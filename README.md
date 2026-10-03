@@ -20,6 +20,7 @@ Open http://localhost:4173. Python 3 is needed only for the local server. Altern
 
 - JPG, PNG and WebP input, with file picker and drag and drop.
 - Target-size presets and custom limits; 1 KB = 1,000 bytes.
+- Two file-size modes: stay under a maximum, or make a JPG exactly the requested KB (smaller or larger). Exact mode converts PNG/WebP inputs to JPG and fills transparent areas white.
 - Width and height controls, with optional aspect-ratio lock.
 - JPG, PNG and WebP export; PNG preserves transparency, JPG uses white behind transparent pixels.
 - Quality search for JPG/WebP. Optional dimension reduction when quality alone cannot meet a limit.
@@ -28,6 +29,10 @@ Open http://localhost:4173. Python 3 is needed only for the local server. Altern
 - A Content Security Policy in the HTML blocks outbound connections from page scripts on GitHub Pages and other static hosts. Cloudflare also applies the additional headers in `public/_headers`.
 
 The app never claims success for an output above the target. Exact dimensions take priority unless the user enables dimension reduction. PNG is lossless, so quality adjustments do not reduce PNG file size. No guarantee of official form acceptance. PDF conversion and cropping are not included in this first version.
+
+To make a 25 KB file 50 KB, select **Make smaller or bigger — exact KB (JPG)**, enter **50**, and prepare the photo. To make a larger file smaller, use the same mode with a smaller target or use the maximum-size mode. If the encoded image still exceeds the target at minimum quality, the result is explicitly marked as not meeting the target; optional dimension reduction can help.
+
+Exact JPG output uses the highest quality found within the target, then adds valid JPEG comment segments and marker fill bytes before the end-of-image marker when needed. Padding preserves the encoded pixels and does not improve quality. The UI discloses when non-image data is added. Some receiving sites re-encode images or strip metadata, so the size can change after uploading elsewhere. Format reference: https://www.w3.org/Graphics/JPEG/itu-t81.pdf (marker fill bytes and COM segments).
 
 Input is limited to 25 MB and 40 million decoded pixels; output is limited to 4,096 pixels per side and 16 million pixels. Very large inputs may still exceed memory on older devices. Animated inputs become a still image. Refreshing discards work. The hosting provider receives ordinary website requests but the app sends no photo data.
 

@@ -1,4 +1,4 @@
-import { fitDimensions, formatBytes, prepareImage } from './image-tools.js';
+import { fitDimensions, formatBytes, prepareImage } from './image-tools.js?v=2';
 
 const $ = id => document.getElementById(id);
 const fileInput = $('file-input');
@@ -25,6 +25,22 @@ function clearResult() {
 
 function updatePresets() {
   document.querySelectorAll('[data-size]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.size === $('target').value)));
+}
+
+function updateSizeControls() {
+  const exact = $('size-mode').value === 'exact';
+  $('target').required = exact;
+  $('target').placeholder = exact ? 'Enter size in KB' : 'No limit';
+  $('target-label').textContent = exact ? 'Target file size' : 'Maximum file size';
+  $('target-optional').hidden = exact;
+  $('format').disabled = exact;
+  if (exact) $('format').value = 'image/jpeg';
+  $('size-help').textContent = exact
+    ? 'Increase or decrease file size to the KB you choose. Saves as JPG. A bigger file does not improve image quality. 1 KB = 1,000 bytes.'
+    : '50 KB means at most 50 KB. A smaller photo can stay smaller.';
+  $('format-help').textContent = exact
+    ? 'Exact-size output uses JPG; transparent areas become white.'
+    : $('format').value === 'image/jpeg' ? 'Transparent areas become white in JPG.' : $('format').value === 'image/png' ? 'PNG is lossless. Smaller dimensions may be needed to meet your limit.' : 'WebP keeps transparency. Check that your form accepts it.';
 }
 
 async function decodeImage(file) {
@@ -106,7 +122,7 @@ $('lock').addEventListener('change', () => { syncDimension('width'); clearResult
 $('settings-form').addEventListener('input', () => {
   clearResult();
   updatePresets();
-  $('format-help').textContent = $('format').value === 'image/jpeg' ? 'Transparent areas become white in JPG.' : $('format').value === 'image/png' ? 'PNG is lossless. Smaller dimensions may be needed to meet your limit.' : 'WebP keeps transparency. Check that your form accepts it.';
+  updateSizeControls();
   setStatus('Settings changed. Prepare your photo to see the updated result.');
 });
 
@@ -119,6 +135,7 @@ $('settings-form').addEventListener('submit', async event => {
   const requestedHeight = Number($('height').value);
   const target = $('target').value === '' ? null : Number($('target').value) * 1000;
   const type = $('format').value;
+  const sizeMode = $('size-mode').value;
   clearResult();
   $('settings').disabled = true;
   $('replace').disabled = true;
@@ -126,7 +143,7 @@ $('settings-form').addEventListener('submit', async event => {
   $('settings-form').setAttribute('aria-busy', 'true');
   setStatus('Preparing your photo on your device…');
   try {
-    const result = await prepareImage(source, { width: requestedWidth, height: requestedHeight, target, type, allowResize: $('auto-resize').checked });
+    const result = await prepareImage(source, { width: requestedWidth, height: requestedHeight, target, type, sizeMode, allowResize: $('auto-resize').checked });
     if (current !== generation) return;
     resultURL = URL.createObjectURL(result.blob);
     $('result-image').src = resultURL;
@@ -135,11 +152,11 @@ $('settings-form').addEventListener('submit', async event => {
     $('download').download = `${originalFile.name.replace(/\.[^.]+$/, '') || 'photo'}-ready.${extension}`;
     const savings = Math.round((1 - result.blob.size / originalFile.size) * 100);
     $('result-heading').textContent = result.meetsTarget ? 'Ready for the next step.' : 'This needs a little more room.';
-    $('result-summary').textContent = `${formatBytes(result.blob.size)} · ${result.width.toLocaleString()} × ${result.height.toLocaleString()} px · ${extension.toUpperCase()}${savings > 0 ? ` · ${savings}% smaller` : ''}`;
+    $('result-summary').textContent = `${formatBytes(originalFile.size)} → ${formatBytes(result.blob.size)} · ${result.width.toLocaleString()} × ${result.height.toLocaleString()} px · ${extension.toUpperCase()}${savings > 0 ? ` · ${savings}% smaller` : savings < 0 ? ` · ${-savings}% larger` : ''}`;
     const checks = $('result-checks');
     checks.replaceChildren();
     const sizeCheck = document.createElement('span');
-    sizeCheck.textContent = !target ? '✓ No file-size limit set' : result.meetsTarget ? `✓ Within ${target / 1000} KB` : `Above ${target / 1000} KB limit`;
+    sizeCheck.textContent = !target ? '✓ No file-size limit set' : result.meetsTarget ? sizeMode === 'exact' ? `✓ Exactly ${target / 1000} KB` : `✓ Within ${target / 1000} KB` : `Above ${target / 1000} KB limit`;
     sizeCheck.classList.toggle('warning', !result.meetsTarget);
     const dimensionCheck = document.createElement('span');
     const changed = result.width !== requestedWidth || result.height !== requestedHeight;
@@ -147,7 +164,9 @@ $('settings-form').addEventListener('submit', async event => {
     dimensionCheck.classList.toggle('warning', changed);
     checks.append(sizeCheck, dimensionCheck);
     $('result-warning').hidden = result.meetsTarget && !changed;
-    $('result-warning').textContent = !result.meetsTarget ? 'The result exceeds your limit. Try JPG or WebP, allow smaller dimensions, or increase the file-size limit.' : 'The dimensions were reduced with your permission. Confirm that the new dimensions meet your form’s requirements.';
+    $('result-warning').textContent = !result.meetsTarget ? sizeMode === 'exact' ? 'The JPG could not fit this target. Allow smaller dimensions or choose a larger target size.' : 'The result exceeds your limit. Try JPG or WebP, allow smaller dimensions, or increase the file-size limit.' : 'The dimensions were reduced with your permission. Confirm that the new dimensions meet your form’s requirements.';
+    $('size-note').hidden = !result.paddedBytes;
+    $('size-note').textContent = result.paddedBytes ? 'Extra non-image data was added to reach the exact file size. This does not add detail or improve the photo’s quality.' : '';
     $('download').firstChild.textContent = result.meetsTarget ? 'Download photo ' : 'Download anyway ';
     $('result').hidden = false;
     setStatus(result.meetsTarget ? 'Your photo is ready. Review the preview and download it below.' : 'Photo prepared, but the file-size limit could not be met.', !result.meetsTarget);

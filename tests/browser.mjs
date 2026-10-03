@@ -164,6 +164,79 @@ try {
     assert.equal(await evaluate("document.getElementById('settings').disabled"), false);
   }
   pass('Unsupported and corrupt files show errors without losing the current photo');
+
+  const exactChecks = await evaluate(`(async () => {
+    const { prepareImage, padJpegToSize } = await import('./image-tools.js');
+    const c=document.createElement('canvas'); c.width=100; c.height=80;
+    const x=c.getContext('2d'); const pixels=x.createImageData(100,80);
+    for(let i=0;i<pixels.data.length;i+=4){pixels.data[i]=i%251; pixels.data[i+1]=(i*7)%253; pixels.data[i+2]=(i*13)%255; pixels.data[i+3]=255} x.putImageData(pixels,0,0);
+    const options={width:100,height:80,type:'image/jpeg',target:25000,allowResize:false,sizeMode:'exact'};
+    const original=await prepareImage(c,{...options,target:null,sizeMode:'maximum'});
+    const decodedPixels=async blob=>{const img=await createImageBitmap(blob); const copy=document.createElement('canvas');copy.width=img.width;copy.height=img.height;const ctx=copy.getContext('2d');ctx.drawImage(img,0,0);img.close();return ctx.getImageData(0,0,copy.width,copy.height).data};
+    const expected=await decodedPixels(original.blob);
+    for(const gap of [1,2,3,4,5,65536,65537,65538,65539,65540,150000]){
+      const padded=await padJpegToSize(original.blob,original.blob.size+gap);
+      if(padded.size!==original.blob.size+gap) throw new Error('Incorrect padding size');
+      const actual=await decodedPixels(padded);
+      if(actual.length!==expected.length || actual.some((byte,i)=>byte!==expected[i])) throw new Error('Padding altered decoded pixels');
+    }
+    const fixture=await prepareImage(c,options);
+    const large=await prepareImage(c,{...options,target:1000});
+    const resized=await prepareImage(c,{...options,target:1000,allowResize:true});
+    let invalid=0;
+    for(const overrides of [{type:'image/png'},{target:null},{target:Infinity}]){
+      try{await prepareImage(c,{...options,...overrides})}catch{invalid++}
+    }
+    const tiny=document.createElement('canvas');tiny.width=tiny.height=25;
+    const enlarged=await prepareImage(tiny,{...options,width:50,height:50,target:50000});
+    const image=await createImageBitmap(enlarged.blob);const dimensions=[image.width,image.height];image.close();
+    const transfer=new DataTransfer();transfer.items.add(new File([fixture.blob],'small-25kb.jpg',{type:'image/jpeg'}));
+    const input=document.getElementById('file-input');input.files=transfer.files;input.dispatchEvent(new Event('change'));
+    return {fixture:fixture.blob.size,invalid,dimensions,impossible:!large.meetsTarget && large.blob.size>1000 && large.paddedBytes===0,resized:resized.meetsTarget && resized.blob.size===1000};
+  })()`);
+  assert.equal(exactChecks.fixture,25000);
+  assert.equal(exactChecks.invalid,3);
+  assert.deepEqual(exactChecks.dimensions,[50,50]);
+  assert.ok(exactChecks.impossible && exactChecks.resized);
+  pass('Exact JPG size, comment boundaries, pixel preservation, impossible targets, and 25-to-50 pixel enlargement');
+
+  await until("document.getElementById('original-name').textContent === 'small-25kb.jpg'");
+  await evaluate("document.getElementById('size-mode').value='exact'; document.getElementById('size-mode').dispatchEvent(new Event('input',{bubbles:true})); document.getElementById('target').value='50'; document.getElementById('target').dispatchEvent(new Event('input',{bubbles:true})); document.getElementById('settings-form').requestSubmit()");
+  await until("!document.getElementById('result').hidden && !document.getElementById('settings').disabled");
+  assert.match(await evaluate("document.getElementById('result-checks').textContent"),/Exactly 50 KB/);
+  assert.equal(await evaluate("document.getElementById('format').disabled"),true);
+  assert.equal(await evaluate("document.getElementById('format').value"),'image/jpeg');
+  assert.equal(await evaluate("document.getElementById('size-note').hidden"),false);
+  assert.match(await evaluate("document.getElementById('result-summary').textContent"),/25.0 KB → 50.0 KB/);
+  await until("document.getElementById('result-image').naturalWidth === 100");
+  await evaluate("document.getElementById('download').click()");
+  const readDownload=async name=>{
+    for(let attempt=0;attempt<100;attempt++){try{return await readFile(join(downloads,name))}catch{await delay(50)}}
+    throw new Error('Download missing: '+name);
+  };
+  const increased=await readDownload('small-25kb-ready.jpg');
+  assert.equal(increased.length,50000);
+  // Read this real downloaded file back into the tool, then make it smaller.
+  await evaluate(`{const data=Uint8Array.from(atob(${JSON.stringify(increased.toString('base64'))}),char=>char.charCodeAt(0));const transfer=new DataTransfer();transfer.items.add(new File([data],'big-50kb.jpg',{type:'image/jpeg'}));const input=document.getElementById('file-input');input.files=transfer.files;input.dispatchEvent(new Event('change'));}`);
+  await until("document.getElementById('original-name').textContent === 'big-50kb.jpg'");
+  await evaluate("document.getElementById('target').value='25'; document.getElementById('target').dispatchEvent(new Event('input',{bubbles:true})); document.getElementById('settings-form').requestSubmit()");
+  await until("!document.getElementById('result').hidden && !document.getElementById('settings').disabled");
+  assert.match(await evaluate("document.getElementById('result-checks').textContent"),/Exactly 25 KB/);
+  assert.match(await evaluate("document.getElementById('result-summary').textContent"),/50.0 KB → 25.0 KB/);
+  await evaluate("document.getElementById('download').click()");
+  const decreased=await readDownload('big-50kb-ready.jpg');
+  assert.equal(decreased.length,25000);
+  await writeFile(join(artifacts,'exact-50kb.jpg'),increased);
+  await writeFile(join(artifacts,'exact-25kb.jpg'),decreased);
+  await screenshot('mobile-exact-size.png');
+  await evaluate("document.getElementById('target').value=''; document.getElementById('target').dispatchEvent(new Event('input',{bubbles:true}))");
+  assert.equal(await evaluate("document.getElementById('target').validity.valueMissing"),true);
+  assert.equal(await evaluate("document.getElementById('result').hidden"),true);
+  await evaluate("document.getElementById('size-mode').value='maximum'; document.getElementById('size-mode').dispatchEvent(new Event('input',{bubbles:true}))");
+  assert.equal(await evaluate("document.getElementById('format').disabled"),false);
+  assert.equal(await evaluate("document.getElementById('target').required"),false);
+  assert.equal(await evaluate('document.documentElement.scrollWidth <= innerWidth'),true);
+  pass('Actual 25 KB → 50 KB → 25 KB upload/download flow, required target, mode switching, and mobile layout');
   assert.deepEqual(errors, []); assert.deepEqual(externalRequests, []);
   pass('No uncaught browser errors or external network requests');
   console.log('All browser integration checks passed.');
