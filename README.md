@@ -1,6 +1,8 @@
 # I Love Free Compressor
 
-Live website: https://kathirvelm387.github.io/i-love-free-compressor/
+Live website: https://ilovefreecompressor.vercel.app/
+
+GitHub Pages mirror: https://kathirvelm387.github.io/i-love-free-compressor/
 
 Source code: https://github.com/KATHIRVELM387/i-love-free-compressor
 
@@ -40,7 +42,7 @@ Input is limited to 25 MB and 40 million decoded pixels; output is limited to 4,
 
 The root `vercel.json` deploys only `public/`, skips dependency installation and builds, and applies the same privacy headers as Cloudflare. No server functions, database, or paid APIs are used. Use Vercel's **Hobby** plan for this personal, non-commercial project.
 
-Import this repository into Vercel, use **Other** as the framework, and keep the output directory as `public`. Alternatively, sign in with the Vercel CLI and deploy this repository with `vercel --prod`. The requested project name is `ilovefreecompressor`; Vercel must confirm availability of the corresponding `vercel.app` address. `.vercel/` account/project link settings are excluded from Git.
+Import this repository into Vercel, use **Other** as the framework, and keep the output directory as `public`. Alternatively, sign in with the Vercel CLI and deploy this repository with `vercel --prod`. The deployed project is `ilovefreecompressor` in the `kathir-project` Hobby account, with production address `https://ilovefreecompressor.vercel.app/`. For this linked checkout, publish updates with `vercel deploy --prod --scope kathir-project`. `.vercel/` account/project link settings are excluded from Git.
 
 When changing the primary website address, update the canonical URL, Open Graph URL, sitemap, and Google Search Console URL-prefix property to match the assigned address.
 
@@ -63,9 +65,9 @@ Official instructions: https://docs.github.com/en/pages/getting-started-with-git
 
 The page includes a descriptive title, description, canonical URL, indexable HTML, and social sharing metadata. `public/sitemap.xml` lists the production homepage. These features help discovery and interpretation; they do not guarantee indexing or a particular ranking.
 
-1. In https://search.google.com/search-console, add a **URL-prefix** property for `https://kathirvelm387.github.io/i-love-free-compressor/`.
+1. In https://search.google.com/search-console, add a **URL-prefix** property for `https://ilovefreecompressor.vercel.app/`.
 2. Choose **HTML tag** verification. Add the exact `google-site-verification` meta tag supplied by Google to the head of `public/index.html`, deploy, and click **Verify** in Search Console.
-3. Submit `https://kathirvelm387.github.io/i-love-free-compressor/sitemap.xml` under **Sitemaps**.
+3. Submit `https://ilovefreecompressor.vercel.app/sitemap.xml` under **Sitemaps**.
 4. Inspect the homepage URL and select **Request indexing**. Monitor the result in Search Console; crawling may take days or weeks and is not guaranteed.
 
 The sitemap must be submitted directly: a `robots.txt` inside a GitHub project subpath does not control the host's crawler policy. If the production address changes, update the canonical URL, Open Graph URL, and sitemap together.
