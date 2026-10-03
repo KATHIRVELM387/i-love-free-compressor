@@ -108,9 +108,9 @@ try {
   await cdp('Page.navigate', { url: `http://127.0.0.1:${port}` }, session);
   await until("document.readyState === 'complete' && !!document.getElementById('demo')");
   await until("document.documentElement.dataset.activeTool==='home'");
-  assert.equal(await evaluate("document.querySelectorAll('.tool-card').length"),16);
+  assert.equal(await evaluate("document.querySelectorAll('.tool-card').length"),20);
   assert.equal(await evaluate("document.getElementById('tool').hidden && document.getElementById('batch-tool').hidden"),true);
-  await until("document.querySelectorAll('#side-links [data-route]').length===17");
+  await until("document.querySelectorAll('#side-links [data-route]').length===21");
   assert.equal(await evaluate("!document.getElementById('sidebar').hidden&&document.getElementById('app-shell').getBoundingClientRect().left>=248"),true);
   assert.equal(await evaluate("document.querySelector('#side-links [aria-current=page]').dataset.route"),'home');
   await input('nav-search','BORDER');
@@ -121,7 +121,7 @@ try {
   await input('tool-search','no-such-tool');
   assert.match(await evaluate("document.getElementById('tool-search-status').textContent"),/No matching/);
   await evaluate("document.getElementById('tool-search-clear').click()");
-  assert.equal(await evaluate("document.querySelectorAll('.tool-card:not([hidden])').length"),16);
+  assert.equal(await evaluate("document.querySelectorAll('.tool-card:not([hidden])').length"),20);
   await screenshot('desktop-home.png');
   for(const width of [768,390,320]){
     await cdp('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:true},session);
@@ -137,7 +137,7 @@ try {
   await until("document.documentElement.dataset.activeTool==='rounded'");
   assert.equal(await evaluate("document.getElementById('sidebar').hidden&&!document.getElementById('app-shell').inert&&document.activeElement.id==='tool-title'"),true);
   await evaluate("document.getElementById('menu-toggle').click();document.getElementById('nav-clear').click()");
-  await evaluate("document.querySelector('#side-links [data-route=pdf]').focus()");
+  await evaluate("document.querySelector('#side-links [data-route=details]').focus()");
   await cdp('Input.dispatchKeyEvent',{type:'keyDown',key:'Tab',code:'Tab',windowsVirtualKeyCode:9},session);
   await cdp('Input.dispatchKeyEvent',{type:'keyUp',key:'Tab',code:'Tab',windowsVirtualKeyCode:9},session);
   assert.equal(await evaluate("document.activeElement.className"),'sidebar-logo');
@@ -367,19 +367,19 @@ try {
   assert.deepEqual(decorationChecks.names,['_a_b.jpg','original-ready.webp','photo-CON.png','été.jpg']);
   pass('Watermark positions, opacity, long-text fitting, upright rotated text, exact KB, background composition, and filename safety');
   await until("document.getElementById('original-name').textContent==='transparent-art.png'");
-  const controls=['target','width','crop-ratio','rotate-right','brightness','watermark-text','background-enabled','batch-target','collage-columns','pdf-paper','filter-style','frame-size','corner-radius','pixel-size'];
-  const expected={compress:['target'],exact:['target'],resize:['width'],crop:['width','crop-ratio'],rotate:['rotate-right'],convert:[],adjust:['brightness'],watermark:['watermark-text'],background:['background-enabled'],batch:['batch-target'],collage:['collage-columns'],pdf:['pdf-paper'],filters:['filter-style'],frame:['frame-size'],rounded:['corner-radius'],pixelate:['pixel-size']};
+  const controls=['target','width','crop-ratio','rotate-right','brightness','watermark-text','background-enabled','batch-target','collage-columns','pdf-paper','filter-style','frame-size','corner-radius','pixel-size','split-rows','palette-count','compare-before-choose','details-choose'];
+  const expected={compress:['target'],exact:['target'],resize:['width'],crop:['width','crop-ratio'],rotate:['rotate-right'],convert:[],adjust:['brightness'],watermark:['watermark-text'],background:['background-enabled'],batch:['batch-target'],collage:['collage-columns'],pdf:['pdf-paper'],filters:['filter-style'],frame:['frame-size'],rounded:['corner-radius'],pixelate:['pixel-size'],split:['split-rows'],palette:['palette-count'],compare:['compare-before-choose'],details:['details-choose']};
   for(const [name, visible] of Object.entries(expected)){
     await goTool(name);
     const actual=await evaluate(`${JSON.stringify(controls)}.filter(id=>document.getElementById(id).getClientRects().length>0)`);
     assert.deepEqual(actual,visible,`${name} should show only its own controls`);
     assert.equal(await evaluate("document.getElementById('home-view').hidden"),true);
-    for(const id of controls.filter(id=>!visible.includes(id) && !['batch-target','collage-columns','pdf-paper'].includes(id))){
-      if(!['batch','collage','pdf'].includes(name)) assert.equal(await evaluate(`document.getElementById(${JSON.stringify(id)}).matches(':disabled')`),true,`${id} must not validate or react in ${name}`);
+    for(const id of controls.filter(id=>!visible.includes(id) && !['batch-target','collage-columns','pdf-paper','split-rows','palette-count','compare-before-choose','details-choose'].includes(id))){
+      if(!['batch','collage','pdf','split','palette','compare','details'].includes(name)) assert.equal(await evaluate(`document.getElementById(${JSON.stringify(id)}).matches(':disabled')`),true,`${id} must not validate or react in ${name}`);
     }
     assert.equal(await evaluate('document.documentElement.scrollWidth<=innerWidth'),true);
   }
-  pass('All sixteen routes show only the required controls; unrelated form fields are disabled');
+  pass('All twenty routes show only the required controls; unrelated form fields are disabled');
 
   await goTool('exact');
   await input('target','50');
@@ -635,6 +635,104 @@ try {
   await writeFile(join(artifacts,'framed-rounded.png'),await readDownload('framed-rounded.png'));
   pass('Actual filter colors/strength, frame pixels, rounded transparency/JPG, pixel blocks, validation, focused exports, and chaining a result into another tool');
 
+  await evaluate(`(async()=>{
+    const c=document.createElement('canvas');c.width=101;c.height=67;const x=c.getContext('2d');
+    for(const [color,px,py,w,h] of [['#ff0000',0,0,50,33],['#00ff00',50,0,51,33],['#0000ff',0,33,50,34],['#ffffff',50,33,51,34]]){x.fillStyle=color;x.fillRect(px,py,w,h)}
+    x.clearRect(100,66,1,1);
+    window.exploreSource=c;window.exploreFile=new File([await new Promise(r=>c.toBlob(r,'image/png'))],'four-colors.png',{type:'image/png'});
+    window.comparisonFiles=[];
+    for(const [color,w,h,name] of [['#ff0000',200,100,'before.png'],['#0000ff',100,200,'after.png']]){const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.fillStyle=color;x.fillRect(0,0,w,h);comparisonFiles.push(new File([await new Promise(r=>c.toBlob(r,'image/png'))],name,{type:'image/png'}))}
+  })()`);
+  async function chooseExplore(id, expression='window.exploreFile') {
+    await evaluate(`{const dt=new DataTransfer();dt.items.add(${expression});const input=document.getElementById('${id}');input.files=dt.files;input.dispatchEvent(new Event('change'));}`);
+  }
+  await goTool('split');await chooseExplore('split-input');
+  await until("!document.getElementById('split-run').disabled&&document.getElementById('split-file').textContent.includes('four-colors')");
+  await input('split-rows','2');await input('split-columns','3');
+  await evaluate("document.getElementById('split-run').click()");
+  await until("!document.getElementById('split-options').disabled&&!document.getElementById('split-output').hidden");
+  await evaluate("document.getElementById('split-download').click()");
+  const tiles=await readDownload('photo-tiles.zip');await writeFile(join(artifacts,'photo-tiles.zip'),tiles);
+  const tileParts=[];
+  for(let offset=0;tiles.readUInt32LE(offset)===0x04034b50;){
+    const length=tiles.readUInt32LE(offset+18),nameLength=tiles.readUInt16LE(offset+26),extra=tiles.readUInt16LE(offset+28);
+    const name=tiles.toString('utf8',offset+30,offset+30+nameLength);const start=offset+30+nameLength+extra;
+    tileParts.push({name,data:Array.from(tiles.subarray(start,start+length))});offset=start+length;
+  }
+  assert.equal(tileParts.length,6);assert.equal(tileParts[0].name,'row-01-col-01.png');assert.equal(tileParts[5].name,'row-02-col-03.png');
+  const reconstruction=await evaluate(`(async()=>{const c=document.createElement('canvas');c.width=101;c.height=67;const x=c.getContext('2d');const sizes=[];for(const [index,part] of ${JSON.stringify(tileParts)}.entries()){
+    const b=await createImageBitmap(new Blob([new Uint8Array(part.data)],{type:'image/png'}));const row=Math.floor(index/3),col=index%3;sizes.push([b.width,b.height]);x.drawImage(b,Math.floor(col*101/3),Math.floor(row*67/2));b.close();
+  }const a=x.getImageData(0,0,101,67).data,b=exploreSource.getContext('2d').getImageData(0,0,101,67).data;return {sizes,equal:a.every((v,i)=>v===b[i])}})()`);
+  assert.equal(reconstruction.equal,true);assert.deepEqual(reconstruction.sizes,[[33,33],[34,33],[34,33],[33,34],[34,34],[34,34]]);
+  await screenshot('desktop-split.png');
+  await input('split-rows','1');assert.equal(await evaluate("document.getElementById('split-output').hidden"),true);
+  await evaluate("window.originalToBlob=HTMLCanvasElement.prototype.toBlob;HTMLCanvasElement.prototype.toBlob=function(...args){setTimeout(()=>originalToBlob.apply(this,args),100)};document.getElementById('split-run').click()");
+  await goTool('palette');await until("!document.getElementById('split-options').disabled");await delay(200);
+  assert.equal(await evaluate("document.getElementById('split-output').hidden"),true);
+  await evaluate('HTMLCanvasElement.prototype.toBlob=originalToBlob;delete window.originalToBlob');
+  await chooseExplore('palette-input');
+  await until("!document.getElementById('palette-options').disabled&&!document.getElementById('palette-output').hidden");
+  const colors=await evaluate("Array.from(document.querySelectorAll('#palette-swatches input')).map(i=>i.value).sort()");
+  assert.deepEqual(colors,['#0000FF','#00FF00','#FF0000','#FFFFFF']);
+  await evaluate("document.getElementById('palette-text').click();document.getElementById('palette-image').click()");
+  assert.deepEqual((await readDownload('photo-palette.txt')).toString().trim().split('\n').sort(),colors);
+  const palettePng=await readDownload('photo-palette.png');assert.equal(palettePng.readUInt32BE(16),640);assert.equal(palettePng.readUInt32BE(20),180);
+  await writeFile(join(artifacts,'photo-palette.png'),palettePng);
+  await evaluate("Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async text=>{window.copiedHex=text}}});document.querySelector('#palette-swatches button').click()");
+  await until("document.getElementById('palette-status').textContent.includes('copied')");
+  assert.ok(colors.includes(await evaluate('window.copiedHex')));
+  await evaluate("Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async()=>{throw new Error('denied')}}});document.querySelector('#palette-swatches button').click()");
+  await until("document.getElementById('palette-status').textContent.includes('selected')");
+  assert.equal(await evaluate("document.activeElement.tagName==='INPUT'&&document.activeElement.selectionEnd-document.activeElement.selectionStart===7"),true);
+  await evaluate("delete navigator.clipboard");
+  await input('palette-count','4');await until("!document.getElementById('palette-options').disabled&&!document.getElementById('palette-output').hidden");
+  await screenshot('desktop-palette.png');
+  await chooseExplore('palette-input',"new File(['bad'],'bad.png',{type:'image/png'})");
+  await until("document.getElementById('palette-status').textContent.includes('valid JPG')");
+  assert.equal(await evaluate("document.getElementById('palette-output').hidden"),false);
+  await evaluate(`(async()=>{const c=document.createElement('canvas');c.width=c.height=10;window.emptyPhoto=new File([await new Promise(r=>c.toBlob(r))],'empty.png',{type:'image/png'})})()`);
+  await chooseExplore('palette-input','window.emptyPhoto');
+  await until("!document.getElementById('palette-options').disabled&&document.getElementById('palette-status').textContent.includes('No visible colors')");
+  assert.equal(await evaluate("document.getElementById('palette-output').hidden"),true);
+  await chooseExplore('palette-input');await until("!document.getElementById('palette-output').hidden");
+  pass('Split ZIP reconstructs odd-sized transparent image exactly; palette colors, text/PNG downloads, clipboard and fallback, corrupt/transparent uploads, and cancellation');
+
+  await goTool('details');
+  await chooseExplore('details-input',"new File([window.exploreFile],'reported.jpg',{type:'image/jpeg'})");
+  await until("!document.getElementById('details-output').hidden");
+  const details=await evaluate("Object.fromEntries(Array.from(document.querySelectorAll('#details-list dt')).map(dt=>[dt.textContent,dt.nextElementSibling.textContent]))");
+  assert.equal(details.Format,'PNG');assert.equal(details.Dimensions,'101 × 67 px');assert.equal(details['Aspect ratio'],'101:67');assert.match(details.Transparency,/Yes/);
+  await evaluate("document.getElementById('details-download').click()");
+  assert.match((await readDownload('image-details.txt')).toString(),/Format: PNG/);
+  await chooseExplore('details-input','window.comparisonFiles[0]');
+  await until("document.getElementById('details-list').textContent.includes('200 × 100')&&!document.getElementById('details-options').disabled");
+  assert.match(await evaluate("document.getElementById('details-list').textContent"),/No — every decoded pixel is opaque/);
+  await chooseExplore('details-input',"new File([new Uint8Array(25000001)],'large.png',{type:'image/png'})");
+  await until("document.getElementById('details-status').textContent.includes('25 MB')");
+  assert.equal(await evaluate("document.getElementById('details-output').hidden"),false);
+  await screenshot('desktop-details.png');
+  await goTool('compare');
+  await chooseExplore('compare-before-input','window.comparisonFiles[0]');
+  await until("document.getElementById('compare-before-name').textContent.includes('before.png')");
+  assert.equal(await evaluate("document.getElementById('compare-output').hidden"),true);
+  await chooseExplore('compare-after-input','window.comparisonFiles[1]');
+  await until("!document.getElementById('compare-output').hidden&&!document.getElementById('compare-swap').disabled");
+  assert.match(await evaluate("document.getElementById('compare-status').textContent"),/aspect ratios differ/);
+  async function comparisonPixels(){return evaluate("[[500,400],[700,400]].map(p=>Array.from(document.getElementById('compare-preview').getContext('2d').getImageData(...p,1,1).data))")}
+  assert.deepEqual(await comparisonPixels(),[[255,0,0,255],[0,0,255,255]]);
+  await input('compare-position','0');assert.deepEqual(await comparisonPixels(),[[0,0,255,255],[0,0,255,255]]);
+  await input('compare-position','100');assert.deepEqual(await comparisonPixels(),[[255,0,0,255],[255,0,0,255]]);
+  await input('compare-position','50');await evaluate("document.getElementById('compare-swap').click()");
+  assert.deepEqual(await comparisonPixels(),[[0,0,255,255],[255,0,0,255]]);
+  assert.match(await evaluate("document.getElementById('compare-before-name').textContent"),/after.png/);
+  await screenshot('desktop-compare.png');
+  await chooseExplore('compare-before-input',"new File(['bad'],'bad.png',{type:'image/png'})");
+  await until("document.getElementById('compare-status').textContent.includes('valid JPG')");
+  assert.deepEqual(await comparisonPixels(),[[0,0,255,255],[255,0,0,255]]);
+  await evaluate("document.getElementById('compare-clear').click()");
+  assert.equal(await evaluate("document.getElementById('compare-output').hidden&&document.getElementById('compare-swap').disabled"),true);
+  pass('Detected file format, exact single-pixel transparency, opaque images, details export, size limits, comparison endpoints/swap/mismatched ratios, and corrupt-photo recovery');
+
   for(const name of Object.keys(expected)){
     await goTool(name);
     for(const width of [1280,1024,768,390,320]){
@@ -657,6 +755,20 @@ try {
   await goTool('watermark');
   assert.equal(await evaluate("document.getElementById('settings').disabled"),true);
   pass('Every tool is responsive; direct links survive reload; All tools and unknown links return to the menu');
+  await cdp('Emulation.setDeviceMetricsOverride',{width:1280,height:800,deviceScaleFactor:1,mobile:false},session);
+  await goTool('details');
+  assert.equal(await evaluate("(()=>{const nav=document.getElementById('side-links'),current=nav.querySelector('[aria-current=page]');const n=nav.getBoundingClientRect(),c=current.getBoundingClientRect();return nav.scrollHeight>nav.clientHeight&&c.top>=n.top-1&&c.bottom<=n.bottom+1&&document.getElementById('nav-search').getBoundingClientRect().top>=0})()"),true);
+  for(const width of [390,320]){
+    await cdp('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:true},session);
+    await evaluate("document.getElementById('menu-toggle').click()");
+    assert.equal(await evaluate("document.getElementById('sidebar').scrollHeight<=document.getElementById('sidebar').clientHeight+1"),true);
+    await input('nav-search','tiles');
+    assert.deepEqual(await evaluate("Array.from(document.querySelectorAll('#side-links [data-route]:not([hidden])')).map(a=>a.dataset.route)"),['home','split']);
+    await screenshot('mobile-explore-menu.png');
+    await evaluate("document.getElementById('nav-clear').click();document.getElementById('menu-close').click()");
+    assert.equal(await evaluate("!document.getElementById('app-shell').inert&&document.activeElement.id==='menu-toggle'"),true);
+  }
+  pass('Long sidebar list scrolls independently, current tool stays visible, and search remains usable on mobile');
   assert.deepEqual(errors,[]);assert.deepEqual(externalRequests,[]);
   pass('No uncaught browser errors or external requests');
   console.log('All browser integration checks passed.');

@@ -1,5 +1,5 @@
 import { fitDimensions, formatBytes, prepareImage, renderImage, getCropRect, downloadName } from './image-tools.js?v=6';
-import { startNavigation, TOOLS } from './navigation.js?v=8';
+import { startNavigation, TOOLS } from './navigation.js?v=9';
 
 const $ = id => document.getElementById(id);
 const fileInput = $('file-input');

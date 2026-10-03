@@ -21,11 +21,12 @@
   <meta name="twitter:title" content="I Love Free Compressor — Free Image Compressor &amp; Photo Resizer">
   <meta name="twitter:description" content="Compress and resize photos for free. Your images stay on your device.">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=8">
-  <script type="module" src="app.js?v=8"></script>
-  <script type="module" src="shell.js?v=1"></script>
+  <link rel="stylesheet" href="styles.css?v=9">
+  <script type="module" src="app.js?v=9"></script>
+  <script type="module" src="shell.js?v=2"></script>
   <script type="module" src="batch.js?v=8"></script>
   <script type="module" src="collections.js?v=2"></script>
+  <script type="module" src="explore.js?v=1"></script>
 </head>
 <body>
   <a class="skip-link" href="#main-content">Skip to content</a>
@@ -47,7 +48,7 @@
     <section class="hero wrap">
       <span class="eyebrow"><span class="status-dot"></span> LESS FILE FUSS. MORE GETTING THINGS DONE.</span>
       <h1>Your everyday image tools.<br><em>Make it yours.</em></h1>
-      <p>Compress, resize, style, and combine your photos.<br class="desktop-break"> 16 free tools. No sign-up. Everything stays on your device.</p>
+      <p>Compress, resize, style, and combine your photos.<br class="desktop-break"> 20 free tools. No sign-up. Everything stays on your device.</p>
       <div class="home-search"><label for="tool-search">What do you want to do?</label><div class="search-row"><input id="tool-search" type="search" placeholder="Try compress, rounded corners, or PDF…" autocomplete="off"><button id="tool-search-clear" class="icon-button" type="button" aria-label="Clear homepage search" hidden>×</button></div></div>
       <div class="hero-notes"><span>✓ No sign-up</span><span>✓ No uploads to a server</span><span>✓ No forced watermarks</span></div>
     </section>
@@ -66,15 +67,19 @@
       <a class="tool-card" href="#/batch"><span class="tool-icon" aria-hidden="true">▦</span><h3>Batch compressor</h3><p>Process up to 20 photos and download a ZIP.</p><span class="tool-open">Open tool →</span></a>
       <a class="tool-card" href="#/collage"><span class="tool-icon" aria-hidden="true">▧</span><h3>Photo collage</h3><p>Arrange up to 9 photos in a colorful grid.</p><span class="tool-open">Open tool →</span></a>
       <a class="tool-card" href="#/pdf"><span class="tool-icon" aria-hidden="true">PDF</span><h3>Images to PDF</h3><p>Combine up to 20 photos into one document.</p><span class="tool-open">Open tool →</span></a>
-      <a class="tool-card" href="#/filters"><span class="tool-icon" aria-hidden="true">✦</span><h3>Photo filters <span class="new-badge">New</span></h3><p>Try sepia, warm, cool, or negative colors.</p><span class="tool-open">Open tool →</span></a>
-      <a class="tool-card" href="#/frame"><span class="tool-icon" aria-hidden="true">▣</span><h3>Photo frames <span class="new-badge">New</span></h3><p>Add a colored border with adjustable thickness.</p><span class="tool-open">Open tool →</span></a>
-      <a class="tool-card" href="#/rounded"><span class="tool-icon" aria-hidden="true">▢</span><h3>Rounded corners <span class="new-badge">New</span></h3><p>Make softer corners with transparent PNG output.</p><span class="tool-open">Open tool →</span></a>
-      <a class="tool-card" href="#/pixelate"><span class="tool-icon" aria-hidden="true">▦</span><h3>Pixel art <span class="new-badge">New</span></h3><p>Create a blocky mosaic from your whole photo.</p><span class="tool-open">Open tool →</span></a>
+      <a class="tool-card" href="#/filters"><span class="tool-icon" aria-hidden="true">✦</span><h3>Photo filters </h3><p>Try sepia, warm, cool, or negative colors.</p><span class="tool-open">Open tool →</span></a>
+      <a class="tool-card" href="#/frame"><span class="tool-icon" aria-hidden="true">▣</span><h3>Photo frames </h3><p>Add a colored border with adjustable thickness.</p><span class="tool-open">Open tool →</span></a>
+      <a class="tool-card" href="#/rounded"><span class="tool-icon" aria-hidden="true">▢</span><h3>Rounded corners </h3><p>Make softer corners with transparent PNG output.</p><span class="tool-open">Open tool →</span></a>
+      <a class="tool-card" href="#/pixelate"><span class="tool-icon" aria-hidden="true">▦</span><h3>Pixel art </h3><p>Create a blocky mosaic from your whole photo.</p><span class="tool-open">Open tool →</span></a>
+      <a class="tool-card" href="#/split"><span class="tool-icon" aria-hidden="true">▦</span><h3>Image splitter <span class="new-badge">New</span></h3><p>Divide a photo into grid tiles and download a ZIP.</p><span class="tool-open">Open tool →</span></a>
+      <a class="tool-card" href="#/palette"><span class="tool-icon" aria-hidden="true">◒</span><h3>Color palette <span class="new-badge">New</span></h3><p>Find photo colors and copy their HEX codes.</p><span class="tool-open">Open tool →</span></a>
+      <a class="tool-card" href="#/compare"><span class="tool-icon" aria-hidden="true">⇆</span><h3>Compare images <span class="new-badge">New</span></h3><p>Compare two photos with a before-and-after slider.</p><span class="tool-open">Open tool →</span></a>
+      <a class="tool-card" href="#/details"><span class="tool-icon" aria-hidden="true">ⓘ</span><h3>Image details <span class="new-badge">New</span></h3><p>Check dimensions, format, size, and transparency.</p><span class="tool-open">Open tool →</span></a>
     </div><p id="tool-search-status" role="status" hidden></p></section>
     <section id="how-it-works" class="how-section wrap"><div class="section-intro"><span class="tiny-label">FROM “FILE TOO LARGE” TO DONE</span><h2>Three steps. Zero headaches.</h2></div><div class="how-grid"><article><span class="how-number">01</span><h3>Pick your photo</h3><p>A portrait, a signature, or a scan. Choose a JPG, PNG, or WebP from your device.</p></article><article><span class="how-number">02</span><h3>Set the requirements</h3><p>Enter the size and dimensions your form asks for. We’ll do the resizing and compression.</p></article><article><span class="how-number">03</span><h3>Download and carry on</h3><p>Check your preview, save the new file, and get back to what you were doing.</p></article></div></section>
     <section id="questions" class="faq-section wrap"><div><span class="tiny-label">GOOD TO KNOW</span><h2>A little clarity.</h2><p>Small answers to common questions.</p></div><div class="faq-list"><details><summary>Is it really free?</summary><p>Yes. Every feature here is free to use, with no account, subscription, or forced watermark. Add your own text watermark only if you choose.</p></details><details><summary>Where do my photos go?</summary><p>They stay in your browser. The tool doesn’t upload or store your photos on a server. Download any result you want to keep before closing or refreshing the page.</p></details><details><summary>How do I crop or adjust a photo?</summary><p>Choose Crop &amp; size presets from the tool menu, then use Crop &amp; frame to pick a shape, zoom in, and move the framing. Choose Light &amp; color from the menu to change brightness or contrast, or switch to black &amp; white. Quick size presets set the crop and output dimensions together. Check the preview, then use the tool’s action button to create your download. These edits apply to the single-photo tool.</p></details><details><summary>Can I add my name or choose a background?</summary><p>Choose Text watermark from the menu to add a name or brand, then choose its position, color, size, and opacity. Transparency background fills transparent pixels with a color; it does not remove an existing background. Each tool opens its own workspace for one photo at a time. You can also enter a download filename, and the tool adds the correct extension.</p></details><details><summary>Can I make a small file bigger?</summary><p>Yes. Choose “Exact file size” from the menu and enter the size you need, such as 50 KB. The tool saves a JPG at that size, adding non-image data if needed. This increases the file size without adding detail or improving quality. To change the photo’s dimensions instead, use Width and Height.</p></details><details><summary>Will it always reach my target size?</summary><p>Exact mode saves a JPG at your chosen size when the image can fit within that target. Very small targets may need smaller dimensions. Maximum mode only keeps the result under a limit, so a smaller file can stay smaller. We’ll clearly show when a target cannot be met. Here, 1 KB means 1,000 bytes. Other websites may change file size if they reprocess the image.</p></details><details><summary>Can I use this for an application form?</summary><p>Yes. Follow the form’s own format, dimension, and size requirements. This tool can resize and compress a photo; it doesn’t check official photo rules, remove backgrounds, or guarantee acceptance.</p></details></div></section>
     </div>
-    <div id="workspace-nav" class="workspace-nav wrap" hidden><a href="#/" class="text-button">← All tools</a><span>Single-photo tools keep your original photo. Collage, PDF, and batch tools have their own photo selections.</span></div>
+    <div id="workspace-nav" class="workspace-nav wrap" hidden><a href="#/" class="text-button">← All tools</a><span>Photo editors share your working photo. Other tools have separate photo selections.</span></div>
     <section class="workspace wrap" id="tool" aria-labelledby="tool-title" hidden>
       <div class="workspace-heading"><div><span class="tiny-label">YOUR SELECTED TOOL</span><h1 id="tool-title" tabindex="-1">Compress images</h1><p id="tool-description"></p></div><span class="local-badge"><span aria-hidden="true">◈</span> Stays on your device</span></div>
       <div class="editor-grid">
@@ -252,6 +257,50 @@
       </form>
     </section>
 
+    <section id="split-tool" class="workspace wrap explore-tool" aria-labelledby="split-heading" hidden>
+      <div class="workspace-heading"><div><span class="tiny-label">EXPLORE YOUR PHOTOS</span><h1 id="split-heading" tabindex="-1">Image splitter</h1><p>Divide a photo into grid tiles and download a ZIP.</p></div><span class="local-badge">Private &amp; free</span></div>
+      <div class="explore-body"><div class="explore-grid"><div>
+        <input id="split-input" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+        <div class="collection-actions"><button id="split-choose" class="button primary" type="button">Choose a photo</button><button id="split-clear" class="text-button" type="button">Clear photo</button></div>
+        <p id="split-file" class="field-help">JPG, PNG or WebP · up to 25 MB · 40 million pixels</p>
+        <div class="explore-preview"><canvas id="split-preview" role="img" aria-label="Photo with tile grid" hidden></canvas><p id="split-empty">Your photo preview will appear here.</p></div>
+      </div><div><fieldset id="split-options"><legend class="sr-only">Image splitter options</legend><label for="split-rows">Rows</label><select id="split-rows"><option value="1">1</option><option value="2" selected>2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option></select><label for="split-columns">Columns</label><select id="split-columns"><option value="1">1</option><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option></select><p class="field-help">Download up to 36 PNG tiles in row order. The whole photo is preserved; edge tiles may differ by one pixel. Large images are resized to fit 4,096 px per side and 16 million pixels before splitting.</p><button id="split-run" class="button primary" type="button" disabled>Create tiles ZIP →</button></fieldset></div></div>
+      <p id="split-status" class="explore-status" role="status" aria-live="polite">Choose a photo to get started.</p>
+      <div id="split-output" class="explore-output" hidden><p id="split-summary"></p><a id="split-download" class="button primary" download="photo-tiles.zip">Download ZIP ↓</a></div></div>
+    </section>
+    <section id="palette-tool" class="workspace wrap explore-tool" aria-labelledby="palette-heading" hidden>
+      <div class="workspace-heading"><div><span class="tiny-label">EXPLORE YOUR PHOTOS</span><h1 id="palette-heading" tabindex="-1">Color palette</h1><p>Find photo colors and copy their HEX codes.</p></div><span class="local-badge">Private &amp; free</span></div>
+      <div class="explore-body"><div class="explore-grid"><div>
+        <input id="palette-input" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+        <div class="collection-actions"><button id="palette-choose" class="button primary" type="button">Choose a photo</button><button id="palette-clear" class="text-button" type="button">Clear photo</button></div>
+        <p id="palette-file" class="field-help">JPG, PNG or WebP · up to 25 MB · 40 million pixels</p>
+        <div class="explore-preview"><canvas id="palette-preview" role="img" aria-label="Selected photo preview" hidden></canvas><p id="palette-empty">Your photo preview will appear here.</p></div>
+      </div><div><fieldset id="palette-options"><legend class="sr-only">Color palette options</legend><label for="palette-count">Maximum colors</label><select id="palette-count"><option value="4">4 colors</option><option value="6" selected>6 colors</option><option value="8">8 colors</option></select><p class="field-help">An approximate palette of the most common distinct colors. Mostly transparent pixels are ignored. Simple photos may have fewer colors.</p></fieldset></div></div>
+      <p id="palette-status" class="explore-status" role="status" aria-live="polite">Choose a photo to get started.</p>
+      <div id="palette-output" class="explore-output" hidden><div id="palette-swatches" class="palette-swatches"></div><div class="explore-downloads"><a id="palette-text" class="button secondary" download="photo-palette.txt">Download HEX codes</a><a id="palette-image" class="button primary" download="photo-palette.png">Download palette PNG ↓</a></div></div></div>
+    </section>
+    <section id="details-tool" class="workspace wrap explore-tool" aria-labelledby="details-heading" hidden>
+      <div class="workspace-heading"><div><span class="tiny-label">EXPLORE YOUR PHOTOS</span><h1 id="details-heading" tabindex="-1">Image details</h1><p>Check dimensions, format, size, and transparency.</p></div><span class="local-badge">Private &amp; free</span></div>
+      <div class="explore-body"><div class="explore-grid"><div>
+        <input id="details-input" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+        <div class="collection-actions"><button id="details-choose" class="button primary" type="button">Choose a photo</button><button id="details-clear" class="text-button" type="button">Clear photo</button></div>
+        <p id="details-file" class="field-help">JPG, PNG or WebP · up to 25 MB · 40 million pixels</p>
+        <div class="explore-preview"><canvas id="details-preview" role="img" aria-label="Selected photo preview" hidden></canvas><p id="details-empty">Your photo preview will appear here.</p></div>
+      </div><div><fieldset id="details-options"><legend class="sr-only">Image details options</legend><p>Understand your photo before uploading it to a form or sharing it.</p><p class="field-help">Reports decoded dimensions and the detected file format. Transparency is checked across all decoded pixels. Animated images are inspected as a still image. Camera and GPS metadata are not read.</p></fieldset></div></div>
+      <p id="details-status" class="explore-status" role="status" aria-live="polite">Choose a photo to get started.</p>
+      <div id="details-output" class="explore-output" hidden><dl id="details-list" class="details-list"></dl><a id="details-download" class="button primary" download="image-details.txt">Download details ↓</a></div></div>
+    </section>
+    <section id="compare-tool" class="workspace wrap explore-tool" aria-labelledby="compare-heading" hidden>
+      <div class="workspace-heading"><div><span class="tiny-label">SEE THE DIFFERENCE</span><h1 id="compare-heading" tabindex="-1">Compare images</h1><p>Choose two photos, then move the slider to reveal each one.</p></div><span class="local-badge">Private &amp; free</span></div>
+      <div class="explore-body"><div class="compare-pickers">
+        <div><input id="compare-before-input" type="file" accept="image/jpeg,image/png,image/webp" hidden><button id="compare-before-choose" type="button" class="button primary">Choose before photo</button><p id="compare-before-name" class="field-help">No photo selected.</p></div>
+        <div><input id="compare-after-input" type="file" accept="image/jpeg,image/png,image/webp" hidden><button id="compare-after-choose" type="button" class="button primary">Choose after photo</button><p id="compare-after-name" class="field-help">No photo selected.</p></div>
+      </div><p class="field-help">JPG, PNG or WebP · up to 25 MB and 40 million pixels per photo. Both images fit the same preview area without stretching.</p>
+      <div class="compare-controls"><button id="compare-swap" type="button" class="button secondary" disabled>⇄ Swap photos</button><button id="compare-clear" type="button" class="text-button">Clear both</button></div>
+      <p id="compare-status" class="explore-status" role="status" aria-live="polite">Choose both photos to compare them.</p>
+      <div id="compare-output" hidden><div class="compare-labels"><strong>Before · left</strong><strong>After · right</strong></div><div class="compare-stage"><canvas id="compare-preview" width="1200" height="800" role="img" aria-label="Before-and-after image comparison"></canvas></div><label class="slider-label" for="compare-position">Reveal before photo <output id="compare-value" for="compare-position">50%</output></label><input id="compare-position" type="range" min="0" max="100" value="50" aria-describedby="compare-help"><p id="compare-help" class="field-help">0% shows the after photo; 100% shows the before photo. Use the slider or your keyboard’s arrow keys.</p></div>
+      </div>
+    </section>
     <noscript><p class="wrap">Enable JavaScript to open these tools. Photo processing happens in your browser.</p></noscript>
   </main>
   <footer class="wrap"><a class="brand" href="#/"><span class="brand-icon" aria-hidden="true">♥</span><span class="brand-name"><small>I Love</small><strong>Free Compressor</strong></span></a><p>A little tool for getting on with life.</p><span>Made to be useful. Free to use.</span></footer>

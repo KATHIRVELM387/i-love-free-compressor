@@ -10,7 +10,7 @@ A free, mobile-friendly photo resizing and compression tool. All photo processin
 
 ## Choose a tool
 
-The homepage shows sixteen tool cards. Selecting a card opens a dedicated view with only the controls needed for that task: compression, exact KB, resizing, cropping/presets, rotation/flipping, format conversion, light/color, watermarks, transparency backgrounds, batches, collages, images to PDF, filters, frames, rounded corners, or pixel art.
+The homepage shows twenty tool cards. Selecting a card opens a dedicated view with only the controls needed for that task: compression, exact KB, resizing, cropping/presets, rotation/flipping, format conversion, light/color, watermarks, transparency backgrounds, batches, collages, images to PDF, filters, frames, rounded corners, pixel art, splitting, palettes, comparison, or image details.
 
 Use **All tools** to return to the menu. Browser Back/Forward and direct links such as `https://ilovefreecompressor.vercel.app/#/crop` work on Vercel and GitHub Pages without server rewrites. Unknown tool links return to the menu. These are views within the static app, not separately indexed pages.
 
@@ -26,6 +26,15 @@ The desktop layout has a persistent vertical menu on the left, grouped by task, 
 - **Pixel art**: a whole-image mosaic with adjustable block size. Zero restores the original appearance.
 
 Measurements use percentages of the shorter side so previews and exports scale consistently. Each tool keeps its own relevant controls visible. Switching tools starts fresh settings; use **Continue editing this photo** to intentionally carry a finished edit forward. All four tools use local canvas processing and support JPG, PNG, and WebP downloads.
+
+## Split, explore, and compare
+
+- **Image splitter** (`#/split`): choose 1–6 rows and columns and download up to 36 PNG tiles in a ZIP. Names identify each tile’s row and column. The complete image is preserved; remainder pixels are distributed among tiles. Large photos are fitted within 4,096 px per side and 16 million pixels before splitting. Combined tile output is limited to 100 MB.
+- **Color palette** (`#/palette`): find up to 4, 6, or 8 distinct frequent colors, copy individual HEX codes, and download a text list or PNG swatch strip. Colors are approximate, extracted from a thumbnail; mostly transparent pixels are ignored. Simple or fully transparent photos can produce fewer colors or no palette. If clipboard access is unavailable, the code is selected for manual copying.
+- **Compare images** (`#/compare`): a keyboard-accessible before/after slider, swap controls, and independent file selection. Both photos fit a common preview area without stretching. Different aspect ratios can leave empty space. This is a visual comparison, not a pixel-difference score.
+- **Image details** (`#/details`): detected format, decoded dimensions, file size, aspect ratio, orientation, megapixels, and exact decoded-pixel transparency detection, with a downloadable text report. Transparency is scanned in small strips; camera/GPS metadata is not read.
+
+These four tools have separate selections. Source files are limited to 25 MB and 40 million decoded pixels. Decoded source images are released after processing; only files and small previews are retained. Clearing a photo or leaving during processing cancels pending output. Corrupt files show an error and preserve an earlier valid selection. As with the other image tools, animations are processed as a still image.
 
 ## Collages and PDF documents
 

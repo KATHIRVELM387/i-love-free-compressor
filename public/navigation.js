@@ -14,7 +14,11 @@ export const TOOLS = {
   pixelate: { title: 'Pixel art', description: 'Turn your whole photo into a blocky mosaic with adjustable pixel size.', action: 'Save pixel art →' },
   batch: { title: 'Batch compressor', view: 'batch' },
   collage: { title: 'Photo collage', view: 'collage' },
-  pdf: { title: 'Images to PDF', view: 'pdf' }
+  pdf: { title: 'Images to PDF', view: 'pdf' },
+  split: { title: 'Image splitter', view: 'split' },
+  palette: { title: 'Color palette', view: 'palette' },
+  compare: { title: 'Compare images', view: 'compare' },
+  details: { title: 'Image details', view: 'details' }
 };
 
 export function startNavigation(onSelect) {
@@ -27,7 +31,7 @@ export function startNavigation(onSelect) {
     $('home-view').hidden = !!name;
     $('workspace-nav').hidden = !name;
     $('tool').hidden = !name || !!config.view;
-    for (const view of ['batch', 'collage', 'pdf']) $(view + '-tool').hidden = name !== view;
+    for (const view of Object.values(TOOLS).filter(tool => tool.view).map(tool => tool.view)) $(view + '-tool').hidden = name !== view;
     document.documentElement.dataset.activeTool = name || 'home';
     for (const group of document.querySelectorAll('[data-tools]')) {
       const active = !!name && group.dataset.tools.split(' ').includes(name);

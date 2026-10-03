@@ -1,10 +1,11 @@
-import { TOOLS } from './navigation.js?v=8';
+import { TOOLS } from './navigation.js?v=9';
 
 const $ = id => document.getElementById(id);
 const groups = [
   ['Size & format', ['compress', 'exact', 'resize', 'convert']],
   ['Edit & style', ['crop', 'rotate', 'adjust', 'filters', 'frame', 'rounded', 'pixelate', 'watermark', 'background']],
-  ['Multiple photos', ['batch', 'collage', 'pdf']]
+  ['Multiple photos', ['batch', 'collage', 'pdf', 'split']],
+  ['Explore & inspect', ['palette', 'compare', 'details']]
 ];
 const aliases = {
   compress: 'reduce shrink kb', exact: 'increase enlarge kb', resize: 'dimensions width height pixels',
@@ -12,7 +13,7 @@ const aliases = {
   adjust: 'brightness contrast grayscale black white', filters: 'sepia vintage warm cool negative invert',
   frame: 'border color', rounded: 'round corners transparent', pixelate: 'pixel mosaic blocks',
   watermark: 'text name brand', background: 'transparent fill color', batch: 'multiple zip',
-  collage: 'grid combine photos', pdf: 'document combine photos'
+  collage: 'grid combine photos', pdf: 'document combine photos', split: 'divide tiles grid pieces zip', palette: 'colors hex swatches extract', compare: 'before after slider comparison', details: 'information dimensions format size aspect ratio transparency'
 };
 function matches(name, query) {
   const text = `${TOOLS[name].title} ${TOOLS[name].description || ''} ${aliases[name]}`.toLowerCase();
@@ -112,6 +113,12 @@ function updateCurrent() {
   for (const link of $('side-links').querySelectorAll('[data-route]')) {
     if (link.dataset.route === name) link.setAttribute('aria-current', 'page');
     else link.removeAttribute('aria-current');
+  }
+  const current = $('side-links').querySelector('[aria-current=page]');
+  if (!mobile.matches && current && current.getClientRects().length) {
+    const area = $('side-links').getBoundingClientRect(), item = current.getBoundingClientRect();
+    if (item.top < area.top) $('side-links').scrollTop -= area.top - item.top;
+    else if (item.bottom > area.bottom) $('side-links').scrollTop += item.bottom - area.bottom;
   }
   // Returning home always offers the complete tool menu for the next step.
   if (name === 'home') { $('tool-search').value = ''; filterCards(); }
