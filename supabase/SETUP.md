@@ -4,9 +4,9 @@ The frontend works without configuration. It deliberately shows “Account sign-
 
 ## 1. Create your backend
 
-Create a **Free** project at https://supabase.com/dashboard. Use a dedicated project for this app so unrelated storage policies cannot grant access to this bucket. Keep the database password private. In the project's SQL Editor, run the complete contents of `migrations/202610040001_accounts.sql` once. The migration is transactional; if it fails, fix the error before retrying. Do not rerun a successful migration.
+Create a **Free** project at https://supabase.com/dashboard. Use a dedicated project for this app so unrelated storage policies cannot grant access to this bucket. Keep the database password private. In the project's SQL Editor, run `migrations/202610040001_accounts.sql`, then `migrations/202610040002_admin_bootstrap.sql`, in that order, once each. The migration is transactional; if it fails, fix the error before retrying. Do not rerun a successful migration.
 
-This creates profiles, saved-file metadata, bounded history, admin audit records, private storage, quotas, and server-side authorization. It creates no administrator automatically.
+This creates profiles, saved-file metadata, bounded history, admin audit records, private storage, quotas, and server-side authorization. It grants no administrator access until a trusted project owner explicitly approves an account. A one-time email approval can activate the first admin only after Auth verifies that email.
 
 In the project settings, copy:
 
@@ -66,16 +66,39 @@ Commit the public config/CSP changes and deploy the existing `public/` directory
 
 ## 5. Establish the first administrator
 
-Sign in with the intended owner's Google account once, then find that user's UUID in Supabase Authentication → Users. In the trusted SQL Editor, replace the placeholder and run:
+Before the intended owner's **first website sign-in**, enter their exact Google email address in the trusted SQL Editor:
 
 ```sql
-update public.account_profiles
-set role = 'admin'
-where id = 'REPLACE_WITH_VERIFIED_OWNER_UUID'::uuid
-returning id, display_name, role;
+insert into account_private.admin_bootstrap (approved_email)
+values (lower('YOUR_GOOGLE_EMAIL_ADDRESS'));
 ```
 
-Verify that exactly the intended row was updated. Sign out/in to refresh the interface. Subsequent role, suspension, and quota changes use the Admin screen and generate audit records. A member cannot update these columns, even by bypassing the UI. Admins cannot read another user's private files through the application.
+This private, single-use approval cannot be read or changed by app users. An unverified signup receives the member role even if its metadata claims to be verified or an admin. Only Auth's server-managed email confirmation can activate the approved owner. The approval is consumed once; subsequent logins cannot restore a revoked admin role. No other email is promoted.
+
+After Google sign-in is enabled, use the approved email to sign in on the website. The Admin tab appears automatically. Role, suspension, and quota changes then use the Admin screen and produce audit records. Administrators cannot read another user's private files through the application.
+
+If the intended owner already signed in before preapproval was configured, use the following alternative with their verified UUID from Authentication → Users. Confirm that exactly the intended account is returned. Do not edit `auth.users` directly to fabricate email verification.
+
+```sql
+begin;
+update public.account_profiles p
+set role = 'admin'
+from auth.users u
+where p.id = u.id
+  and u.id = 'REPLACE_WITH_VERIFIED_OWNER_UUID'::uuid
+  and u.email_confirmed_at is not null
+returning p.id, p.display_name, p.role;
+-- Do not leave an unused matching approval that could regrant a revoked role.
+delete from account_private.admin_bootstrap b
+using auth.users u
+where u.id = 'REPLACE_WITH_VERIFIED_OWNER_UUID'::uuid
+  and u.email_confirmed_at is not null
+  and b.approved_email = lower(u.email)
+  and b.consumed_at is null;
+commit;
+```
+
+Sign out/in after this alternative to refresh the interface.
 
 ## Limits and operations
 
@@ -100,3 +123,13 @@ Local tests use real embedded PostgreSQL for the migration/RLS and the real brow
 6. Delete a disposable member account. Verify Storage objects are gone before Auth deletion, and profiles/history/file metadata are gone afterward. Verify the last admin cannot delete itself.
 
 Sources: [Supabase Auth](https://supabase.com/docs/guides/auth/social-login/auth-google), [Storage access control](https://supabase.com/docs/guides/storage/security/access-control), [Row Level Security](https://supabase.com/docs/guides/database/postgres/row-level-security), [Edge Function authentication](https://supabase.com/docs/guides/functions/auth).
+
+## Optional hosted acceptance script
+
+After deploying both migrations and the deletion function, `scripts/check-live-accounts.mjs` can check the actual hosted services. It requires an authenticated Supabase CLI, Node.js 22+, and Python/Pillow. Set `SUPABASE_CLI` if the CLI is not on PATH. It creates disposable users through the Admin API without sending emails, saves tiny real JPEG/PDF/ZIP/text files, exercises permissions and deletion, restores the original site quota, and removes its test users/files. It does not configure Google or replace a real browser Google login check.
+
+```sh
+node scripts/check-live-accounts.mjs YOUR_PROJECT_REF --confirm-live-test
+```
+
+The frontend checks Google provider availability on account pages. If it is disabled, visitors see an honest setup message. After enabling it, **Check again** makes the sign-in button available without another deployment.

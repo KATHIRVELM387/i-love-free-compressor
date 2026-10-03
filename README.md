@@ -151,7 +151,7 @@ The image-tool browser integration suite uses installed Google Chrome. Use Node.
 
 Six dedicated views are available from **Sign in / My account**: sign-in, dashboard, private files, activity history, profile/settings, and administration. Guest image tools remain available without login. Google sign-in is enabled only after backend setup; until then the account pages clearly explain that setup is pending.
 
-Follow [supabase/SETUP.md](supabase/SETUP.md) to create the free backend, enable Google OAuth, deploy account deletion, configure public credentials/CSP, and establish the first admin. Secret/server keys never belong in the public directory.
+Follow [supabase/SETUP.md](supabase/SETUP.md) to create the free backend, enable Google OAuth, deploy account deletion, configure public credentials/CSP, and preapprove the first admin for activation after verified sign-in. Secret/server keys never belong in the public directory.
 
 Validation:
 

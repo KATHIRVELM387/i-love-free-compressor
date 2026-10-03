@@ -14,16 +14,16 @@ const downloads = join(profile, 'downloads');
 await mkdir(downloads);
 let mockConfigured = false;
 const mockHost = 'https://accounts-test.supabase.co';
-const csp = (await readFile(join(root, 'public/_headers'), 'utf8')).split('\n').find(line => line.includes('Content-Security-Policy:')).split('Content-Security-Policy: ')[1];
+const csp = (await readFile(join(root, 'public/_headers'), 'utf8')).split('\n').find(line => line.includes('Content-Security-Policy:')).split('Content-Security-Policy: ')[1].replace(/connect-src [^;]+/, "connect-src 'none'");
 const server = createServer(async (req, res) => {
   try {
     const pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
     const file = resolve(root, 'public', `.${pathname === '/' ? '/index.html' : pathname}`);
     if (!file.startsWith(join(root, 'public') + '/')) { res.writeHead(403).end(); return; }
-    let data = await readFile(file);
+    let data = pathname === '/account-config.js' ? Buffer.from("export const accountConfig = { url: '', publishableKey: '' };") : await readFile(file);
     const policy = mockConfigured ? csp.replace("connect-src 'none'", 'connect-src ' + mockHost) : csp;
     if (mockConfigured && pathname === '/account-config.js') data = `export const accountConfig={url:'${mockHost}',publishableKey:'sb_publishable_fixture'};`;
-    if (mockConfigured && file.endsWith('index.html')) data = data.toString().replace("connect-src 'none'", 'connect-src ' + mockHost);
+    if (mockConfigured && file.endsWith('index.html')) data = data.toString().replace(/connect-src [^;]+/, 'connect-src ' + mockHost);
     res.writeHead(200, { 'Content-Type': ({ '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.svg': 'image/svg+xml' })[extname(file)] || 'application/octet-stream', 'Content-Security-Policy': policy });
     res.end(data);
   } catch { res.writeHead(404).end(); }
@@ -111,6 +111,7 @@ const memberId = '00000000-0000-4000-8000-000000000001';
 const otherId = '00000000-0000-4000-8000-000000000002';
 const mockUser = { id: memberId, email: 'member@example.test', aud: 'authenticated', role: 'authenticated', app_metadata:{provider:'google'}, user_metadata:{} };
 let mockProfile = {id:memberId,display_name:'Example member',role:'member',status:'active',quota_bytes:20000000,preferences:{},created_at:new Date().toISOString()};
+let mockGoogleEnabled=false;
 let files=[], activity=[], uploads=0, deletes=0, requests=[], failUpload=false, revokeAdmin=false;
 let idSequence=10;
 const nextId=()=>`00000000-0000-4000-8000-${String(idSequence++).padStart(12,'0')}`;
@@ -122,6 +123,7 @@ async function respond(event) {
   if(request.method==='OPTIONS')return reply({});
   requests.push({path,method:request.method,body:request.postData,headers:request.headers});
   let body={};try{body=JSON.parse(request.postData||'{}');}catch{}
+  if(path==='/auth/v1/settings')return reply({external:{google:mockGoogleEnabled}});
   if(path==='/auth/v1/authorize') {
     assert.equal(url.searchParams.get('provider'),'google');
     assert.equal(url.searchParams.get('redirect_to'),`http://127.0.0.1:${port}/`);
@@ -195,8 +197,12 @@ try {
   assert.equal(requests.length,0);
   pass('All six account routes safely explain missing setup; no remote requests or guest login requirement');
   mockConfigured=true;await goTool('account');await cdp('Page.reload',{ignoreCache:true},session);
+  await until("document.getElementById('account-content').textContent.includes('Google sign-in is being set up')");
+  mockGoogleEnabled=true; await clickText('Check again');
   await until("document.querySelector('#account-content button')?.textContent==='Continue with Google'");
   await screenshot('account-sign-in.png');
+  await cdp('Page.navigate',{url:`http://127.0.0.1:${port}/index.html#/account`},session);
+  await until("document.querySelector('#account-content button')?.textContent==='Continue with Google'");
   await clickText('Continue with Google');
   await until("document.documentElement.dataset.activeTool==='dashboard' && document.getElementById('account-nav').textContent==='♡ My account'");
   assert.equal(await evaluate('location.search'),'');

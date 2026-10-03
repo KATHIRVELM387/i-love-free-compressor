@@ -2,3 +2,7 @@
 # publishable API keys as well as legacy anon keys. Never remove that check.
 [functions.delete-account]
 verify_jwt = false
+
+[auth]
+site_url = "https://ilovefreecompressor.vercel.app/"
+additional_redirect_urls = ["https://ilovefreecompressor.vercel.app/", "https://kathirvelm387.github.io/i-love-free-compressor/"]

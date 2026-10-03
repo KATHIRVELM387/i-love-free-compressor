@@ -18,7 +18,7 @@ const server = createServer(async (req, res) => {
     const pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
     const file = resolve(root, 'public', `.${pathname === '/' ? '/index.html' : pathname}`);
     if (!file.startsWith(join(root, 'public') + '/')) { res.writeHead(403).end(); return; }
-    const data = await readFile(file);
+    const data = pathname === '/account-config.js' ? Buffer.from("export const accountConfig = { url: '', publishableKey: '' };") : await readFile(file);
     res.writeHead(200, { 'Content-Type': ({ '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.svg': 'image/svg+xml' })[extname(file)] || 'application/octet-stream', 'Content-Security-Policy': csp });
     res.end(data);
   } catch { res.writeHead(404).end(); }

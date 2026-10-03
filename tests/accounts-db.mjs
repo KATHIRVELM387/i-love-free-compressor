@@ -22,7 +22,7 @@ try {
   // are the production migration, executed by PostgreSQL, not mocked SQL.
   await db.exec(`create role anon; create role authenticated; create role service_role bypassrls;
     create schema auth; create schema storage;
-    create table auth.users(id uuid primary key, email text, raw_user_meta_data jsonb default '{}');
+    create table auth.users(id uuid primary key, email text, email_confirmed_at timestamptz, raw_user_meta_data jsonb default '{}');
     create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
     grant usage on schema public,auth,storage to anon,authenticated;
     grant execute on function auth.uid() to anon,authenticated;
@@ -31,6 +31,7 @@ try {
     alter table storage.objects enable row level security;
     grant select,insert,update,delete on storage.objects to authenticated;`);
   await db.exec(await readFile(new URL('../supabase/migrations/202610040001_accounts.sql', import.meta.url), 'utf8'));
+  await db.exec(await readFile(new URL('../supabase/migrations/202610040002_admin_bootstrap.sql', import.meta.url), 'utf8'));
   for (const id of [A,B,C]) await q("insert into auth.users(id,email,raw_user_meta_data) values($1,$2,'{\"role\":\"admin\",\"full_name\":\"Member\"}')",[id,id+'@example.test']);
   await as(null, 'anon');
   await denied('select * from public.account_profiles');
@@ -106,4 +107,23 @@ try {
   await db.exec('reset role'); await q('delete from auth.users where id=$1',[B]);
   assert.equal((await rows('select * from public.account_files where id=$1',[b.id])).length,0);
   console.log('PASS bounded/optional history, admin audit, live role revocation, suspension, last-admin protection, and deletion cascade');
+  await db.exec('reset role');
+  const owner='00000000-0000-4000-8000-000000000004', stranger='00000000-0000-4000-8000-000000000005';
+  await q("insert into account_private.admin_bootstrap(approved_email) values('owner@example.test')");
+  await q("insert into auth.users(id,email,raw_user_meta_data) values($1,'owner@example.test','{\"email_verified\":true,\"role\":\"admin\"}')",[owner]);
+  await as(owner);
+  assert.equal((await rows('select role from public.account_profiles'))[0].role,'member');
+  await denied('select * from account_private.admin_bootstrap');
+  await denied('update auth.users set email_confirmed_at=now()');
+  await db.exec('reset role');
+  await q("insert into auth.users(id,email,email_confirmed_at) values($1,'other@example.test',now())",[stranger]);
+  assert.equal((await rows('select role from public.account_profiles where id=$1',[stranger]))[0].role,'member');
+  await q('update auth.users set email_confirmed_at=now() where id=$1',[owner]);
+  assert.equal((await rows('select role from public.account_profiles where id=$1',[owner]))[0].role,'admin');
+  assert.equal((await rows('select consumed_by from account_private.admin_bootstrap'))[0].consumed_by,owner);
+  assert.equal((await rows("select * from public.account_audit where action='owner_bootstrap'")).length,1);
+  await q("update public.account_profiles set role='member' where id=$1",[owner]);
+  await q('update auth.users set email_confirmed_at=now() where id=$1',[owner]);
+  assert.equal((await rows('select role from public.account_profiles where id=$1',[owner]))[0].role,'member');
+  console.log('PASS first-admin preapproval requires server-verified email, ignores forged metadata, and cannot reactivate revoked roles');
 } finally { await db.close(); }

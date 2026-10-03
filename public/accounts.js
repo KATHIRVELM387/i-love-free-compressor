@@ -3,8 +3,16 @@ import { results, setPreferences } from './account-bridge.js?v=1';
 import { TOOLS, ACCOUNT_PAGES } from './navigation.js?v=10';
 
 const $ = id => document.getElementById(id);
+const authReturnURL = new URL('./', import.meta.url).href;
 const configured = /^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(accountConfig.url) && !!accountConfig.publishableKey;
 let client, createClient, session, profile, revision = 0, loading = configured;
+let googleEnabled, providerRequest;
+async function checkGoogleProvider() {
+  if (!providerRequest) providerRequest = fetch(accountConfig.url + '/auth/v1/settings', { headers: { apikey: accountConfig.publishableKey } })
+    .then(async response => { if (!response.ok) throw new Error('Sign-in unavailable'); return (await response.json()).external?.google === true; })
+    .catch(() => 'unavailable').finally(() => { providerRequest = null; });
+  return providerRequest;
+}
 let oauthPending = new URL(location.href).searchParams.has('code');
 const active = () => !!profile && profile.status === 'active';
 const mb = bytes => `${(Number(bytes || 0) / 1000000).toFixed(2)} MB`;
@@ -40,9 +48,14 @@ function guard(container, admin = false) {
   }
   if (!client) { empty(container, 'Account sign-in could not load. Refresh this page to retry, or continue using guest tools.'); container.append(link('Continue as guest', '#/')); return false; }
   if (!profile) {
+    if (googleEnabled !== true) {
+      empty(container, googleEnabled === false ? 'Google sign-in is being set up. All image tools remain available without an account.' : 'Sign-in is temporarily unavailable. Please try again, or continue as a guest.');
+      container.append(button('Check again', async () => { googleEnabled = undefined; await render(); }), link('Continue as guest', '#/'));
+      return false;
+    }
     empty(container, 'Sign in to keep your files, preferences, and activity together. Using the image tools never requires an account.');
     container.append(button('Continue with Google', async () => {
-      checked(await client.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname } }));
+      checked(await client.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: authReturnURL } }));
     }, 'button primary'), link('Continue as guest', '#/'));
     container.append(el('p', 'Google creates your account on first sign-in. Sign-in reloads the page, so download any result you want to keep first. Activity metadata is saved by default; turn it off in Settings. Photos upload only when you choose Save to My Files.', 'field-help'));
     return false;
@@ -68,6 +81,12 @@ async function render() {
   if (!ACCOUNT_PAGES[route]) return;
   const container = $(route + '-content'), token = revision;
   container.replaceChildren();
+  if (configured && client && !loading && !profile && googleEnabled === undefined) {
+    empty(container, 'Checking sign-in availability…');
+    googleEnabled = await checkGoogleProvider();
+    if (token === revision && document.documentElement.dataset.activeTool === route) await render();
+    return;
+  }
   const allowed = guard(container, route === 'admin');
   if (!allowed && !(route === 'profile' && profile && !loading)) return;
   const current = () => token === revision && document.documentElement.dataset.activeTool === route;
