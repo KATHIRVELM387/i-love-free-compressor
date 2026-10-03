@@ -1,4 +1,5 @@
-import { TOOLS, PAGES } from './navigation.js?v=10';
+import { EXTRA_TOOLS } from './studio-catalog.js';
+import { TOOLS, PAGES } from './navigation.js?v=11';
 
 const $ = id => document.getElementById(id);
 const groups = [
@@ -7,6 +8,7 @@ const groups = [
   ['Multiple photos', ['batch', 'collage', 'pdf', 'split']],
   ['Explore & inspect', ['palette', 'compare', 'details']]
 ];
+for (const label of ['PDF tools','Create & draw','Web utilities']) groups.push([label,Object.keys(EXTRA_TOOLS).filter(k=>EXTRA_TOOLS[k].group===label)]);
 const aliases = {
   compress: 'reduce shrink kb', exact: 'increase enlarge kb', resize: 'dimensions width height pixels',
   convert: 'jpg jpeg png webp', crop: 'square instagram story presets', rotate: 'mirror flip',
@@ -23,6 +25,7 @@ function matches(name, query) {
 const home = document.createElement('a');
 home.href = '#/'; home.textContent = '⌂  All tools'; home.dataset.route = 'home';
 $('side-links').append(home);
+const workflowLink=document.createElement('a');workflowLink.href='#/workflow';workflowLink.textContent='Saved workflows';$('side-links').append(workflowLink);
 for (const [label, names] of groups) {
   const section = document.createElement('div'); section.className = 'nav-group';
   const heading = document.createElement('h2'); heading.textContent = label; section.append(heading);

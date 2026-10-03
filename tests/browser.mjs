@@ -19,7 +19,7 @@ const server = createServer(async (req, res) => {
     const file = resolve(root, 'public', `.${pathname === '/' ? '/index.html' : pathname}`);
     if (!file.startsWith(join(root, 'public') + '/')) { res.writeHead(403).end(); return; }
     const data = pathname === '/account-config.js' ? Buffer.from("export const accountConfig = { url: '', publishableKey: '' };") : await readFile(file);
-    res.writeHead(200, { 'Content-Type': ({ '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.svg': 'image/svg+xml' })[extname(file)] || 'application/octet-stream', 'Content-Security-Policy': csp });
+    res.writeHead(200, { 'Content-Type': ({ '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.mjs': 'text/javascript', '.svg': 'image/svg+xml' })[extname(file)] || 'application/octet-stream', 'Content-Security-Policy': csp });
     res.end(data);
   } catch { res.writeHead(404).end(); }
 });
@@ -42,6 +42,7 @@ browser.stdio[4].on('data', data => {
       const { resolve, reject, timer } = pending.get(message.id); clearTimeout(timer); pending.delete(message.id);
       if (message.error) reject(new Error(JSON.stringify(message.error))); else resolve(message.result);
     }
+    if(message.method==='Page.javascriptDialogOpening'&&message.params.type==='beforeunload')cdp('Page.handleJavaScriptDialog',{accept:true},session).catch(()=>{});
     if (message.method === 'Runtime.exceptionThrown') errors.push(message.params.exceptionDetails.text);
     if (message.method === 'Network.requestWillBeSent') {
       const url = message.params.request.url;
@@ -108,20 +109,20 @@ try {
   await cdp('Page.navigate', { url: `http://127.0.0.1:${port}` }, session);
   await until("document.readyState === 'complete' && !!document.getElementById('demo')");
   await until("document.documentElement.dataset.activeTool==='home'");
-  assert.equal(await evaluate("document.querySelectorAll('.tool-card').length"),20);
+  assert.equal(await evaluate("document.querySelectorAll('.tool-card').length"),40);
   assert.equal(await evaluate("document.getElementById('tool').hidden && document.getElementById('batch-tool').hidden"),true);
-  await until("document.querySelectorAll('#side-links [data-route]').length===21");
+  await until("document.querySelectorAll('#side-links [data-route]').length===41");
   assert.equal(await evaluate("!document.getElementById('sidebar').hidden&&document.getElementById('app-shell').getBoundingClientRect().left>=248"),true);
   assert.equal(await evaluate("document.querySelector('#side-links [aria-current=page]').dataset.route"),'home');
   await input('nav-search','BORDER');
   assert.deepEqual(await evaluate("Array.from(document.querySelectorAll('#side-links [data-route]:not([hidden])')).map(a=>a.dataset.route)"),['home','frame']);
   await evaluate("document.getElementById('nav-clear').click()");
   await input('tool-search','PDF');
-  assert.deepEqual(await evaluate("Array.from(document.querySelectorAll('.tool-card:not([hidden])')).map(a=>a.getAttribute('href'))"),['#/pdf']);
+  assert.deepEqual(await evaluate("Array.from(document.querySelectorAll('.tool-card:not([hidden])')).map(a=>a.getAttribute('href'))"),['#/pdf','#/merge-pdf','#/split-pdf','#/pdf-images','#/organize-pdf','#/pdf-watermark','#/pdf-numbers','#/pdf-text','#/text-pdf']);
   await input('tool-search','no-such-tool');
   assert.match(await evaluate("document.getElementById('tool-search-status').textContent"),/No matching/);
   await evaluate("document.getElementById('tool-search-clear').click()");
-  assert.equal(await evaluate("document.querySelectorAll('.tool-card:not([hidden])').length"),20);
+  assert.equal(await evaluate("document.querySelectorAll('.tool-card:not([hidden])').length"),40);
   await screenshot('desktop-home.png');
   for(const width of [768,390,320]){
     await cdp('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:true},session);
@@ -137,7 +138,7 @@ try {
   await until("document.documentElement.dataset.activeTool==='rounded'");
   assert.equal(await evaluate("document.getElementById('sidebar').hidden&&!document.getElementById('app-shell').inert&&document.activeElement.id==='tool-title'"),true);
   await evaluate("document.getElementById('menu-toggle').click();document.getElementById('nav-clear').click()");
-  await evaluate("document.querySelector('#side-links [data-route=details]').focus()");
+  await evaluate("[...document.querySelectorAll('#sidebar a,#sidebar button,#sidebar input')].filter(n=>!n.disabled&&n.getClientRects().length).at(-1).focus()");
   await cdp('Input.dispatchKeyEvent',{type:'keyDown',key:'Tab',code:'Tab',windowsVirtualKeyCode:9},session);
   await cdp('Input.dispatchKeyEvent',{type:'keyUp',key:'Tab',code:'Tab',windowsVirtualKeyCode:9},session);
   assert.equal(await evaluate("document.activeElement.className"),'sidebar-logo');
@@ -744,7 +745,7 @@ try {
   await goTool('pdf');await screenshot('mobile-pdf.png');
   await goTool('crop');await screenshot('mobile-focused-crop.png');
   await cdp('Page.reload',{},session);
-  await until("document.readyState==='complete'&&document.documentElement.dataset.activeTool==='crop'");
+  await until("document.readyState==='complete'&&document.documentElement.dataset.activeTool==='crop'&&document.getElementById('settings').disabled");
   assert.equal(await evaluate("document.getElementById('settings').disabled"),true);
   assert.equal(await evaluate("document.getElementById('home-view').hidden"),true);
   await evaluate("document.querySelector('#workspace-nav a').click()");

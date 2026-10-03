@@ -1,0 +1,24 @@
+// Each tool owns a focused route; large codecs are loaded only when used.
+const entries = [
+ ['merge-pdf','Merge PDFs','Combine documents in your chosen order.','PDF tools'],
+ ['split-pdf','Split PDF','Extract the pages you need into a new document.','PDF tools'],
+ ['pdf-images','PDF to images','Export PDF pages as JPG or PNG in a ZIP.','PDF tools'],
+ ['organize-pdf','Organize PDF','Preview, reorder, rotate, and remove pages.','PDF tools'],
+ ['pdf-watermark','PDF watermark','Add a text watermark to selected pages.','PDF tools'],
+ ['pdf-numbers','PDF page numbers','Add page numbers with your chosen starting number.','PDF tools'],
+ ['pdf-text','Extract PDF text','Save selectable text. Scanned pages need OCR, which is not included.','PDF tools'],
+ ['text-pdf','Text to PDF','Turn your notes into a clean, formatted document.','PDF tools'],
+ ['redact','Image redaction','Cover selected areas with permanent solid blocks in the exported image.','Create & draw'],
+ ['signature','Signature creator','Draw your signature and save a transparent PNG.','Create & draw'],
+ ['logo-watermark','Logo watermark','Position your own logo on a photo.','Create & draw'],
+ ['annotate','Image annotations','Add arrows, rectangles, circles, and text.','Create & draw'],
+ ['contact-sheet','Contact sheet','Make a printable thumbnail sheet with filenames.','Create & draw'],
+ ['stitch','Stitch images','Join photos vertically or horizontally.','Create & draw'],
+ ['expand','Expand canvas','Add solid or transparent space around a photo.','Create & draw'],
+ ['gradient','Gradient generator','Create a custom two-color gradient background.','Create & draw'],
+ ['qr','QR code generator','Turn text or a link into a downloadable QR code.','Web utilities'],
+ ['qr-reader','QR code reader','Read a QR code from an image without opening its link.','Web utilities'],
+ ['base64','Image ↔ Base64','Encode an image or decode a valid image data URL.','Web utilities'],
+ ['favicon','Favicon generator','Create a ZIP of website icons in common sizes.','Web utilities']
+];
+export const EXTRA_TOOLS = Object.fromEntries(entries.map(([key,title,description,group])=>[key,{title,description,group,view:key}]));

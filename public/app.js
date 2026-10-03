@@ -1,6 +1,6 @@
 import { registerResult, forgetResult, getPreferences } from './account-bridge.js?v=1';
 import { fitDimensions, formatBytes, prepareImage, renderImage, getCropRect, downloadName } from './image-tools.js?v=6';
-import { startNavigation, TOOLS } from './navigation.js?v=10';
+import { startNavigation, TOOLS } from './navigation.js?v=11';
 
 const $ = id => document.getElementById(id);
 const fileInput = $('file-input');
@@ -285,6 +285,7 @@ async function loadFile(file) {
     $('settings').disabled = false;
     document.querySelector('.settings-footnote').textContent = 'Your original photo stays unchanged.';
     setStatus(fitted.width !== width || fitted.height !== height ? 'Large photo detected. Output dimensions were reduced to fit browser processing limits.' : 'Photo loaded. Set your requirements, then prepare your photo.');
+    resetUndo();
     return true;
   } catch (error) {
     if (decoded && decoded !== source) decoded.close?.();
@@ -452,3 +453,22 @@ startNavigation((name, config) => {
   }
   updateSizeControls(); updatePresets(); updateDownloadName();
 });
+
+// Undo/redo snapshots contain settings only, never duplicate source image pixels.
+var undoStates = [], undoIndex = -1;
+function snapshot(){return {edits:{...edits},values:Object.fromEntries(['width','height','format','target','size-mode','auto-resize','lock','dimension-preset'].map(id=>[id,$(id).type==='checkbox'?$(id).checked:$(id).value]))};}
+function resetUndo(){undoStates=source?[snapshot()]:[];undoIndex=undoStates.length-1;updateUndo();}
+function updateUndo(){if($('photo-undo')){$('photo-undo').disabled=busy||undoIndex<=0;$('photo-redo').disabled=busy||undoIndex>=undoStates.length-1;}}
+function recordUndo(){if(!source||busy||TOOLS[currentTool]?.view)return;const next=snapshot();if(JSON.stringify(next)===JSON.stringify(undoStates[undoIndex]))return;undoStates=undoStates.slice(0,undoIndex+1);undoStates.push(next);if(undoStates.length>40)undoStates.shift();undoIndex=undoStates.length-1;updateUndo();}
+function restoreUndo(delta){if(busy||undoIndex+delta<0||undoIndex+delta>=undoStates.length)return;undoIndex+=delta;const state=undoStates[undoIndex];edits={...state.edits};for(const[id,value]of Object.entries(state.values))if($(id).type==='checkbox')$(id).checked=value;else $(id).value=value;clearResult();showEdits();updateSizeControls();updatePresets();updateUndo();setStatus('Edit settings restored. Prepare your photo to update the download.');}
+const undoBar=document.createElement('div');undoBar.className='quick-links';for(const [id,label,delta]of [['photo-undo','Undo',-1],['photo-redo','Redo',1]]){const b=document.createElement('button');b.id=id;b.type='button';b.textContent=label;b.onclick=()=>restoreUndo(delta);undoBar.append(b);}$('original-card').append(undoBar);resetUndo();
+for(const type of ['input','change','click'])$('tool').addEventListener(type,e=>{if(e.target.closest('#photo-undo,#photo-redo,#browse,#replace,#demo,#process,#download,#use-result'))return;queueMicrotask(recordUndo);});
+window.addEventListener('toolchange',resetUndo);
+window.addEventListener('keydown',e=>{if(/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)||!TOOLS[currentTool]||TOOLS[currentTool].view)return;if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();restoreUndo(e.shiftKey?1:-1);}});
+window.addEventListener('paste',e=>{if(/INPUT|TEXTAREA/.test(e.target.tagName)||!TOOLS[currentTool]||TOOLS[currentTool].view)return;const file=e.clipboardData?.files[0];if(file){e.preventDefault();loadFile(file);}});
+window.addEventListener('open-account-image',e=>loadFile(e.detail));
+let pendingEdits=false;
+$('tool').addEventListener('input',()=>{if(source)pendingEdits=true;});$('download').addEventListener('click',()=>pendingEdits=false);
+window.addEventListener('beforeunload',e=>{if(pendingEdits){e.preventDefault();e.returnValue='';}});
+
+document.addEventListener('click',e=>{const a=e.target.closest('a[href^="#/"]');if(pendingEdits&&a&&a.hash!==location.hash&&!confirm('You have edits that have not been downloaded. Leave this tool?'))e.preventDefault();});

@@ -10,7 +10,7 @@ A free, mobile-friendly photo resizing and compression tool. All photo processin
 
 ## Choose a tool
 
-The homepage shows twenty tool cards. Selecting a card opens a dedicated view with only the controls needed for that task: compression, exact KB, resizing, cropping/presets, rotation/flipping, format conversion, light/color, watermarks, transparency backgrounds, batches, collages, images to PDF, filters, frames, rounded corners, pixel art, splitting, palettes, comparison, or image details.
+The homepage shows forty tool cards. Selecting a card opens a dedicated view with only the controls needed for that task: compression, exact KB, resizing, cropping/presets, rotation/flipping, format conversion, light/color, watermarks, transparency backgrounds, batches, collages, images to PDF, filters, frames, rounded corners, pixel art, splitting, palettes, comparison, or image details.
 
 Use **All tools** to return to the menu. Browser Back/Forward and direct links such as `https://ilovefreecompressor.vercel.app/#/crop` work on Vercel and GitHub Pages without server rewrites. Unknown tool links return to the menu. These are views within the static app, not separately indexed pages.
 
@@ -74,15 +74,15 @@ Open http://localhost:4173. Python 3 is needed only for the local server. Altern
 - Quality search for JPG/WebP. Optional dimension reduction when quality alone cannot meet a limit.
 - Original and processed previews, actual output dimensions, target checks, and downloads.
 - A generated sample illustration, keyboard controls, accessible status messages, responsive layout.
-- A Content Security Policy in the HTML blocks outbound connections from page scripts on GitHub Pages and other static hosts. Cloudflare also applies the additional headers in `public/_headers`.
+- A Content Security Policy limits connections to this site and the configured Supabase project on GitHub Pages and other static hosts. Cloudflare also applies the additional headers in `public/_headers`.
 
-The app never claims success for an output above the target. Exact dimensions take priority unless the user enables dimension reduction. PNG is lossless, so encoding-quality adjustments do not reduce PNG file size. No guarantee of official form acceptance. Background removal and PDF-to-image conversion are not included.
+The app never claims success for an output above the target. Exact dimensions take priority unless the user enables dimension reduction. PNG is lossless, so encoding-quality adjustments do not reduce PNG file size. No guarantee of official form acceptance. Background removal and OCR are not included. PDF-to-image conversion is available as a separate local tool.
 
 To make a 25 KB file 50 KB, select **Exact file size** from the menu, enter **50**, and prepare the photo. To make a larger file smaller, use the same mode with a smaller target or use the maximum-size mode. If the encoded image still exceeds the target at minimum quality, the result is explicitly marked as not meeting the target; optional dimension reduction can help.
 
 Exact JPG output uses the highest quality found within the target, then adds valid JPEG comment segments and marker fill bytes before the end-of-image marker when needed. Padding preserves the encoded pixels and does not improve quality. The UI discloses when non-image data is added. Some receiving sites re-encode images or strip metadata, so the size can change after uploading elsewhere. Format reference: https://www.w3.org/Graphics/JPEG/itu-t81.pdf (marker fill bytes and COM segments).
 
-Input is limited to 25 MB and 40 million decoded pixels; output is limited to 4,096 pixels per side and 16 million pixels. Very large inputs may still exceed memory on older devices. Animated inputs become a still image. Refreshing discards work. The hosting provider receives ordinary website requests but the app sends no photo data.
+Input is limited to 25 MB and 40 million decoded pixels; output is limited to 4,096 pixels per side and 16 million pixels. Very large inputs may still exceed memory on older devices. Animated inputs become a still image. Refreshing discards work. The hosting provider receives ordinary website requests. Photo data is sent to private Supabase storage only when a signed-in member explicitly chooses Save to My Files.
 
 Batch processing decodes one photo at a time and caps the combined output at 100 MB. ZIP files use uncompressed entries with CRC-32 checksums, so the image bytes are preserved without extra runtime dependencies. Changing settings or choosing another batch discards old download links.
 
@@ -163,3 +163,41 @@ npm test               # All existing image-tool browser checks
 ```
 
 Backend tests exercise the actual migration with PostgreSQL roles and policies. Browser account tests use controlled responses; the live OAuth/Storage acceptance checks in SETUP.md remain required after connecting a real project.
+
+
+## Professional workspace release
+
+The shared light theme uses white surfaces, blue/teal accents, responsive controls, and a grouped collapsible sidebar. Each tool has a separate hash route. The task finder, recent tools, favorites, keyboard help, clipboard image input, and undo/redo for supported photo/drawing edits reduce repeated steps. Undownloaded edits trigger a page-leave reminder. Browser memory is temporary; saved workflow settings never include source files.
+
+### Twenty additional tools
+
+- PDFs: merge, split/extract pages, PDF-to-image ZIP, visual page organization with reorder/rotate/delete, text watermarks, page numbers, selectable-text extraction, and text-to-PDF.
+- Creative: solid image redaction, transparent signatures, logo watermarks, annotations, contact sheets, image stitching, canvas expansion, and gradient backgrounds.
+- Web utilities: QR generation/reading, image/Base64 conversion, and favicon packages (PNG sizes plus ICO).
+
+Libraries are pinned, bundled on this site, and loaded on demand. PDF operations use pdf-lib and PDF.js; QR operations use qrcode and jsQR. Run `npm run build:tools` after changing these dependencies. Redistribution notices are in `public/vendor/TOOLS-LICENSES.txt`.
+
+PDF limits: 25 MB per document, 100 MB combined, 20 input documents, 200 pages combined. Encrypted PDFs are not supported. PDF text extraction reads existing selectable text, not scans. Text-to-PDF and PDF watermarks use a standard Latin font. Page thumbnails render one at a time. PDF-to-images limits output to 100 MB; reduce page selection or resolution if necessary. Rewriting a PDF can invalidate existing digital signatures.
+
+New image tools accept JPG/PNG/WebP up to 25 MB/40 million input pixels; exports are bounded to 4096 px per edge and 16 million pixels. Stitching asks for a smaller shared edge if the combined result exceeds those dimensions. Base64 decoding accepts only supported image data URLs and re-encodes pixels. QR reader displays plain text and never follows links. Redaction exports flattened opaque blocks; inspect the downloaded result before sharing. Signature creator is a drawing tool, not a certificate-based digital signing service.
+
+`#/workflow` saves up to ten resize → text watermark → compression presets. Guests store settings on this device; members save them in their existing private profile preferences. Files are still explicitly chosen for every run. Batch filenames support `{n}`, `{name}`, `{width}`, and `{height}`.
+
+### Account workspace improvements
+
+My Files adds folders, search/type/folder filters, sorting, rename/move, image/PDF/text previews, image reopening, multi-selection, ZIP downloads, and deletion. Folder labels are metadata only; storage object paths always remain owner UUID/file UUID. Account storage meters include charged pending uploads. Activity history exports as CSV with spreadsheet formula escaping.
+
+The admin dashboard adds exact user/status counts, stored/reserved file usage, role/status filters, audit action/date filters (latest 100 records), and a dismissible plain-text site announcement. The dashboard reports app file storage, not total Supabase database disk usage. Public registration still creates members; existing server-side admin and last-admin protections remain in force.
+
+Apply `supabase/migrations/202610040003_workspace.sql` once to an existing configured project before deploying this release. It adds only metadata and tightly scoped RPCs; no user roles, files, or quotas are rewritten. Public announcement retrieval reveals only the announcement text and revision. Only an active admin can publish it. The Supabase project continues to enforce configured per-user and site storage limits.
+
+### Release verification
+
+```sh
+npm run test:accounts
+npm run test:account-ui
+npm run test:studio
+npm test
+```
+
+The studio tests exercise all twenty new tools in real Chrome, inspect PDF page counts, decoded redaction pixels, QR round trips, ZIP signatures, saved workflows, and responsive layouts. The original suite continues validating image encoders and every existing tool. Account tests cover metadata ownership, admin authorization, folders/previews, Google PKCE callback handling, private data cleanup, and existing quota/deletion protections.

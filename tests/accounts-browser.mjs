@@ -24,7 +24,7 @@ const server = createServer(async (req, res) => {
     const policy = mockConfigured ? csp.replace("connect-src 'none'", 'connect-src ' + mockHost) : csp;
     if (mockConfigured && pathname === '/account-config.js') data = `export const accountConfig={url:'${mockHost}',publishableKey:'sb_publishable_fixture'};`;
     if (mockConfigured && file.endsWith('index.html')) data = data.toString().replace(/connect-src [^;]+/, 'connect-src ' + mockHost);
-    res.writeHead(200, { 'Content-Type': ({ '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.svg': 'image/svg+xml' })[extname(file)] || 'application/octet-stream', 'Content-Security-Policy': policy });
+    res.writeHead(200, { 'Content-Type': ({ '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.mjs': 'text/javascript', '.svg': 'image/svg+xml' })[extname(file)] || 'application/octet-stream', 'Content-Security-Policy': policy });
     res.end(data);
   } catch { res.writeHead(404).end(); }
 });
@@ -144,6 +144,10 @@ async function respond(event) {
     if(request.method==='PATCH')Object.assign(mockProfile,body);
     return reply(mockProfile);
   }
+  if(path==='/rest/v1/rpc/site_announcement')return reply({body:'',revision:0});
+  if(path==='/rest/v1/rpc/admin_set_announcement')return reply(null);
+  if(path==='/rest/v1/rpc/admin_workspace_stats')return reply({total:2,active:2,suspended:0,admins:1,files:files.length});
+  if(path==='/rest/v1/rpc/update_account_file'){const f=files.find(f=>f.id===body.p_id);Object.assign(f,{name:body.p_name,folder:body.p_folder});return reply(null);}
   if(path==='/rest/v1/account_files')return reply(files);
   if(path==='/rest/v1/account_history'){
     if(request.method==='DELETE')activity=[];
@@ -164,6 +168,7 @@ async function respond(event) {
   }
   if(path==='/rest/v1/rpc/admin_storage_usage')return reply({used_bytes:100,limit_bytes:800000000});
   if(path==='/rest/v1/rpc/admin_update_account'||path==='/rest/v1/rpc/admin_storage_limit')return reply(null);
+  if(path.startsWith('/storage/v1/object/account-files/')&&request.method==='GET')return cdp('Fetch.fulfillRequest',{requestId,responseCode:200,responseHeaders:[...headers.filter(h=>h.name!=='Content-Type'),{name:'Content-Type',value:'image/png'}],body:'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aV1kAAAAASUVORK5CYII='},session);
   if(path.startsWith('/storage/v1/object/account-files/')){
     if(request.method==='POST'){uploads++;return failUpload?reply({message:'Upload interrupted'},503):reply({Key:path.split('/object/')[1]});}
     return reply({});
@@ -179,7 +184,7 @@ async function authenticate(role='member') {
   const jwt=[{alg:'HS256',typ:'JWT'},{sub:memberId,aud:'authenticated',role:'authenticated',exp,iat:exp-3600}].map(x=>Buffer.from(JSON.stringify(x)).toString('base64url')).join('.')+'.fixture';
   await evaluate(`localStorage.setItem('sb-accounts-test-auth-token',${JSON.stringify(JSON.stringify({access_token:jwt,refresh_token:'fixture-refresh',expires_in:3600,expires_at:exp,token_type:'bearer',user:mockUser}))})`);
   await cdp('Page.reload',{ignoreCache:true},session);
-  await until("document.getElementById('account-nav')?.textContent==='♡ My account'");
+  await until("document.getElementById('account-nav')?.textContent.startsWith('♡ My account')");
 }
 try {
   const {targetId}=await cdp('Target.createTarget',{url:'about:blank'});
@@ -204,7 +209,7 @@ try {
   await cdp('Page.navigate',{url:`http://127.0.0.1:${port}/index.html#/account`},session);
   await until("document.querySelector('#account-content button')?.textContent==='Continue with Google'");
   await clickText('Continue with Google');
-  await until("document.documentElement.dataset.activeTool==='dashboard' && document.getElementById('account-nav').textContent==='♡ My account'");
+  await until("document.documentElement?.dataset.activeTool==='dashboard' && document.getElementById('account-nav')?.textContent.startsWith('♡ My account')");
   assert.equal(await evaluate('location.search'),'');
   pass('Real SDK PKCE redirect, code exchange, callback cleanup, and dashboard landing with intercepted OAuth service');
   await authenticate();await goTool('dashboard');
@@ -229,8 +234,21 @@ try {
   await until("document.getElementById('download-save').textContent==='Saved ✓'");
   assert.equal(uploads,1);assert.equal(files[0].state,'ready');assert.ok(activity.length);
   await goTool('files');await until("document.getElementById('files-content').textContent.includes('a-little-escape')");
+  await evaluate("[...document.querySelectorAll('#files-content label')].find(l=>l.textContent==='New folder').querySelector('input').value='Website'");
+  await clickText('Create folder');await until("document.querySelector('#files-content select') && document.getElementById('files-content').textContent.includes('Website')");
+  assert.deepEqual(mockProfile.preferences.folders,['Website']);
+  await clickText('Rename / move');await until("!!document.querySelector('.file-preview-dialog[open]')");
+  await evaluate("{const d=document.querySelector('.file-preview-dialog');d.querySelectorAll('input')[0].value='renamed.webp';d.querySelectorAll('input')[1].value='Website';}");
+  await clickText('Save file details','.file-preview-dialog');await until("document.getElementById('files-content').textContent.includes('renamed.webp')");
+  assert.equal(files[0].folder,'Website');assert.equal(files[0].name,'renamed.webp');
+  await clickText('Preview & details');await until("!!document.querySelector('.file-preview-dialog[open]')");
+  await until("document.querySelector('.file-preview-dialog img').naturalWidth===1");
+  await clickText('Close','.file-preview-dialog');
+  await clickText('Select visible');
+  assert.equal(await evaluate("document.querySelector('#files-content input[type=checkbox]').checked"),true);
+  await clickText('Clear selection');
   await screenshot('account-files.png');
-  await evaluate('window.confirm=()=>true');await clickText('Delete file');await until("document.getElementById('files-content').textContent.includes('No files saved yet')");
+  await evaluate('window.confirm=()=>true');await clickText('Delete file');await until("document.getElementById('files-content').textContent.includes('No matching files')");
   assert.equal(deletes,1);assert.equal(files.length,0);
   pass('Real SDK requests: optional explicit save, private library deletion, activity, saved defaults/favorites, and text-safe rendering');
   await goTool('history');await until("document.getElementById('history-content').textContent.includes('bytes prepared')");
@@ -239,11 +257,13 @@ try {
   await evaluate("document.getElementById('download-save').click()");
   await until("document.getElementById('account-notice').textContent.includes('unfinished upload')");failUpload=false;
   await goTool('files');await until("document.getElementById('files-content').textContent.includes('Unfinished upload')");
-  await clickText('Delete file');await until("document.getElementById('files-content').textContent.includes('No files saved yet')");
+  await clickText('Delete file');await until("document.getElementById('files-content').textContent.includes('No matching files')");
   await authenticate('admin');await goTool('admin');await until("document.getElementById('admin-content').textContent.includes('Other member')");
   assert.equal(await evaluate("document.querySelectorAll('#admin-content .admin-row select').length"),2);
   await evaluate('window.confirm=()=>true');await clickText('Save access changes');await until("document.getElementById('account-notice').textContent==='Member access updated.'");
   assert.ok(requests.some(r=>r.path.endsWith('admin_update_account')));
+  await clickText('Publish announcement');await until("document.getElementById('account-notice').textContent==='Announcement updated.'");
+  assert.ok(requests.some(r=>r.path.endsWith('admin_set_announcement')));
   await screenshot('account-admin.png');
   revokeAdmin=true;await goTool('dashboard');await goTool('admin');await until("document.getElementById('admin-content').textContent.includes('Could not load')");revokeAdmin=false;
   await goTool('profile');await cdp('Emulation.setDeviceMetricsOverride',{width:320,height:800,deviceScaleFactor:1,mobile:true},session);

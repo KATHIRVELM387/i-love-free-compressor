@@ -14,7 +14,7 @@ try {
   assert.notEqual(run('http://example.supabase.co','sb_publishable_fixture').status,0);
   for(const file of files) assert.match(await readFile(join(root,file),'utf8'),/connect-src 'none'/);
   assert.equal(run('https://example.supabase.co','sb_publishable_fixture').status,0);
-  for(const file of files) assert.equal(await readFile(join(root,file),'utf8'),"connect-src https://example.supabase.co; script-src 'self';");
+  for(const file of files) assert.equal(await readFile(join(root,file),'utf8'),"connect-src 'self' https://example.supabase.co; script-src 'self';");
   const config=await readFile(join(root,'public/account-config.js'),'utf8');
   assert.match(config,/sb_publishable_fixture/); assert.doesNotMatch(config,/sb_secret|service_role/);
   console.log('PASS public configuration rejects secret keys and updates only project-specific CSP connections');

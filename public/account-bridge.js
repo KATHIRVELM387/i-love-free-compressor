@@ -2,7 +2,7 @@
 export const results = new Map();
 let preferences = {};
 export const getPreferences = () => preferences;
-export function setPreferences(value = {}) { preferences = value; }
+export function setPreferences(value = {}) { preferences = value; window.dispatchEvent(new CustomEvent('preferences-changed')); }
 export function registerResult(id, blob, tool) {
   results.set(id, { blob, tool });
   window.dispatchEvent(new CustomEvent('account-result', { detail: { id, tool, bytes: blob.size } }));

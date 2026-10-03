@@ -103,7 +103,8 @@ $('batch-form').addEventListener('submit', async event => {
         totalBytes += result.blob.size;
         // A numeric prefix prevents collisions; strip path characters from ZIP names.
         const stem = (file.name.replace(/\.[^.]+$/, '').replace(/[\\/<>:"|?*\u0000-\u001f\u007f]/g, '_').replace(/^\.+/, '').slice(0, 100) || 'photo');
-        const name = `${index + 1}-${stem}-ready.${extension}`;
+        const rule=$('batch-name-rule').value.trim()||'{n}-{name}-ready';
+        const name=rule.replaceAll('{n}',String(index+1)).replaceAll('{name}',stem).replaceAll('{width}',String(result.width)).replaceAll('{height}',String(result.height)).replace(/[\\/<>:"|?*\u0000-\u001f]/g,'_').replace(/^\.+/,'').slice(0,140)+'.'+extension;
         output.push({ name, blob: result.blob });
         const url = URL.createObjectURL(result.blob);
         urls.push(url);
@@ -148,3 +149,5 @@ $('batch-form').addEventListener('submit', async event => {
     $('batch-form').removeAttribute('aria-busy');
   }
 });
+
+const namingLabel=document.createElement('label');namingLabel.textContent='Output name pattern';const naming=document.createElement('input');naming.id='batch-name-rule';naming.type='text';naming.maxLength=100;naming.value='{n}-{name}-ready';namingLabel.append(naming);$('batch-settings').append(namingLabel);const namingHelp=document.createElement('p');namingHelp.className='field-help';namingHelp.textContent='Use {n}, {name}, {width}, and {height}. Include {n} to avoid duplicate filenames.';$('batch-settings').append(namingHelp);

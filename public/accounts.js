@@ -1,6 +1,7 @@
+import { filesView, meter, csv, download, setWorkspaceOwner } from './workspace-accounts.js';
 import { accountConfig } from './account-config.js';
 import { results, setPreferences } from './account-bridge.js?v=1';
-import { TOOLS, ACCOUNT_PAGES } from './navigation.js?v=10';
+import { TOOLS, ACCOUNT_PAGES } from './navigation.js?v=11';
 
 const $ = id => document.getElementById(id);
 const authReturnURL = new URL('./', import.meta.url).href;
@@ -73,6 +74,8 @@ async function render() {
   for (const node of document.querySelectorAll('[data-admin-only]')) node.hidden = !active() || profile.role !== 'admin';
   for (const node of document.querySelectorAll('[data-signout]')) node.hidden = !session;
   $('account-nav').textContent = profile ? '♡ My account' : '♡ Sign in / My account';
+  document.getElementById('account-role')?.remove();
+  if(profile){ const badge=el('span',profile.role==='admin'?'Admin':'Member','role-badge');badge.id='account-role';$('account-nav').append(badge); }
   $('account-nav').href = profile ? '#/dashboard' : '#/account';
   if (ACCOUNT_PAGES[route]) $('account-nav').setAttribute('aria-current', 'page'); else $('account-nav').removeAttribute('aria-current');
   for (const a of document.querySelectorAll('.account-tabs a')) {
@@ -101,6 +104,7 @@ async function render() {
       if (!current()) return;
       const used = files.reduce((sum, f) => sum + charge(f), 0);
       container.append(el('p', `${files.length} saved files · ${mb(used)} of ${mb(profile.quota_bytes)} used`, 'account-summary'));
+      meter(container,used,profile.quota_bytes);
       container.append(el('p', 'Save up to 5 MB per file. Keep 5 MB free to begin an upload. Uploads reserve 5 MB until complete; unfinished uploads can be removed below. Download files to keep your own backup.', 'field-help'));
       if (route === 'dashboard') {
         container.prepend(el('h2', `Welcome, ${profile.display_name || 'image maker'}`));
@@ -109,29 +113,19 @@ async function render() {
         if (!favorites.length) empty(container, 'Choose your favorite tools in Settings for quick access here.');
         const grid = el('div', undefined, 'account-grid');
         for (const name of favorites) grid.append(link(TOOLS[name].title, '#/' + name));
-        container.append(grid, link('Choose favorites & defaults', '#/profile')); return;
+        container.append(grid, link('Choose favorites & defaults', '#/profile'),link('Saved workflows', '#/workflow'));
+        const recent=checked(await api.from('account_history').select('*').order('created_at',{ascending:false}).limit(5));
+        if(!current())return;container.append(el('h2','Recent activity'));
+        for(const item of recent)container.append(el('p',`${TOOLS[item.tool]?.title||item.tool} · ${new Date(item.created_at).toLocaleString()}`));
+        return;
       }
-      if (!files.length) empty(container, 'No files saved yet. Prepare a photo in any tool, then choose Save to My Files beside its download.');
-      for (const file of files) {
-        const row = el('article', undefined, 'account-row');
-        row.append(el('strong', file.name), el('span', `${mb(file.size_bytes)} · ${file.state === 'ready' ? 'Saved' : 'Unfinished upload'} · ${new Date(file.created_at).toLocaleDateString()}`));
-        if (file.state === 'ready') row.append(button('Download', async () => {
-          const blob = checked(await api.storage.from('account-files').download(`${file.user_id}/${file.id}`));
-          if (!current()) return;
-          const url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = file.name; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
-        }));
-        row.append(button('Delete file', async () => {
-          if (!confirm(`Delete “${file.name}” from your account? This cannot be undone.`)) return;
-          checked(await api.storage.from('account-files').remove([`${file.user_id}/${file.id}`]));
-          checked(await api.rpc('release_account_file', { p_id: file.id }));
-          if (current()) { notice('File deleted.'); await render(); }
-        })); container.append(row);
-      }
+      await filesView(container,files,{api,current,profile,button,field,select,render,notice,savePreferences});
     }
     if (route === 'history') {
       const entries = checked(await api.from('account_history').select('*').order('created_at', { ascending: false }).limit(100));
       if (!current()) return;
       container.append(el('p', 'Your latest 100 results. History contains tool names and result sizes, not photos. You can turn recording off in Settings.'));
+      container.append(button('Export history CSV',()=>download(new Blob([csv([['Date','Tool','Details'],...entries.map(e=>[e.created_at,TOOLS[e.tool]?.title||e.tool,e.details])])],{type:'text/csv'}),'activity-history.csv')));
       if (!entries.length) empty(container, 'No activity recorded yet.');
       else container.append(button('Clear history', async () => {
         if (!confirm('Delete all your activity history?')) return;
@@ -172,7 +166,7 @@ function settings(container) {
     const save = el('button', 'Save settings', 'button primary'); save.type = 'submit'; form.append(save);
     form.addEventListener('submit', async event => {
       event.preventDefault(); if (!form.reportValidity()) return; save.disabled = true;
-      const preferences = { format: format.value, targetKB: Number(target.value), allowResize: resize.checked, history: history.checked, favorites: boxes.filter(([, box]) => box.checked).map(([key]) => key) };
+      const preferences = { ...profile.preferences, format: format.value, targetKB: Number(target.value), allowResize: resize.checked, history: history.checked, favorites: boxes.filter(([, box]) => box.checked).map(([key]) => key) };
       try {
         const updated = checked(await api.from('account_profiles').update({ display_name: name.value.trim(), preferences }).eq('id', owner).select().single());
         if (profile?.id === owner) { profile = updated; setPreferences(preferences); notice('Settings saved.'); }
@@ -193,11 +187,13 @@ function settings(container) {
   })); container.append(danger);
 }
 async function admin(container, api, current) {
-  const [users, usage, audit] = await Promise.all([
+  const [users, usage, audit,stats,announcement] = await Promise.all([
     api.rpc('admin_account_list').then(checked), api.rpc('admin_storage_usage').then(checked),
-    api.from('account_audit').select('*').order('created_at', { ascending: false }).limit(50).then(checked)
+    api.from('account_audit').select('*').order('created_at', { ascending: false }).limit(100).then(checked),api.rpc('admin_workspace_stats').then(checked),api.rpc('site_announcement').then(checked)
   ]);
   if (!current()) return;
+  const cards=el('div',undefined,'stats-grid');for(const [key,label] of [['total','Users'],['active','Active'],['suspended','Suspended'],['admins','Admins'],['files','Saved files']]){const card=el('div',undefined,'stat-card');card.append(el('strong',String(stats[key])),el('span',label));cards.append(card);}container.append(cards);
+  const announcementForm=el('div',undefined,'account-form');const message=field(announcementForm,'Site announcement (blank removes it)','text',announcement.body,{maxLength:500});announcementForm.append(button('Publish announcement',async()=>{checked(await api.rpc('admin_set_announcement',{p_body:message.value}));if(current()){notice('Announcement updated.');window.dispatchEvent(new Event('announcement-updated'));}}));container.append(announcementForm);
   container.append(el('p', `${mb(usage.used_bytes)} reserved or stored across the site. Administrators manage access and quotas; other members’ files remain private.`));
   const limits = el('div', undefined, 'account-form');
   const max = field(limits, 'Site storage limit (MB, maximum 800)', 'number', usage.limit_bytes / 1000000, { min: 0, max: 800, step: 1 });
@@ -207,6 +203,7 @@ async function admin(container, api, current) {
     checked(await api.rpc('admin_storage_limit', { p_bytes: Number(max.value) * 1000000 })); if (current()) { notice('Storage limit updated.'); await render(); }
   })); container.append(limits, el('h2', `Members (${users.length}${users.length === 500 ? ', latest 500 shown' : ''})`));
   const search = field(container, 'Find a member by name or email', 'search', '', { placeholder: 'Search members' });
+  const roleFilter=select(container,'Filter role',[['','All roles'],['member','Members'],['admin','Admins']],'');const statusFilter=select(container,'Filter status',[['','All statuses'],['active','Active'],['suspended','Suspended'],['deleting','Deleting']],'');
   const rows = [];
   for (const user of users) {
     const row = el('article', undefined, 'account-row admin-row');
@@ -223,12 +220,13 @@ async function admin(container, api, current) {
         if (current()) { notice('Member access updated.'); await render(); }
       }));
     }
-    rows.push([row, `${user.email} ${user.display_name}`.toLowerCase()]); container.append(row);
+    rows.push([row, `${user.email} ${user.display_name}`.toLowerCase(),user]); container.append(row);
   }
-  search.addEventListener('input', () => { for (const [row, text] of rows) row.hidden = !text.includes(search.value.trim().toLowerCase()); });
+  const filter=()=>{for(const [row,text,u]of rows)row.hidden=!(text.includes(search.value.trim().toLowerCase())&&(!roleFilter.value||u.role===roleFilter.value)&&(!statusFilter.value||u.status===statusFilter.value));};for(const input of [search,roleFilter,statusFilter])input.addEventListener('input',filter);
   container.append(el('h2', 'Recent admin actions'));
   if (!audit.length) empty(container, 'No administrative changes yet.');
-  for (const event of audit) container.append(el('p', `${new Date(event.created_at).toLocaleString()} · ${event.action} · actor ${event.actor_id || 'system'} · target ${event.target_id || 'site'} · ${JSON.stringify(event.details)}`, 'audit-entry'));
+  const auditControls=el('div',undefined,'account-toolbar');container.append(auditControls);const actionFilter=field(auditControls,'Filter action','search',''),after=field(auditControls,'From date','date',''),before=field(auditControls,'Through date','date','');
+  const log=el('div');container.append(log);const filterAudit=()=>{log.replaceChildren();for(const event of audit){const day=event.created_at.slice(0,10);if(event.action.includes(actionFilter.value)&&(!after.value||day>=after.value)&&(!before.value||day<=before.value))log.append(el('p',`${new Date(event.created_at).toLocaleString()} · ${event.action} · actor ${event.actor_id||'system'} · target ${event.target_id||'site'} · ${JSON.stringify(event.details)}`,'audit-entry'));}};for(const input of [actionFilter,after,before])input.addEventListener('input',filterAudit);filterAudit();
 }
 function saveButtons() {
   for (const [id, result] of results) {
@@ -261,7 +259,7 @@ function saveButtons() {
 }
 async function refresh() {
   const token = ++revision;
-  profile = null; session = null; setPreferences();
+  profile = null; session = null; setWorkspaceOwner(null); setPreferences(); window.dispatchEvent(new CustomEvent('workspace-identity',{detail:{signedIn:false}}));
   // Clear every private page, including currently hidden pages, on auth change.
   for (const name of Object.keys(ACCOUNT_PAGES)) $(name + '-content').replaceChildren();
   loading = true; render();
@@ -272,8 +270,9 @@ async function refresh() {
       checked(await client.auth.getUser());
       const data = checked(await client.from('account_profiles').select('*').eq('id', response.session.user.id).single());
       if (token !== revision) return;
-      session = response.session; profile = data;
+      session = response.session; profile = data; setWorkspaceOwner(profile.id);
       if (active()) setPreferences(profile.preferences);
+      window.dispatchEvent(new CustomEvent('workspace-identity',{detail:{signedIn:active()}}));
     }
   } catch { if (token === revision) notice('Account service could not be reached. Guest tools still work. Try signing in again.'); }
   finally { if (token === revision) { loading = false;
@@ -304,3 +303,14 @@ if (configured) {
 
   } catch { loading = false; notice('Account sign-in is temporarily unavailable. All guest tools still work.'); render(); }
 }
+
+async function savePreferences(key,value){if(!active())throw Error('Sign in to save account settings.');const api=scoped(),owner=profile.id;const preferences={...profile.preferences,[key]:value};const updated=checked(await api.from('account_profiles').update({preferences}).eq('id',owner).select().single());if(profile?.id===owner){profile=updated;setPreferences(preferences);}return updated;}
+window.addEventListener('save-workspace-preferences',event=>{if(!active()){event.detail.reject(Error('Sign in to save to your account.'));return;}savePreferences(event.detail.key,event.detail.value).then(event.detail.resolve,event.detail.reject);});
+window.addEventListener('request-workspace-identity',()=>window.dispatchEvent(new CustomEvent('workspace-identity',{detail:{signedIn:active()}})));
+
+// Announcements contain only public, administrator-authored plain text.
+async function announcement(){
+ if(!configured)return;
+ try {const response=await fetch(accountConfig.url+'/rest/v1/rpc/site_announcement',{method:'POST',headers:{apikey:accountConfig.publishableKey,'Content-Type':'application/json'},body:'{}'});if(!response.ok)return;const data=await response.json();document.getElementById('site-announcement')?.remove();if(!data.body)return;let dismissed;try{dismissed=localStorage.getItem('ilfc-announcement-dismissed');}catch{}if(dismissed===String(data.revision))return;const box=el('div',undefined,'announcement wrap');box.id='site-announcement';box.append(el('p',data.body),button('Dismiss',()=>{try{localStorage.setItem('ilfc-announcement-dismissed',String(data.revision));}catch{}box.remove();}));document.querySelector('.site-header').after(box);}catch{}
+}
+announcement();window.addEventListener('announcement-updated',announcement);

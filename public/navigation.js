@@ -1,3 +1,6 @@
+import './studio.js';
+import './workflow.js';
+import { EXTRA_TOOLS } from './studio-catalog.js';
 export const TOOLS = {
   compress: { title: 'Compress images', description: 'Choose a photo and set the maximum file size you need.', action: 'Compress photo →' },
   exact: { title: 'Exact file size', description: 'Make a JPG smaller or bigger to reach your chosen size in KB.', action: 'Set exact file size →' },
@@ -18,11 +21,12 @@ export const TOOLS = {
   split: { title: 'Image splitter', view: 'split' },
   palette: { title: 'Color palette', view: 'palette' },
   compare: { title: 'Compare images', view: 'compare' },
-  details: { title: 'Image details', view: 'details' }
+  details: { title: 'Image details', view: 'details' },
+  ...EXTRA_TOOLS
 };
 
 export const ACCOUNT_PAGES = Object.fromEntries(['account','dashboard','files','history','profile','admin'].map(name => [name, { title: ({account:'Sign in',dashboard:'My dashboard',files:'My files',history:'Activity history',profile:'Profile & settings',admin:'Administration'})[name], view:name }]));
-export const PAGES = { ...TOOLS, ...ACCOUNT_PAGES };
+export const PAGES = { ...TOOLS, ...ACCOUNT_PAGES, workflow:{title:'Saved workflows',view:'workflow'} };
 
 export function startNavigation(onSelect) {
   const $ = id => document.getElementById(id);

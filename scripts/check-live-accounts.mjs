@@ -31,6 +31,10 @@ try {
   assert.match(admin.id,/^[0-9a-f-]{36}$/);
   query(`update public.account_profiles set role='admin' where id='${admin.id}'::uuid`);
   originalLimit=ok(await admin.client.rpc('admin_storage_usage')).limit_bytes;
+  const stats=ok(await admin.client.rpc('admin_workspace_stats'));assert.ok(stats.total>=3);
+  assert.ok((await a.client.rpc('admin_workspace_stats')).error);
+  assert.ok((await a.client.rpc('admin_set_announcement',{p_body:'Unauthorized'})).error);
+  assert.equal(typeof ok(await publicClient().rpc('site_announcement')).body,'string');
   assert.ok((await publicClient().from('account_profiles').select('*')).error);
   assert.equal(ok(await a.client.from('account_profiles').select('*')).length,1);
   assert.ok((await a.client.from('account_profiles').update({role:'admin'}).eq('id',a.id)).error);
@@ -43,6 +47,9 @@ try {
   const zip=await makeZip([{name:'photo.jpg',blob:jpg}]);
   for(const [name,blob,tool] of [['photo.jpg',jpg,'compress'],['palette.txt',text,'palette'],['photos.pdf',pdf,'pdf'],['photos.zip',zip,'batch']]) {
     const f=ok(await a.client.rpc('reserve_account_file',{p_name:name,p_mime:blob.type,p_size:blob.size,p_tool:tool}).single());
+    ok(await a.client.rpc('update_account_file',{p_id:f.id,p_name:name,p_folder:'Acceptance checks'}));
+    assert.ok((await b.client.rpc('update_account_file',{p_id:f.id,p_name:'intrusion',p_folder:''})).error);
+    assert.equal(ok(await a.client.from('account_files').select('folder').eq('id',f.id).single()).folder,'Acceptance checks');
     ok(await a.client.storage.from('account-files').upload(`${a.id}/${f.id}`,blob,{contentType:blob.type,upsert:false}));
     ok(await a.client.rpc('complete_account_file',{p_id:f.id}));
     const downloaded=ok(await a.client.storage.from('account-files').download(`${a.id}/${f.id}`));

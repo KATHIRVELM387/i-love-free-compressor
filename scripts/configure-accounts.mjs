@@ -11,6 +11,6 @@ const contents = await Promise.all(files.map(file => readFile(root + file, 'utf8
 for (let i = 0; i < files.length; i++) {
   if (!contents[i].includes('connect-src ')) throw new Error('Missing CSP in ' + files[i]);
 }
-for (let i = 0; i < files.length; i++) await writeFile(root + files[i], contents[i].replace(/connect-src [^;]+;/g, `connect-src ${url};`));
+for (let i = 0; i < files.length; i++) await writeFile(root + files[i], contents[i].replace(/connect-src [^;]+;/g, `connect-src 'self' ${url};`));
 await writeFile(root + 'public/account-config.js', '// Public configuration. Never put a secret or service-role key here.\nexport const accountConfig = ' + JSON.stringify({ url, publishableKey: key }, null, 2) + ';\n');
 console.log('Public account configuration and all three CSP policies updated. Deploy after backend setup and checks.');

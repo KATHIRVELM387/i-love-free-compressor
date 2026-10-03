@@ -1,2 +1,4 @@
 # The generated SDK has intentional whitespace inside template strings.
 public/vendor/supabase.js -whitespace linguist-vendored=true
+
+public/vendor/** -whitespace linguist-vendored=true
