@@ -1,4 +1,4 @@
-import { prepareImage, formatBytes } from './image-tools.js?v=5';
+import { prepareImage, formatBytes } from './image-tools.js?v=6';
 import { imagesToPdf } from './pdf.js?v=1';
 
 const types = ['image/jpeg', 'image/png', 'image/webp'];

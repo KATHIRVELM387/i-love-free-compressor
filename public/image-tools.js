@@ -1,3 +1,5 @@
+import { applyEffects } from './effects.js?v=1';
+
 export const MAX_PIXELS = 16_000_000;
 export const MAX_EDGE = 4096;
 
@@ -109,6 +111,7 @@ export function renderImage(ctx, source, width, height, { type = 'image/png', ba
       !Number.isFinite(watermarkSize) || watermarkSize < 2 || watermarkSize > 15 ||
       !Number.isFinite(watermarkOpacity) || watermarkOpacity < 0 || watermarkOpacity > 1) throw new Error('Choose valid watermark text, color, size, opacity, and position.');
   drawTransformed(ctx, source, width, height, edits);
+  applyEffects(ctx, width, height, edits);
   const fill = background || (type === 'image/jpeg' ? '#ffffff' : null);
   if (fill) {
     ctx.save();

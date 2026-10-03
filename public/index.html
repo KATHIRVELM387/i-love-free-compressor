@@ -21,27 +21,38 @@
   <meta name="twitter:title" content="I Love Free Compressor — Free Image Compressor &amp; Photo Resizer">
   <meta name="twitter:description" content="Compress and resize photos for free. Your images stay on your device.">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css">
-  <script type="module" src="app.js?v=7"></script>
-  <script type="module" src="batch.js?v=6"></script>
-  <script type="module" src="collections.js?v=1"></script>
+  <link rel="stylesheet" href="styles.css?v=8">
+  <script type="module" src="app.js?v=8"></script>
+  <script type="module" src="shell.js?v=1"></script>
+  <script type="module" src="batch.js?v=8"></script>
+  <script type="module" src="collections.js?v=2"></script>
 </head>
 <body>
   <a class="skip-link" href="#main-content">Skip to content</a>
+  <aside id="sidebar" class="sidebar" aria-label="Tool navigation" hidden>
+    <div class="sidebar-top"><a class="sidebar-logo" href="#/"><span aria-hidden="true">♥</span> Your image toolbox</a><button id="menu-close" class="icon-button" type="button" aria-label="Close tool menu">×</button></div>
+    <label for="nav-search">Find a tool</label><div class="search-row"><input id="nav-search" type="search" placeholder="Search tools…" autocomplete="off"><button id="nav-clear" type="button" class="icon-button" aria-label="Clear tool search" hidden>×</button></div>
+    <nav id="side-links" aria-label="Image tools"></nav>
+    <p id="nav-empty" role="status" hidden>No tools found. Try “resize” or “PDF”.</p>
+    <div class="sidebar-note"><strong>Free. Private. Yours.</strong><span>Photos stay on your device.</span></div>
+  </aside>
+  <button id="menu-backdrop" class="menu-backdrop" type="button" tabindex="-1" aria-label="Close tool menu" hidden></button>
+  <div id="app-shell">
   <header class="site-header wrap">
     <a class="brand" href="#/" aria-label="I Love Free Compressor home"><span class="brand-icon" aria-hidden="true">♥</span><span class="brand-name"><small>I Love</small><strong>Free Compressor</strong></span></a>
-    <nav aria-label="Main navigation"><a href="#/" class="all-tools-link">All tools</a><a href="#/batch">Batch tools</a><span class="free-badge">100% free</span></nav>
+    <nav aria-label="Main navigation"><button id="menu-toggle" type="button" class="menu-toggle" aria-controls="sidebar" aria-expanded="false">☰ Tools</button><a href="#/" class="all-tools-link">All tools</a><a href="#/batch">Batch tools</a><span class="free-badge">100% free</span></nav>
   </header>
   <main id="main-content" tabindex="-1">
     <div id="home-view">
     <section class="hero wrap">
       <span class="eyebrow"><span class="status-dot"></span> LESS FILE FUSS. MORE GETTING THINGS DONE.</span>
-      <h1>Free image compressor.<br><em>Photos that fit.</em></h1>
-      <p>Resize, compress, crop, and brighten JPG, PNG and WebP photos.<br class="desktop-break"> One photo or a whole batch. Free, private, and no signup needed.</p>
-      <p>Choose a tool below to get started.</p>
+      <h1>Your everyday image tools.<br><em>Make it yours.</em></h1>
+      <p>Compress, resize, style, and combine your photos.<br class="desktop-break"> 16 free tools. No sign-up. Everything stays on your device.</p>
+      <div class="home-search"><label for="tool-search">What do you want to do?</label><div class="search-row"><input id="tool-search" type="search" placeholder="Try compress, rounded corners, or PDF…" autocomplete="off"><button id="tool-search-clear" class="icon-button" type="button" aria-label="Clear homepage search" hidden>×</button></div></div>
       <div class="hero-notes"><span>✓ No sign-up</span><span>✓ No uploads to a server</span><span>✓ No forced watermarks</span></div>
     </section>
 
+    <p id="continue-notice" class="continue-notice wrap" role="status" hidden></p>
     <section id="tool-menu" class="tool-menu wrap" aria-labelledby="menu-heading"><h2 id="menu-heading" tabindex="-1">What would you like to do?</h2><div class="tool-grid">
       <a class="tool-card" href="#/compress"><span class="tool-icon" aria-hidden="true">↓</span><h3>Compress images</h3><p>Reduce file size to fit a KB limit.</p><span class="tool-open">Open tool →</span></a>
       <a class="tool-card" href="#/exact"><span class="tool-icon" aria-hidden="true">KB</span><h3>Exact file size</h3><p>Make a JPG smaller or bigger to a chosen KB size.</p><span class="tool-open">Open tool →</span></a>
@@ -55,7 +66,11 @@
       <a class="tool-card" href="#/batch"><span class="tool-icon" aria-hidden="true">▦</span><h3>Batch compressor</h3><p>Process up to 20 photos and download a ZIP.</p><span class="tool-open">Open tool →</span></a>
       <a class="tool-card" href="#/collage"><span class="tool-icon" aria-hidden="true">▧</span><h3>Photo collage</h3><p>Arrange up to 9 photos in a colorful grid.</p><span class="tool-open">Open tool →</span></a>
       <a class="tool-card" href="#/pdf"><span class="tool-icon" aria-hidden="true">PDF</span><h3>Images to PDF</h3><p>Combine up to 20 photos into one document.</p><span class="tool-open">Open tool →</span></a>
-    </div></section>
+      <a class="tool-card" href="#/filters"><span class="tool-icon" aria-hidden="true">✦</span><h3>Photo filters <span class="new-badge">New</span></h3><p>Try sepia, warm, cool, or negative colors.</p><span class="tool-open">Open tool →</span></a>
+      <a class="tool-card" href="#/frame"><span class="tool-icon" aria-hidden="true">▣</span><h3>Photo frames <span class="new-badge">New</span></h3><p>Add a colored border with adjustable thickness.</p><span class="tool-open">Open tool →</span></a>
+      <a class="tool-card" href="#/rounded"><span class="tool-icon" aria-hidden="true">▢</span><h3>Rounded corners <span class="new-badge">New</span></h3><p>Make softer corners with transparent PNG output.</p><span class="tool-open">Open tool →</span></a>
+      <a class="tool-card" href="#/pixelate"><span class="tool-icon" aria-hidden="true">▦</span><h3>Pixel art <span class="new-badge">New</span></h3><p>Create a blocky mosaic from your whole photo.</p><span class="tool-open">Open tool →</span></a>
+    </div><p id="tool-search-status" role="status" hidden></p></section>
     <section id="how-it-works" class="how-section wrap"><div class="section-intro"><span class="tiny-label">FROM “FILE TOO LARGE” TO DONE</span><h2>Three steps. Zero headaches.</h2></div><div class="how-grid"><article><span class="how-number">01</span><h3>Pick your photo</h3><p>A portrait, a signature, or a scan. Choose a JPG, PNG, or WebP from your device.</p></article><article><span class="how-number">02</span><h3>Set the requirements</h3><p>Enter the size and dimensions your form asks for. We’ll do the resizing and compression.</p></article><article><span class="how-number">03</span><h3>Download and carry on</h3><p>Check your preview, save the new file, and get back to what you were doing.</p></article></div></section>
     <section id="questions" class="faq-section wrap"><div><span class="tiny-label">GOOD TO KNOW</span><h2>A little clarity.</h2><p>Small answers to common questions.</p></div><div class="faq-list"><details><summary>Is it really free?</summary><p>Yes. Every feature here is free to use, with no account, subscription, or forced watermark. Add your own text watermark only if you choose.</p></details><details><summary>Where do my photos go?</summary><p>They stay in your browser. The tool doesn’t upload or store your photos on a server. Download any result you want to keep before closing or refreshing the page.</p></details><details><summary>How do I crop or adjust a photo?</summary><p>Choose Crop &amp; size presets from the tool menu, then use Crop &amp; frame to pick a shape, zoom in, and move the framing. Choose Light &amp; color from the menu to change brightness or contrast, or switch to black &amp; white. Quick size presets set the crop and output dimensions together. Check the preview, then use the tool’s action button to create your download. These edits apply to the single-photo tool.</p></details><details><summary>Can I add my name or choose a background?</summary><p>Choose Text watermark from the menu to add a name or brand, then choose its position, color, size, and opacity. Transparency background fills transparent pixels with a color; it does not remove an existing background. Each tool opens its own workspace for one photo at a time. You can also enter a download filename, and the tool adds the correct extension.</p></details><details><summary>Can I make a small file bigger?</summary><p>Yes. Choose “Exact file size” from the menu and enter the size you need, such as 50 KB. The tool saves a JPG at that size, adding non-image data if needed. This increases the file size without adding detail or improving quality. To change the photo’s dimensions instead, use Width and Height.</p></details><details><summary>Will it always reach my target size?</summary><p>Exact mode saves a JPG at your chosen size when the image can fit within that target. Very small targets may need smaller dimensions. Maximum mode only keeps the result under a limit, so a smaller file can stay smaller. We’ll clearly show when a target cannot be met. Here, 1 KB means 1,000 bytes. Other websites may change file size if they reprocess the image.</p></details><details><summary>Can I use this for an application form?</summary><p>Yes. Follow the form’s own format, dimension, and size requirements. This tool can resize and compress a photo; it doesn’t check official photo rules, remove backgrounds, or guarantee acceptance.</p></details></div></section>
     </div>
@@ -113,7 +128,11 @@
                 <label for="background-color" class="color-label">Background color <input id="background-color" type="color" value="#ffffff" disabled></label>
                 <p class="field-help">Fills existing transparency only; it does not remove a photo’s background. When off, PNG and WebP keep transparency and JPG uses white.</p>
               </details></fieldset>
-              <div data-tools="crop rotate adjust watermark background"><button type="button" id="reset-edits" class="text-button">Reset this tool</button></div>
+              <fieldset data-tools="filters"><legend>Choose a look</legend><label for="filter-style">Filter</label><select id="filter-style"><option value="none">Original</option><option value="sepia">Sepia · vintage brown</option><option value="warm">Warm · golden tones</option><option value="cool">Cool · blue tones</option><option value="invert">Negative · inverted colors</option></select><label class="slider-label" for="filter-strength">Strength <output id="filter-strength-value">100%</output></label><input id="filter-strength" type="range" min="0" max="100" value="100"><p class="field-help">Adjust the strength while checking the live preview.</p></fieldset>
+              <fieldset data-tools="frame"><legend>Frame your photo</legend><label class="color-label" for="frame-color">Border color <input id="frame-color" type="color" value="#ffffff"></label><label class="slider-label" for="frame-size">Thickness <output id="frame-size-value">5%</output></label><input id="frame-size" type="range" min="0" max="20" value="5"><p class="field-help">The border covers the photo’s outer edges. Output dimensions stay the same. Thickness is a percentage of the shorter side.</p></fieldset>
+              <fieldset data-tools="rounded"><legend>Soften the corners</legend><label class="slider-label" for="corner-radius">Roundness <output id="corner-radius-value">20%</output></label><input id="corner-radius" type="range" min="0" max="50" value="20"><p class="field-help">PNG and WebP keep the corners transparent. JPG fills them white. Roundness is a percentage of the shorter side.</p></fieldset>
+              <fieldset data-tools="pixelate"><legend>Create a pixel mosaic</legend><label class="slider-label" for="pixel-size">Pixel block size <output id="pixel-size-value">5%</output></label><input id="pixel-size" type="range" min="0" max="20" value="5"><p class="field-help">Larger blocks give a stronger effect across the whole photo. Set to 0% to restore the original look.</p></fieldset>
+              <div data-tools="crop rotate adjust watermark background filters frame rounded pixelate"><button type="button" id="reset-edits" class="text-button">Reset this tool</button></div>
             </fieldset>
 <fieldset data-tools="compress exact">
 
@@ -147,7 +166,7 @@
       <p id="status" role="status" aria-live="polite" hidden></p>
       <section id="result" class="result" aria-labelledby="result-heading" hidden>
         <div class="result-preview"><img id="result-image" alt="Processed photo preview"></div>
-        <div class="result-content"><span class="tiny-label">YOUR PREPARED PHOTO</span><h3 id="result-heading">Ready for the next step.</h3><p id="result-summary"></p><div id="result-checks" class="result-checks"></div><p id="result-warning" hidden></p><p id="size-note" class="field-help" hidden></p><a id="download" class="button primary" download>Download photo <span aria-hidden="true">↓</span></a><p class="field-help">Check the preview before using your photo.</p></div>
+        <div class="result-content"><span class="tiny-label">YOUR PREPARED PHOTO</span><h3 id="result-heading">Ready for the next step.</h3><p id="result-summary"></p><div id="result-checks" class="result-checks"></div><p id="result-warning" hidden></p><p id="size-note" class="field-help" hidden></p><a id="download" class="button primary" download>Download photo <span aria-hidden="true">↓</span></a><button id="use-result" class="button secondary" type="button">Continue editing this photo →</button><p class="field-help">Download to keep a copy, or continue with another tool using this result.</p></div>
       </section>
     </section>
 
@@ -236,5 +255,6 @@
     <noscript><p class="wrap">Enable JavaScript to open these tools. Photo processing happens in your browser.</p></noscript>
   </main>
   <footer class="wrap"><a class="brand" href="#/"><span class="brand-icon" aria-hidden="true">♥</span><span class="brand-name"><small>I Love</small><strong>Free Compressor</strong></span></a><p>A little tool for getting on with life.</p><span>Made to be useful. Free to use.</span></footer>
+  </div>
 </body>
 </html>

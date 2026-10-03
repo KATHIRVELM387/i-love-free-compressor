@@ -108,8 +108,20 @@ try {
   await cdp('Page.navigate', { url: `http://127.0.0.1:${port}` }, session);
   await until("document.readyState === 'complete' && !!document.getElementById('demo')");
   await until("document.documentElement.dataset.activeTool==='home'");
-  assert.equal(await evaluate("document.querySelectorAll('.tool-card').length"),12);
+  assert.equal(await evaluate("document.querySelectorAll('.tool-card').length"),16);
   assert.equal(await evaluate("document.getElementById('tool').hidden && document.getElementById('batch-tool').hidden"),true);
+  await until("document.querySelectorAll('#side-links [data-route]').length===17");
+  assert.equal(await evaluate("!document.getElementById('sidebar').hidden&&document.getElementById('app-shell').getBoundingClientRect().left>=248"),true);
+  assert.equal(await evaluate("document.querySelector('#side-links [aria-current=page]').dataset.route"),'home');
+  await input('nav-search','BORDER');
+  assert.deepEqual(await evaluate("Array.from(document.querySelectorAll('#side-links [data-route]:not([hidden])')).map(a=>a.dataset.route)"),['home','frame']);
+  await evaluate("document.getElementById('nav-clear').click()");
+  await input('tool-search','PDF');
+  assert.deepEqual(await evaluate("Array.from(document.querySelectorAll('.tool-card:not([hidden])')).map(a=>a.getAttribute('href'))"),['#/pdf']);
+  await input('tool-search','no-such-tool');
+  assert.match(await evaluate("document.getElementById('tool-search-status').textContent"),/No matching/);
+  await evaluate("document.getElementById('tool-search-clear').click()");
+  assert.equal(await evaluate("document.querySelectorAll('.tool-card:not([hidden])').length"),16);
   await screenshot('desktop-home.png');
   for(const width of [768,390,320]){
     await cdp('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:true},session);
@@ -117,6 +129,36 @@ try {
     assert.equal(await evaluate("document.querySelector('.site-header nav').getBoundingClientRect().left >= document.querySelector('.site-header .brand').getBoundingClientRect().right"),true,`Header items overlap at ${width}px`);
   }
   await screenshot('mobile-home.png');
+  await evaluate("document.getElementById('menu-toggle').click()");
+  assert.equal(await evaluate("!document.getElementById('sidebar').hidden&&document.getElementById('app-shell').inert&&document.activeElement.id==='nav-search'"),true);
+  await input('nav-search','rounded');
+  await screenshot('mobile-navigation.png');
+  await evaluate("document.querySelector('#side-links [data-route=rounded]').click()");
+  await until("document.documentElement.dataset.activeTool==='rounded'");
+  assert.equal(await evaluate("document.getElementById('sidebar').hidden&&!document.getElementById('app-shell').inert&&document.activeElement.id==='tool-title'"),true);
+  await evaluate("document.getElementById('menu-toggle').click();document.getElementById('nav-clear').click()");
+  await evaluate("document.querySelector('#side-links [data-route=pdf]').focus()");
+  await cdp('Input.dispatchKeyEvent',{type:'keyDown',key:'Tab',code:'Tab',windowsVirtualKeyCode:9},session);
+  await cdp('Input.dispatchKeyEvent',{type:'keyUp',key:'Tab',code:'Tab',windowsVirtualKeyCode:9},session);
+  assert.equal(await evaluate("document.activeElement.className"),'sidebar-logo');
+  await cdp('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27},session);
+  await cdp('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape',windowsVirtualKeyCode:27},session);
+  assert.equal(await evaluate("document.getElementById('sidebar').hidden&&document.activeElement.id==='menu-toggle'&&!document.getElementById('app-shell').inert"),true);
+  await evaluate("document.getElementById('menu-toggle').click();document.getElementById('menu-backdrop').click()");
+  assert.equal(await evaluate("document.getElementById('sidebar').hidden"),true);
+  await goTool('');
+  await goTool('frame');
+  await evaluate("document.querySelector('.skip-link').click()");
+  assert.equal(await evaluate("document.documentElement.dataset.activeTool==='frame'&&document.activeElement.id==='main-content'"),true);
+  await evaluate("document.getElementById('menu-toggle').click()");
+  await goTool('rounded');
+  assert.equal(await evaluate("document.getElementById('sidebar').hidden&&!document.getElementById('app-shell').inert&&document.activeElement.id==='tool-title'"),true);
+  await evaluate("document.getElementById('menu-toggle').click()");
+  await cdp('Emulation.setDeviceMetricsOverride',{width:1280,height:844,deviceScaleFactor:1,mobile:false},session);
+  await until("!document.getElementById('app-shell').inert&&!document.getElementById('sidebar').hidden");
+  await goTool('');
+  pass('Desktop sidebar, current route, both tool searches, mobile drawer selection, focus trap, Escape, and backdrop');
+
   await cdp('Emulation.setDeviceMetricsOverride',{width:1440,height:1100,deviceScaleFactor:1,mobile:false},session);
   await evaluate("document.getElementById('menu-heading').focus()");
   await cdp('Input.dispatchKeyEvent',{type:'keyDown',key:'Tab',code:'Tab',windowsVirtualKeyCode:9},session);
@@ -325,8 +367,8 @@ try {
   assert.deepEqual(decorationChecks.names,['_a_b.jpg','original-ready.webp','photo-CON.png','été.jpg']);
   pass('Watermark positions, opacity, long-text fitting, upright rotated text, exact KB, background composition, and filename safety');
   await until("document.getElementById('original-name').textContent==='transparent-art.png'");
-  const controls=['target','width','crop-ratio','rotate-right','brightness','watermark-text','background-enabled','batch-target','collage-columns','pdf-paper'];
-  const expected={compress:['target'],exact:['target'],resize:['width'],crop:['width','crop-ratio'],rotate:['rotate-right'],convert:[],adjust:['brightness'],watermark:['watermark-text'],background:['background-enabled'],batch:['batch-target'],collage:['collage-columns'],pdf:['pdf-paper']};
+  const controls=['target','width','crop-ratio','rotate-right','brightness','watermark-text','background-enabled','batch-target','collage-columns','pdf-paper','filter-style','frame-size','corner-radius','pixel-size'];
+  const expected={compress:['target'],exact:['target'],resize:['width'],crop:['width','crop-ratio'],rotate:['rotate-right'],convert:[],adjust:['brightness'],watermark:['watermark-text'],background:['background-enabled'],batch:['batch-target'],collage:['collage-columns'],pdf:['pdf-paper'],filters:['filter-style'],frame:['frame-size'],rounded:['corner-radius'],pixelate:['pixel-size']};
   for(const [name, visible] of Object.entries(expected)){
     await goTool(name);
     const actual=await evaluate(`${JSON.stringify(controls)}.filter(id=>document.getElementById(id).getClientRects().length>0)`);
@@ -337,7 +379,7 @@ try {
     }
     assert.equal(await evaluate('document.documentElement.scrollWidth<=innerWidth'),true);
   }
-  pass('All twelve routes show only the required controls; unrelated form fields are disabled');
+  pass('All sixteen routes show only the required controls; unrelated form fields are disabled');
 
   await goTool('exact');
   await input('target','50');
@@ -535,9 +577,67 @@ try {
   await evaluate('HTMLCanvasElement.prototype.toBlob=originalToBlob;delete window.originalToBlob');
   pass('Corrupt inputs retain the original; navigation during processing prevents stale results');
 
+  const effectChecks=await evaluate(`(async()=>{
+    const {prepareImage}=await import('./image-tools.js?v=6');
+    const c=document.createElement('canvas');c.width=c.height=100;const x=c.getContext('2d');x.fillStyle='rgb(100,150,200)';x.fillRect(0,0,100,100);
+    const inspect=async(options={})=>{
+      const result=await prepareImage(c,{width:100,height:100,type:'image/png',target:null,allowResize:false,...options});
+      const b=await createImageBitmap(result.blob);const out=document.createElement('canvas');out.width=out.height=100;const ctx=out.getContext('2d');ctx.drawImage(b,0,0);b.close();
+      return [[0,0],[50,50],[5,50],[10,50],[18,50],[25,50]].map(p=>Array.from(ctx.getImageData(...p,1,1).data));
+    };
+    const result={};for(const filter of ['none','sepia','warm','cool','invert'])result[filter]=await inspect({filter});
+    result.zero=await inspect({filter:'invert',filterStrength:0});result.half=await inspect({filter:'invert',filterStrength:50});
+    result.frame=await inspect({frameSize:10,frameColor:'#00ff00'});
+    result.rounded=await inspect({cornerRadius:30});result.jpg=await inspect({cornerRadius:30,type:'image/jpeg'});
+    x.clearRect(0,0,100,100);result.transparent=await inspect({filter:'invert'});
+    const pixels=x.createImageData(100,100);for(let i=0;i<pixels.data.length;i+=4){pixels.data[i]=(i/4%100)*2;pixels.data[i+1]=Math.floor(i/400)*2;pixels.data[i+2]=100;pixels.data[i+3]=255}x.putImageData(pixels,0,0);
+    result.pixel=await inspect({pixelSize:20});result.pixelOff=await inspect({pixelSize:0});
+    let invalid=0;for(const options of [{filter:'bad'},{filterStrength:101},{frameSize:-1},{frameColor:'red'},{cornerRadius:51},{pixelSize:21}]){try{await inspect(options)}catch{invalid++}}result.invalid=invalid;
+    x.fillStyle='rgb(100,150,200)';x.fillRect(0,0,100,100);
+    const blob=await new Promise(r=>c.toBlob(r,'image/png'));const dt=new DataTransfer();dt.items.add(new File([blob],'effects.png',{type:'image/png'}));const input=document.getElementById('file-input');input.files=dt.files;input.dispatchEvent(new Event('change'));
+    return result;
+  })()`);
+  assert.deepEqual(effectChecks.invert[1],[155,105,55,255]);
+  assert.deepEqual(effectChecks.warm[1],[130,158,180,255]);
+  assert.deepEqual(effectChecks.cool[1],[80,158,230,255]);
+  assert.ok(effectChecks.sepia[1][0]>effectChecks.sepia[1][1]&&effectChecks.sepia[1][1]>effectChecks.sepia[1][2]);
+  assert.deepEqual(effectChecks.zero,effectChecks.none);
+  assert.deepEqual(effectChecks.half[1],[128,128,128,255]);
+  assert.deepEqual(effectChecks.frame[2],[0,255,0,255]);assert.deepEqual(effectChecks.frame[3],[100,150,200,255]);
+  assert.equal(effectChecks.rounded[0][3],0);assert.deepEqual(effectChecks.rounded[1],[100,150,200,255]);
+  // JPEG chroma subsampling can tint pixels near the curved edge.
+  assert.ok(effectChecks.jpg[0].slice(0,3).every(v=>v>=235),JSON.stringify(effectChecks.jpg));
+  assert.equal(effectChecks.jpg[0][3],255);
+  assert.equal(effectChecks.transparent[1][3],0);
+  assert.deepEqual(effectChecks.pixel[3],effectChecks.pixel[4]);assert.notDeepEqual(effectChecks.pixel[4],effectChecks.pixel[5]);
+  assert.notDeepEqual(effectChecks.pixelOff[3],effectChecks.pixelOff[4]);assert.equal(effectChecks.invalid,6);
+  await until("document.getElementById('original-name').textContent==='effects.png'");
+  async function exportedPixels(){return evaluate(`(()=>{const im=document.getElementById('result-image');const c=document.createElement('canvas');c.width=im.naturalWidth;c.height=im.naturalHeight;const x=c.getContext('2d');x.drawImage(im,0,0);return [[0,0],[50,50],[1,50]].map(p=>Array.from(x.getImageData(...p,1,1).data))})()`)}
+  await goTool('filters');await input('filter-style','invert');await prepare();
+  assert.deepEqual((await exportedPixels())[1],[155,105,55,255]);
+  await input('output-name','filtered');await evaluate("document.getElementById('download').click()");
+  assert.equal((await readDownload('filtered.png')).readUInt32BE(0),0x89504e47);
+  await goTool('rounded');assert.equal(await evaluate("document.getElementById('format').value"),'image/png');await prepare();
+  assert.equal((await exportedPixels())[0][3],0);assert.deepEqual((await exportedPixels())[1],[100,150,200,255]);
+  await goTool('pixelate');await input('pixel-size','10');await prepare();
+  assert.deepEqual(await dimensions(),[100,100]);
+  await goTool('frame');await input('frame-color','#00ff00');await input('frame-size','10');await prepare();
+  assert.deepEqual((await exportedPixels())[0],[0,255,0,255]);
+  await screenshot('desktop-frame.png');
+  const nextName=await evaluate("document.getElementById('download').download");
+  await evaluate("document.getElementById('use-result').click()");
+  await until("document.documentElement.dataset.activeTool==='home'&&!document.getElementById('continue-notice').hidden");
+  await goTool('rounded');
+  assert.equal(await evaluate("document.getElementById('original-name').textContent"),nextName);
+  await prepare();
+  const chained=await exportedPixels();assert.equal(chained[0][3],0);assert.deepEqual(chained[2],[0,255,0,255]);assert.deepEqual(chained[1],[100,150,200,255]);
+  await input('output-name','framed-rounded');await evaluate("document.getElementById('download').click()");
+  await writeFile(join(artifacts,'framed-rounded.png'),await readDownload('framed-rounded.png'));
+  pass('Actual filter colors/strength, frame pixels, rounded transparency/JPG, pixel blocks, validation, focused exports, and chaining a result into another tool');
+
   for(const name of Object.keys(expected)){
     await goTool(name);
-    for(const width of [768,390,320]){
+    for(const width of [1280,1024,768,390,320]){
       await cdp('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:true},session);
       assert.equal(await evaluate('document.documentElement.scrollWidth<=innerWidth'),true,`${name} overflow at ${width}`);
     }

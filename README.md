@@ -10,11 +10,22 @@ A free, mobile-friendly photo resizing and compression tool. All photo processin
 
 ## Choose a tool
 
-The homepage shows twelve tool cards. Selecting a card opens a dedicated view with only the controls needed for that task: compression, exact KB, resizing, cropping/presets, rotation/flipping, format conversion, light/color, watermarks, transparency backgrounds, batches, collages, or images to PDF.
+The homepage shows sixteen tool cards. Selecting a card opens a dedicated view with only the controls needed for that task: compression, exact KB, resizing, cropping/presets, rotation/flipping, format conversion, light/color, watermarks, transparency backgrounds, batches, collages, images to PDF, filters, frames, rounded corners, or pixel art.
 
 Use **All tools** to return to the menu. Browser Back/Forward and direct links such as `https://ilovefreecompressor.vercel.app/#/crop` work on Vercel and GitHub Pages without server rewrites. Unknown tool links return to the menu. These are views within the static app, not separately indexed pages.
 
-Switching tools retains the original uploaded photo and starts fresh settings, so hidden adjustments and size limits cannot affect another tool. Download and reopen a result to use it as the starting photo for another tool. Reloading the page clears photos from memory. Leaving a running batch stops it after the current photo.
+Switching tools retains the original uploaded photo and starts fresh settings, so hidden adjustments and size limits cannot affect another tool. Choose **Continue editing this photo** beneath a completed result to use it as the starting photo for another single-photo tool. This replaces the working original with the result; download a copy first if you want to keep that intermediate file. Reloading the page clears photos from memory. Leaving a running batch stops it after the current photo.
+
+## Navigation and creative tools
+
+The desktop layout has a persistent vertical menu on the left, grouped by task, with search and a highlighted current tool. On screens up to 1,000 px, **Tools** opens a mobile drawer. Escape, the close button, or the backdrop closes it; keyboard focus stays inside the open drawer and returns to the button when closed. The homepage also has a searchable tool grid with clear-search and no-results states.
+
+- **Photo filters**: sepia, warm, cool, and negative colors with adjustable strength. Alpha is preserved.
+- **Photo frames**: adjustable color and thickness. The border is drawn inside the photo, covering its edges without increasing dimensions.
+- **Rounded corners**: adjustable radius; PNG is the default to retain transparency. JPG fills the corners white.
+- **Pixel art**: a whole-image mosaic with adjustable block size. Zero restores the original appearance.
+
+Measurements use percentages of the shorter side so previews and exports scale consistently. Each tool keeps its own relevant controls visible. Switching tools starts fresh settings; use **Continue editing this photo** to intentionally carry a finished edit forward. All four tools use local canvas processing and support JPG, PNG, and WebP downloads.
 
 ## Collages and PDF documents
 

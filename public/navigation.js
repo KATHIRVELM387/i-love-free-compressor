@@ -8,6 +8,10 @@ export const TOOLS = {
   adjust: { title: 'Light & color', description: 'Adjust brightness and contrast, or create a black-and-white photo.', action: 'Save adjustments →' },
   watermark: { title: 'Text watermark', description: 'Add your own text and choose its position, color, size, and opacity.', action: 'Add watermark →' },
   background: { title: 'Transparency background', description: 'Fill transparent pixels with a color. Existing photo backgrounds stay in place.', action: 'Save background →' },
+  filters: { title: 'Photo filters', description: 'Try a warm, cool, sepia, or negative look and adjust its strength.', action: 'Save filtered photo →' },
+  frame: { title: 'Photo frames', description: 'Add a colored border inside the edges of your photo.', action: 'Save framed photo →' },
+  rounded: { title: 'Rounded corners', description: 'Soften your photo’s corners. Save as PNG or WebP to keep them transparent.', action: 'Save rounded photo →' },
+  pixelate: { title: 'Pixel art', description: 'Turn your whole photo into a blocky mosaic with adjustable pixel size.', action: 'Save pixel art →' },
   batch: { title: 'Batch compressor', view: 'batch' },
   collage: { title: 'Photo collage', view: 'collage' },
   pdf: { title: 'Images to PDF', view: 'pdf' }
@@ -30,7 +34,7 @@ export function startNavigation(onSelect) {
       group.hidden = !active;
       if (group.tagName === 'FIELDSET') group.disabled = !active;
     }
-    $('edit-controls').hidden = !['crop', 'rotate', 'adjust', 'watermark', 'background'].includes(name);
+    $('edit-controls').hidden = !['crop', 'rotate', 'adjust', 'watermark', 'background', 'filters', 'frame', 'rounded', 'pixelate'].includes(name);
     if (config && !config.view) {
       $('tool-title').textContent = config.title;
       $('tool-description').textContent = config.description;

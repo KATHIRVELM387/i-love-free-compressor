@@ -1,5 +1,5 @@
-import { fitDimensions, formatBytes, prepareImage, renderImage, getCropRect, downloadName } from './image-tools.js?v=5';
-import { startNavigation, TOOLS } from './navigation.js?v=7';
+import { fitDimensions, formatBytes, prepareImage, renderImage, getCropRect, downloadName } from './image-tools.js?v=6';
+import { startNavigation, TOOLS } from './navigation.js?v=8';
 
 const $ = id => document.getElementById(id);
 const fileInput = $('file-input');
@@ -7,10 +7,11 @@ let source = null;
 let originalFile = null;
 let originalURL = null;
 let resultURL = null;
+let resultBlob = null;
 let generation = 0;
 let busy = false;
 let currentTool = null;
-const defaultEdits = () => ({ rotation: 0, flipX: false, flipY: false, cropRatio: 0, cropZoom: 1, cropX: .5, cropY: .5, brightness: 0, contrast: 0, grayscale: false, background: null, watermarkText: '', watermarkColor: '#ffffff', watermarkPosition: 'bottom-right', watermarkSize: 6, watermarkOpacity: .65 });
+const defaultEdits = () => ({ rotation: 0, flipX: false, flipY: false, cropRatio: 0, cropZoom: 1, cropX: .5, cropY: .5, brightness: 0, contrast: 0, grayscale: false, background: null, watermarkText: '', watermarkColor: '#ffffff', watermarkPosition: 'bottom-right', watermarkSize: 6, watermarkOpacity: .65, filter: currentTool === 'filters' ? 'sepia' : 'none', filterStrength: 100, frameSize: currentTool === 'frame' ? 5 : 0, frameColor: '#ffffff', cornerRadius: currentTool === 'rounded' ? 20 : 0, pixelSize: currentTool === 'pixelate' ? 5 : 0 });
 let edits = defaultEdits();
 
 function orientedSize() {
@@ -18,7 +19,7 @@ function orientedSize() {
 }
 
 function showEdits() {
-  const active = edits.rotation !== 0 || edits.flipX || edits.flipY || edits.cropRatio !== 0 || edits.cropZoom !== 1 || edits.brightness !== 0 || edits.contrast !== 0 || edits.grayscale || edits.background !== null || edits.watermarkText.trim() !== '' || $('format').value === 'image/jpeg';
+  const active = edits.filter !== 'none' || edits.frameSize > 0 || edits.cornerRadius > 0 || edits.pixelSize > 0 || edits.rotation !== 0 || edits.flipX || edits.flipY || edits.cropRatio !== 0 || edits.cropZoom !== 1 || edits.brightness !== 0 || edits.contrast !== 0 || edits.grayscale || edits.background !== null || edits.watermarkText.trim() !== '' || $('format').value === 'image/jpeg';
   $('original-image').hidden = active;
   $('edit-preview').hidden = !active;
   $('preview-label').textContent = active ? 'Edited preview' : 'Original';
@@ -28,6 +29,11 @@ function showEdits() {
   for (const [id, value] of [['crop-zoom', edits.cropZoom * 100], ['crop-x', edits.cropX * 100], ['crop-y', edits.cropY * 100], ['brightness', edits.brightness], ['contrast', edits.contrast]]) {
     $(id).value = Math.round(value);
     $(id + '-value').textContent = id.startsWith('crop-') ? `${Math.round(value)}%` : String(Math.round(value));
+  }
+  $('filter-style').value = edits.filter;
+  $('frame-color').value = edits.frameColor;
+  for (const [id, value] of [['filter-strength', edits.filterStrength], ['frame-size', edits.frameSize], ['corner-radius', edits.cornerRadius], ['pixel-size', edits.pixelSize]]) {
+    $(id).value = value; $(id + '-value').textContent = `${value}%`;
   }
   $('grayscale').checked = edits.grayscale;
   $('watermark-text').value = edits.watermarkText;
@@ -111,6 +117,15 @@ for (const id of ['background-enabled', 'background-color']) {
   });
 }
 
+for (const [id, key, convert] of [['filter-style', 'filter', String], ['filter-strength', 'filterStrength', Number], ['frame-size', 'frameSize', Number], ['frame-color', 'frameColor', String], ['corner-radius', 'cornerRadius', Number], ['pixel-size', 'pixelSize', Number]]) {
+  $(id).addEventListener('input', () => {
+    if (!source || busy) return;
+    edits[key] = convert($(id).value);
+    showEdits(); clearResult();
+    setStatus('Preview updated. Save your photo to create the download.');
+  });
+}
+
 function updateDownloadName() {
   if (!originalFile) return;
   const extension = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }[$('format').value];
@@ -190,6 +205,7 @@ function clearResult() {
   $('result-image').removeAttribute('src');
   if (resultURL) URL.revokeObjectURL(resultURL);
   resultURL = null;
+  resultBlob = null;
 }
 
 function updatePresets() {
@@ -242,7 +258,8 @@ async function loadFile(file) {
     $('dimension-preset').value = '';
     $('edit-controls').disabled = false;
     originalFile = file;
-    if (!['compress', 'exact'].includes(currentTool)) $('format').value = file.type;
+    $('continue-notice').hidden = true;
+    if (!['compress', 'exact'].includes(currentTool)) $('format').value = currentTool === 'rounded' ? 'image/png' : file.type;
     $('output-name').value = '';
     if (originalURL) URL.revokeObjectURL(originalURL);
     originalURL = URL.createObjectURL(file);
@@ -260,6 +277,7 @@ async function loadFile(file) {
     $('settings').disabled = false;
     document.querySelector('.settings-footnote').textContent = 'Your original photo stays unchanged.';
     setStatus(fitted.width !== width || fitted.height !== height ? 'Large photo detected. Output dimensions were reduced to fit browser processing limits.' : 'Photo loaded. Set your requirements, then prepare your photo.');
+    return true;
   } catch (error) {
     if (decoded && decoded !== source) decoded.close?.();
     if (current === generation) setStatus(error.message.includes('decode') || error.name === 'InvalidStateError' ? 'This file could not be opened. Please choose a valid JPG, PNG, or WebP image.' : error.message, true);
@@ -329,6 +347,7 @@ $('settings-form').addEventListener('submit', async event => {
   try {
     const result = await prepareImage(source, { width: requestedWidth, height: requestedHeight, target, type, sizeMode, allowResize: $('auto-resize').checked, ...edits });
     if (current !== generation) return;
+    resultBlob = result.blob;
     resultURL = URL.createObjectURL(result.blob);
     $('result-image').src = resultURL;
     $('download').href = resultURL;
@@ -363,6 +382,19 @@ $('settings-form').addEventListener('submit', async event => {
     $('process').textContent = TOOLS[currentTool]?.action || 'Prepare photo →';
     $('settings-form').removeAttribute('aria-busy');
   }
+});
+
+$('use-result').addEventListener('click', async () => {
+  if (!resultBlob || busy) return;
+  const next = new File([resultBlob], $('download').download || 'edited-photo.png', { type: resultBlob.type });
+  $('use-result').disabled = true;
+  try {
+    if (await loadFile(next)) {
+      $('continue-notice').hidden = false;
+      $('continue-notice').textContent = 'Your edited photo is ready for the next step. Choose another single-photo tool below or from the menu.';
+      location.hash = '#/';
+    }
+  } finally { $('use-result').disabled = false; }
 });
 
 $('demo').addEventListener('click', async () => {
@@ -400,7 +432,7 @@ startNavigation((name, config) => {
   $('auto-resize').checked = false;
   $('lock').checked = true;
   $('output-name').value = '';
-  $('format').value = name === 'exact' || name === 'compress' ? 'image/jpeg' : originalFile?.type || 'image/png';
+  $('format').value = name === 'exact' || name === 'compress' ? 'image/jpeg' : name === 'rounded' ? 'image/png' : originalFile?.type || 'image/png';
   $('process').textContent = busy ? 'Finishing the previous photo…' : config.action;
   $('settings').disabled = busy || !source;
   $('edit-controls').disabled = busy || !source;
