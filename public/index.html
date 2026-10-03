@@ -8,7 +8,7 @@
   <meta name="google-site-verification" content="qNgvCQDjTJRYThLtSrekcbv9rR_-x0CuWfTNZg_7BCs" />
   <meta name="description" content="Compress, resize, crop and adjust JPG, PNG and WebP photos for free. Create collages, combine images into PDFs, or download a batch as ZIP. Private, no signup.">
   <meta name="robots" content="index, follow, max-image-preview:large">
-  <meta name="theme-color" content="#5145cd">
+  <meta name="theme-color" content="#0d2442">
   <title>I Love Free Compressor — Free Image Compressor &amp; Photo Resizer</title>
   <link rel="canonical" href="https://ilovefreecompressor.vercel.app/">
   <link rel="sitemap" type="application/xml" href="sitemap.xml">
@@ -20,18 +20,18 @@
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="I Love Free Compressor — Free Image Compressor &amp; Photo Resizer">
   <meta name="twitter:description" content="Compress and resize photos for free. Local image editing with optional private cloud saves.">
-  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="icon" href="icon.svg?v=2" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css?v=11">
   <script type="module" src="app.js?v=13"></script>
   <script type="module" src="shell.js?v=6"></script>
   <script type="module" src="batch.js?v=9"></script>
   <script type="module" src="collections.js?v=3"></script>
   <script type="module" src="explore.js?v=2"></script>
-  <script type="module" src="accounts.js?v=5"></script>
+  <script type="module" src="accounts.js?v=6"></script>
   <link rel="stylesheet" href="professional.css?v=1">
   <script type="module" src="productivity.js?v=3"></script>
   <link rel="stylesheet" href="help-pages.css?v=1">
-  <link rel="stylesheet" href="design.css?v=1">
+  <link rel="stylesheet" href="design.css?v=2">
   <script type="module" src="help-navigation.js?v=2"></script>
 </head>
 <body>
@@ -65,24 +65,29 @@
   </header>
   <main id="main-content" tabindex="-1">
     <div id="home-view">
-    <section class="hero wrap">
+    <section class="hero wrap" aria-labelledby="home-heading">
       <div class="hero-copy">
-        <span class="eyebrow"><span class="status-dot"></span> YOUR EVERYDAY FILE TOOLKIT</span>
-        <h1>Small tasks.<br><em>Big possibilities.</em></h1>
-        <p>Make images lighter, PDFs simpler, and ideas ready to share. All the tools you need, without the extra steps.</p>
-        <div class="hero-actions"><a class="button primary" href="#/compress">Start compressing <span aria-hidden="true">↗</span></a><a class="button secondary watch-demo" href="#/videos"><span class="play-small" aria-hidden="true">▶</span> Watch a demo</a></div>
-        <div class="hero-notes"><span>✓ Free to use</span><span>✓ No sign-up needed</span><span>✓ Edit on your device</span></div>
-      </div>
-      <div class="hero-art" aria-label="Illustration of an image ready to edit and download">
-        <div class="art-orbit orbit-one"></div><div class="art-orbit orbit-two"></div>
-        <div class="floating-label label-pdf"><span>PDF</span> Documents, sorted.</div>
-        <div class="preview-window"><div class="preview-toolbar"><span class="window-dots" aria-hidden="true">● ● ●</span><span>Your next great upload</span><span aria-hidden="true">↗</span></div>
-          <img src="assets/landscape.svg" width="560" height="330" alt="Illustrated mountains and a sun reflected in a calm lake">
-          <div class="preview-bottom"><span><strong>A little lighter.</strong><small>Ready for whatever comes next.</small></span><span class="ready-check" aria-hidden="true">✓</span></div>
+        <span class="eyebrow">FREE DIGITAL TOOLS, FOR EVERYONE</span>
+        <h1 id="home-heading">I Love Free Compressor</h1>
+        <p>Simple, reliable tools for your images, PDFs, and everyday creative tasks. Prepare your files in your browser, then download and get on with your day.</p>
+        <div class="hero-stats" aria-label="What is available">
+          <div><strong>40</strong><span>FREE TOOLS</span></div><div><strong>47</strong><span>FEATURE GUIDES</span></div><div><strong>3</strong><span>VIDEO DEMOS</span></div>
+          <div><strong>JPG · PNG · WebP</strong><span>IMAGE FORMATS</span></div><div><strong>On your device</strong><span>LOCAL PROCESSING</span></div><div><strong>Optional</strong><span>ACCOUNT SIGN-UP</span></div>
         </div>
-        <div class="floating-label label-image"><span aria-hidden="true">↗</span><div>Images made easy<small>Resize · Compress · Create</small></div></div>
-        <span class="art-spark" aria-hidden="true">✳</span>
+        <div class="hero-actions"><a class="button primary" href="#/compress">Start compressing <span aria-hidden="true">→</span></a><a class="button secondary watch-demo" href="#/videos"><span aria-hidden="true">▶</span> Watch a demo</a></div>
       </div>
+      <aside class="hero-account" aria-label="Your account">
+        <div id="hero-guest">
+          <nav class="hero-account-nav" aria-label="Get started"><a href="#/account">Login</a><a href="#/signup">New registration</a><a href="#/how-to-use">Help</a></nav>
+          <div class="hero-account-body"><span class="account-emblem" aria-hidden="true">♥</span><h2>Your personal workspace</h2><p>Sign in with Google to keep your files, preferences, and activity together.</p>
+            <ul class="account-benefits"><li>Private cloud saves</li><li>Saved preferences &amp; favourites</li><li>Your recent activity</li></ul>
+            <a class="button primary" href="#/account">Login to your account <span aria-hidden="true">→</span></a>
+            <p class="hero-account-note">New here? <a href="#/signup">Create a free account</a></p>
+          </div>
+        </div>
+        <div id="hero-member" hidden><div class="hero-account-nav"><span>Your workspace</span></div><div class="hero-account-body"><span class="account-emblem" aria-hidden="true">✓</span><h2>Welcome back</h2><p>Open your dashboard to manage saved files, preferences, and recent activity.</p><a class="button primary" href="#/dashboard">Open my dashboard →</a><a class="button secondary" href="#/files">Go to My Files</a></div></div>
+        <div class="hero-guest-note">Just need a tool? <a href="#/compress">Continue without an account →</a></div>
+      </aside>
     </section>
     <section class="tool-discovery wrap" aria-label="Find a tool">
       <div><span class="tiny-label">LESS SEARCHING. MORE DOING.</span><h2>Your next task starts here.</h2></div>

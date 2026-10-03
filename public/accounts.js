@@ -71,8 +71,8 @@ function guard(container, admin = false) {
 }
 async function render() {
   const route = document.documentElement.dataset.activeTool;
-  for(const id of ['header-login','header-signup']) $(id).hidden = !!session;
-  for(const id of ['header-dashboard','header-profile']) $(id).hidden = !session;
+  for(const id of ['header-login','header-signup','hero-guest']) $(id).hidden = !!session;
+  for(const id of ['header-dashboard','header-profile','hero-member']) $(id).hidden = !session;
   for (const node of document.querySelectorAll('[data-admin-only]')) node.hidden = !active() || profile.role !== 'admin';
   for (const node of document.querySelectorAll('[data-signout]')) node.hidden = !session;
   $('account-nav').textContent = profile ? '♡ My account' : '♡ Sign in / My account';

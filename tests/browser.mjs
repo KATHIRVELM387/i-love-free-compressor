@@ -67,7 +67,11 @@ async function evaluate(expression) {
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 async function until(expression) {
   const start = Date.now();
-  while (Date.now() - start < 20000) { if (await evaluate(expression)) return; await delay(50); }
+  while (Date.now() - start < 20000) {
+    try { if (await evaluate(expression)) return; }
+    catch (error) { if (!/Inspected target navigated or closed|Execution context was destroyed|Cannot find context/.test(error.message)) throw error; }
+    await delay(50);
+  }
   throw new Error(`Condition not met: ${expression}`);
 }
 async function screenshot(name) {
@@ -749,8 +753,9 @@ try {
   await goTool('collage');await screenshot('mobile-collage.png');
   await goTool('pdf');await screenshot('mobile-pdf.png');
   await goTool('crop');await screenshot('mobile-focused-crop.png');
+  await evaluate('window.beforeReloadCheck=true');
   await cdp('Page.reload',{},session);
-  await until("document.readyState==='complete'&&document.documentElement.dataset.activeTool==='crop'&&document.getElementById('settings').disabled");
+  await until("window.beforeReloadCheck!==true&&document.readyState==='complete'&&document.documentElement.dataset.activeTool==='crop'&&document.getElementById('settings').disabled");
   assert.equal(await evaluate("document.getElementById('settings').disabled"),true);
   assert.equal(await evaluate("document.getElementById('home-view').hidden"),true);
   await evaluate("document.querySelector('#workspace-nav a').click()");

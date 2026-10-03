@@ -106,7 +106,7 @@ try {
  const base=process.env.ILFC_LIVE_URL||`http://127.0.0.1:${port}/`;
  await cdp('Page.navigate',{url:base},session);await until("document.documentElement?.dataset.activeTool==='home' && !!document.getElementById('demo-video')");
  assert.equal(await evaluate("getComputedStyle(document.querySelector('.hero')).display"),'grid');
- assert.equal(await evaluate("document.querySelector('.hero-art img').complete && document.querySelector('.hero-art img').naturalWidth>0"),true);
+ assert.equal(await evaluate("document.querySelectorAll('.hero-stats>div').length===6 && document.getElementById('hero-guest').getClientRects().length>0"),true);
  assert.equal(mediaRequests.length,0,'Homepage must not download videos');
  await screenshot('redesign-home-desktop.png');
  await evaluate("document.querySelector('.watch-demo').click()");await until("document.documentElement.dataset.activeTool==='videos'");

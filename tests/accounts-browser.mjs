@@ -207,14 +207,14 @@ try {
   mockGoogleEnabled=true; await clickText('Check again');
   await until("document.querySelector('#signup-content button')?.textContent==='Continue with Google'");
   assert.match(await evaluate("document.getElementById('signup-content').textContent"),/Member account/);
-  assert.equal(await evaluate("!document.getElementById('header-login').hidden&&!document.getElementById('header-signup').hidden"),true);
+  assert.equal(await evaluate("!document.getElementById('header-login').hidden&&!document.getElementById('header-signup').hidden&&!document.getElementById('hero-guest').hidden&&document.getElementById('hero-member').hidden"),true);
   await screenshot('account-sign-in.png');
   await cdp('Page.navigate',{url:`http://127.0.0.1:${port}/index.html#/account`},session);
   await until("document.querySelector('#account-content button')?.textContent==='Continue with Google'");
   await clickText('Continue with Google');
   await until("document.documentElement?.dataset.activeTool==='dashboard' && document.getElementById('account-nav')?.textContent.startsWith('♡ My account')");
   assert.equal(await evaluate('location.search'),'');
-  assert.equal(await evaluate("document.getElementById('header-login').hidden&&document.getElementById('header-signup').hidden&&!document.getElementById('header-dashboard').hidden"),true);
+  assert.equal(await evaluate("document.getElementById('header-login').hidden&&document.getElementById('header-signup').hidden&&!document.getElementById('header-dashboard').hidden&&document.getElementById('hero-guest').hidden&&!document.getElementById('hero-member').hidden"),true);
   pass('Real SDK PKCE redirect, code exchange, callback cleanup, and dashboard landing with intercepted OAuth service');
   await authenticate();await goTool('dashboard');
   await until("document.getElementById('dashboard-content').textContent.includes('Welcome, Example member')");
@@ -279,7 +279,7 @@ try {
   await until("document.getElementById('account-nav').textContent==='♡ Sign in / My account' && document.documentElement.dataset.activeTool==='account'");
   assert.equal(await evaluate("['files','history','profile','admin'].every(n=>{const page=document.getElementById(n+'-content');return !page.querySelector('form,.account-row,.admin-row,.account-danger')&&!/member@example.test|Other member|bytes prepared/.test(page.textContent)})"),true);
   assert.equal(await evaluate("localStorage.getItem('sb-accounts-test-auth-token')"),null);
-  assert.equal(await evaluate("!document.getElementById('header-login').hidden&&!document.getElementById('header-signup').hidden&&document.getElementById('header-dashboard').hidden"),true);
+  assert.equal(await evaluate("!document.getElementById('header-login').hidden&&!document.getElementById('header-signup').hidden&&!document.getElementById('hero-guest').hidden&&document.getElementById('hero-member').hidden&&document.getElementById('header-dashboard').hidden"),true);
   pass('Interrupted upload recovery, admin controls and server rejection, mobile layout, explicit deletion, and private data cleared on sign-out');
   assert.deepEqual(errors,[]);
 } finally {

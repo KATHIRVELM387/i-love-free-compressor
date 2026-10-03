@@ -36,14 +36,14 @@ def timestamp(seconds):
 for key,(title,scenes) in DATA.items():
  bases=[]
  for i,(label,instruction) in enumerate(scenes):
-  frame=Image.new('RGB',(1280,900),'#faf9f6');d=ImageDraw.Draw(frame)
-  d.rounded_rectangle((25,18,64,56),radius=11,fill='#5145cd');d.text((36,22),'♥',font=regular(25),fill='white')
-  d.text((78,26),'I LOVE FREE COMPRESSOR',font=bold(15),fill='#51415f')
-  d.text((650,24),title,font=regular(19),fill='#766382')
+  frame=Image.new('RGB',(1280,900),'#f5f7fb');d=ImageDraw.Draw(frame)
+  d.rounded_rectangle((25,18,64,56),radius=11,fill='#0d2442');d.text((36,22),'♥',font=regular(25),fill='white')
+  d.text((78,26),'I LOVE FREE COMPRESSOR',font=bold(15),fill='#0d2442')
+  d.text((650,24),title,font=regular(19),fill='#52667e')
   shot=Image.open(FRAMES/f'{key}-{i+1}.png').convert('RGB').resize((1168,730),Image.Resampling.LANCZOS)
-  frame.paste(shot,(56,77));d.rounded_rectangle((54,75,1225,808),radius=4,outline='#e1d8eb',width=2)
-  d.rectangle((0,824,1280,900),fill='#eee9f7')
-  d.text((36,838),label,font=bold(12),fill='#5145cd');d.text((36,859),instruction,font=regular(20),fill='#51415f')
+  frame.paste(shot,(56,77));d.rounded_rectangle((54,75,1225,808),radius=4,outline='#dce3ee',width=2)
+  d.rectangle((0,824,1280,900),fill='#eaf0f8')
+  d.text((36,838),label,font=bold(12),fill='#0d2442');d.text((36,859),instruction,font=regular(20),fill='#0d2442')
   bases.append(frame)
  poster=bases[0].copy();poster.thumbnail((960,675));poster.save(OUT/f'{key}.jpg',quality=88,optimize=True)
  captions=['WEBVTT','']
@@ -56,9 +56,9 @@ for key,(title,scenes) in DATA.items():
     frame=Image.blend(bases[i-1],base,tick/6) if i and tick<6 else base.copy()
     d=ImageDraw.Draw(frame)
     for step in range(4):
-     x=36+step*305;d.rounded_rectangle((x,894,x+292,898),radius=2,fill='#dbd2eb')
+     x=36+step*305;d.rounded_rectangle((x,894,x+292,898),radius=2,fill='#cad7e7')
      progress=1 if step<i else min(1,tick/(FRAMES_PER_SCENE-1)) if step==i else 0
-     if progress:d.rectangle((x,894,x+max(2,292*progress),898),fill='#7964b7')
+     if progress:d.rectangle((x,894,x+max(2,292*progress),898),fill='#e86c08')
     proc.stdin.write(frame.tobytes())
  finally:proc.stdin.close()
  if proc.wait()!=0:raise RuntimeError(f'Video encoding failed: {key}')
