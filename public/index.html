@@ -22,26 +22,43 @@
   <meta name="twitter:description" content="Compress and resize photos for free. Your images stay on your device.">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css">
-  <script type="module" src="app.js?v=5"></script>
-  <script type="module" src="batch.js?v=5"></script>
+  <script type="module" src="app.js?v=6"></script>
+  <script type="module" src="batch.js?v=6"></script>
 </head>
 <body>
-  <a class="skip-link" href="#tool">Skip to photo tool</a>
+  <a class="skip-link" href="#main-content">Skip to content</a>
   <header class="site-header wrap">
-    <a class="brand" href="./" aria-label="I Love Free Compressor home"><span class="brand-icon" aria-hidden="true">♥</span><span class="brand-name"><small>I Love</small><strong>Free Compressor</strong></span></a>
-    <nav aria-label="Main navigation"><a href="#batch-tool">Batch tools</a><a href="#questions">FAQs</a><span class="free-badge">100% free</span></nav>
+    <a class="brand" href="#/" aria-label="I Love Free Compressor home"><span class="brand-icon" aria-hidden="true">♥</span><span class="brand-name"><small>I Love</small><strong>Free Compressor</strong></span></a>
+    <nav aria-label="Main navigation"><a href="#/" class="all-tools-link">All tools</a><a href="#/batch">Batch tools</a><span class="free-badge">100% free</span></nav>
   </header>
-  <main>
+  <main id="main-content" tabindex="-1">
+    <div id="home-view">
     <section class="hero wrap">
       <span class="eyebrow"><span class="status-dot"></span> LESS FILE FUSS. MORE GETTING THINGS DONE.</span>
       <h1>Free image compressor.<br><em>Photos that fit.</em></h1>
       <p>Resize, compress, crop, and brighten JPG, PNG and WebP photos.<br class="desktop-break"> One photo or a whole batch. Free, private, and no signup needed.</p>
-      <p><a class="text-button" href="#tool">Edit one photo</a> · <a class="text-button" href="#batch-tool">Compress a batch</a></p>
+      <p>Choose a tool below to get started.</p>
       <div class="hero-notes"><span>✓ No sign-up</span><span>✓ No uploads to a server</span><span>✓ No forced watermarks</span></div>
     </section>
 
-    <section class="workspace wrap" id="tool" aria-label="Photo resizing and compression tool">
-      <div class="workspace-heading"><div><span class="tiny-label">THE EVERYDAY PHOTO TOOL</span><h2>A smaller file. A smoother application.</h2></div><span class="local-badge"><span aria-hidden="true">◈</span> Stays on your device</span></div>
+    <section id="tool-menu" class="tool-menu wrap" aria-labelledby="menu-heading"><h2 id="menu-heading" tabindex="-1">What would you like to do?</h2><div class="tool-grid">
+      <a class="tool-card" href="#/compress"><span class="tool-icon" aria-hidden="true">↓</span><h3>Compress images</h3><p>Reduce file size to fit a KB limit.</p><span class="tool-open">Open tool →</span></a>
+      <a class="tool-card" href="#/exact"><span class="tool-icon" aria-hidden="true">KB</span><h3>Exact file size</h3><p>Make a JPG smaller or bigger to a chosen KB size.</p><span class="tool-open">Open tool →</span></a>
+      <a class="tool-card" href="#/resize"><span class="tool-icon" aria-hidden="true">↔</span><h3>Resize images</h3><p>Set pixel dimensions or resize by percentage.</p><span class="tool-open">Open tool →</span></a>
+      <a class="tool-card" href="#/crop"><span class="tool-icon" aria-hidden="true">⌗</span><h3>Crop & size presets</h3><p>Frame your photo or choose a ready-made size.</p><span class="tool-open">Open tool →</span></a>
+      <a class="tool-card" href="#/rotate"><span class="tool-icon" aria-hidden="true">↻</span><h3>Rotate & flip</h3><p>Turn your photo or mirror it in one click.</p><span class="tool-open">Open tool →</span></a>
+      <a class="tool-card" href="#/convert"><span class="tool-icon" aria-hidden="true">⇄</span><h3>Convert format</h3><p>Save photos as JPG, PNG, or WebP.</p><span class="tool-open">Open tool →</span></a>
+      <a class="tool-card" href="#/adjust"><span class="tool-icon" aria-hidden="true">☀</span><h3>Light & color</h3><p>Adjust brightness, contrast, or black & white.</p><span class="tool-open">Open tool →</span></a>
+      <a class="tool-card" href="#/watermark"><span class="tool-icon" aria-hidden="true">Aa</span><h3>Text watermark</h3><p>Add your name or brand to a photo.</p><span class="tool-open">Open tool →</span></a>
+      <a class="tool-card" href="#/background"><span class="tool-icon" aria-hidden="true">◐</span><h3>Transparency background</h3><p>Fill transparent areas with your chosen color.</p><span class="tool-open">Open tool →</span></a>
+      <a class="tool-card" href="#/batch"><span class="tool-icon" aria-hidden="true">▦</span><h3>Batch compressor</h3><p>Process up to 20 photos and download a ZIP.</p><span class="tool-open">Open tool →</span></a>
+    </div></section>
+    <section id="how-it-works" class="how-section wrap"><div class="section-intro"><span class="tiny-label">FROM “FILE TOO LARGE” TO DONE</span><h2>Three steps. Zero headaches.</h2></div><div class="how-grid"><article><span class="how-number">01</span><h3>Pick your photo</h3><p>A portrait, a signature, or a scan. Choose a JPG, PNG, or WebP from your device.</p></article><article><span class="how-number">02</span><h3>Set the requirements</h3><p>Enter the size and dimensions your form asks for. We’ll do the resizing and compression.</p></article><article><span class="how-number">03</span><h3>Download and carry on</h3><p>Check your preview, save the new file, and get back to what you were doing.</p></article></div></section>
+    <section id="questions" class="faq-section wrap"><div><span class="tiny-label">GOOD TO KNOW</span><h2>A little clarity.</h2><p>Small answers to common questions.</p></div><div class="faq-list"><details><summary>Is it really free?</summary><p>Yes. Every feature here is free to use, with no account, subscription, or forced watermark. Add your own text watermark only if you choose.</p></details><details><summary>Where do my photos go?</summary><p>They stay in your browser. The tool doesn’t upload or store your photos on a server. Download any result you want to keep before closing or refreshing the page.</p></details><details><summary>How do I crop or adjust a photo?</summary><p>Choose Crop &amp; size presets from the tool menu, then use Crop &amp; frame to pick a shape, zoom in, and move the framing. Choose Light &amp; color from the menu to change brightness or contrast, or switch to black &amp; white. Quick size presets set the crop and output dimensions together. Check the preview, then use the tool’s action button to create your download. These edits apply to the single-photo tool.</p></details><details><summary>Can I add my name or choose a background?</summary><p>Choose Text watermark from the menu to add a name or brand, then choose its position, color, size, and opacity. Transparency background fills transparent pixels with a color; it does not remove an existing background. Each tool opens its own workspace for one photo at a time. You can also enter a download filename, and the tool adds the correct extension.</p></details><details><summary>Can I make a small file bigger?</summary><p>Yes. Choose “Exact file size” from the menu and enter the size you need, such as 50 KB. The tool saves a JPG at that size, adding non-image data if needed. This increases the file size without adding detail or improving quality. To change the photo’s dimensions instead, use Width and Height.</p></details><details><summary>Will it always reach my target size?</summary><p>Exact mode saves a JPG at your chosen size when the image can fit within that target. Very small targets may need smaller dimensions. Maximum mode only keeps the result under a limit, so a smaller file can stay smaller. We’ll clearly show when a target cannot be met. Here, 1 KB means 1,000 bytes. Other websites may change file size if they reprocess the image.</p></details><details><summary>Can I use this for an application form?</summary><p>Yes. Follow the form’s own format, dimension, and size requirements. This tool can resize and compress a photo; it doesn’t check official photo rules, remove backgrounds, or guarantee acceptance.</p></details></div></section>
+    </div>
+    <div id="workspace-nav" class="workspace-nav wrap" hidden><a href="#/" class="text-button">← All tools</a><span>Switching tools keeps your original photo and starts fresh settings.</span></div>
+    <section class="workspace wrap" id="tool" aria-labelledby="tool-title" hidden>
+      <div class="workspace-heading"><div><span class="tiny-label">YOUR SELECTED TOOL</span><h1 id="tool-title" tabindex="-1">Compress images</h1><p id="tool-description"></p></div><span class="local-badge"><span aria-hidden="true">◈</span> Stays on your device</span></div>
       <div class="editor-grid">
         <div class="photo-panel">
           <div class="step-heading"><span class="step">1</span><h3>Add your photo</h3><button id="replace" class="text-button" hidden>Change photo</button></div>
@@ -53,24 +70,33 @@
             <span class="file-hint">JPG, PNG or WebP · up to 25 MB</span>
           </div>
           <div id="original-card" class="preview-card" hidden><div class="preview-image"><img id="original-image" alt="Your original photo"><canvas id="edit-preview" role="img" aria-label="Photo with edits, watermark, and background applied" hidden></canvas></div><div class="image-caption"><span id="original-name"></span><span id="preview-label" class="pill">Original</span></div><p id="original-details" class="image-details"></p>
+
+          </div>
+          <p class="demo-line" id="demo-line">Just looking around? <button id="demo" class="text-button">Try a sample photo</button></p>
+          <div class="privacy-note"><span aria-hidden="true">⌁</span><p><strong>Your photos are yours.</strong> They’re processed right here in your browser and never sent to us.</p></div>
+        </div>
+
+        <form id="settings-form" class="settings-panel">
+          <div class="step-heading"><span class="step">2</span><h3 id="settings-title">Set your options</h3></div>
+          <fieldset id="settings" disabled>
             <fieldset id="edit-controls" class="edit-controls" disabled>
-              <legend>Edit your photo</legend>
-              <div class="edit-buttons"><button type="button" id="rotate-left">↶ Left 90°</button><button type="button" id="rotate-right">↷ Right 90°</button><button type="button" id="flip-horizontal" aria-pressed="false">↔ Flip horizontal</button><button type="button" id="flip-vertical" aria-pressed="false">↕ Flip vertical</button></div>
-              <details class="edit-section" open><summary>Crop &amp; frame</summary>
+              <legend class="sr-only">Tool controls</legend>
+              <fieldset data-tools="rotate"><legend class="field-heading">Rotate &amp; flip</legend><div class="edit-buttons"><button type="button" id="rotate-left">↶ Left 90°</button><button type="button" id="rotate-right">↷ Right 90°</button><button type="button" id="flip-horizontal" aria-pressed="false">↔ Flip horizontal</button><button type="button" id="flip-vertical" aria-pressed="false">↕ Flip vertical</button></div></fieldset>
+              <fieldset data-tools="crop"><details class="edit-section" open><summary>Crop &amp; frame</summary>
                 <label for="crop-ratio">Crop shape</label>
                 <select id="crop-ratio"><option value="0">Original ratio</option><option value="1">Square · 1:1</option><option value="1.3333333333333333">Landscape · 4:3</option><option value="0.75">Portrait · 3:4</option><option value="1.7777777777777777">Widescreen · 16:9</option><option value="0.5625">Tall · 9:16</option><option value="0.8">Portrait · 4:5</option><option value="1.25">Landscape · 5:4</option></select>
                 <label class="slider-label" for="crop-zoom">Zoom <output id="crop-zoom-value" for="crop-zoom">100%</output></label><input id="crop-zoom" type="range" min="100" max="300" value="100" step="1">
                 <label class="slider-label" for="crop-x">Horizontal position <output id="crop-x-value" for="crop-x">50%</output></label><input id="crop-x" type="range" min="0" max="100" value="50" step="1">
                 <label class="slider-label" for="crop-y">Vertical position <output id="crop-y-value" for="crop-y">50%</output></label><input id="crop-y" type="range" min="0" max="100" value="50" step="1">
                 <p class="field-help">The preview shows what you’ll keep. Position sliders move the crop when there is room; zoom in to tighten the framing.</p>
-              </details>
-              <details class="edit-section"><summary>Light &amp; color</summary>
+              </details></fieldset>
+              <fieldset data-tools="adjust"><details class="edit-section" open><summary>Light &amp; color</summary>
                 <label class="slider-label" for="brightness">Brightness <output id="brightness-value" for="brightness">0</output></label><input id="brightness" type="range" min="-100" max="100" value="0" step="1">
                 <label class="slider-label" for="contrast">Contrast <output id="contrast-value" for="contrast">0</output></label><input id="contrast" type="range" min="-100" max="100" value="0" step="1">
                 <label class="checkbox-label effect-option" for="grayscale"><input id="grayscale" type="checkbox"> Black &amp; white</label>
                 <button id="reset-adjustments" type="button" class="text-button">Reset light &amp; color</button>
-              </details>
-              <details class="edit-section"><summary>Text watermark</summary>
+              </details></fieldset>
+              <fieldset data-tools="watermark"><details class="edit-section" open><summary>Text watermark</summary>
                 <label for="watermark-text">Your text <span class="optional">optional</span></label><input id="watermark-text" type="text" maxlength="80" placeholder="Your name or brand" autocomplete="off">
                 <label for="watermark-position" class="spaced-label">Position</label><select id="watermark-position"><option value="bottom-right">Bottom right</option><option value="bottom-left">Bottom left</option><option value="center">Center</option><option value="top-left">Top left</option><option value="top-right">Top right</option></select>
                 <label for="watermark-color" class="color-label">Text color <input id="watermark-color" type="color" value="#ffffff"></label>
@@ -78,39 +104,39 @@
                 <label class="slider-label" for="watermark-opacity">Opacity <output id="watermark-opacity-value" for="watermark-opacity">65%</output></label><input id="watermark-opacity" type="range" min="0" max="100" value="65" step="1">
                 <p class="field-help">Text stays upright and scales with the image. Long text shrinks to fit. Leave blank for no watermark.</p>
                 <button id="remove-watermark" type="button" class="text-button spaced-label">Remove watermark</button>
-              </details>
-              <details class="edit-section"><summary>Transparency background</summary>
+              </details></fieldset>
+              <fieldset data-tools="background"><details class="edit-section" open><summary>Transparency background</summary>
                 <label class="checkbox-label effect-option" for="background-enabled"><input id="background-enabled" type="checkbox"> Fill transparent areas with a color</label>
                 <label for="background-color" class="color-label">Background color <input id="background-color" type="color" value="#ffffff" disabled></label>
                 <p class="field-help">Fills existing transparency only; it does not remove a photo’s background. When off, PNG and WebP keep transparency and JPG uses white.</p>
-              </details>
-              <button type="button" id="reset-edits" class="text-button">Reset photo edits</button>
+              </details></fieldset>
+              <div data-tools="crop rotate adjust watermark background"><button type="button" id="reset-edits" class="text-button">Reset this tool</button></div>
             </fieldset>
-          </div>
-          <p class="demo-line" id="demo-line">Just looking around? <button id="demo" class="text-button">Try a sample photo</button></p>
-          <div class="privacy-note"><span aria-hidden="true">⌁</span><p><strong>Your photos are yours.</strong> They’re processed right here in your browser and never sent to us.</p></div>
-        </div>
+<fieldset data-tools="compress exact">
 
-        <form id="settings-form" class="settings-panel">
-          <div class="step-heading"><span class="step">2</span><h3>Make it fit</h3></div>
-          <fieldset id="settings" disabled>
-            <label for="size-mode">What do you need?</label>
-            <select id="size-mode" aria-describedby="size-help"><option value="maximum">Stay under a size limit</option><option value="exact">Make smaller or bigger — exact KB (JPG)</option></select>
+            <select hidden id="size-mode" aria-describedby="size-help"><option value="maximum">Stay under a size limit</option><option value="exact">Make smaller or bigger — exact KB (JPG)</option></select>
             <p class="field-help" id="size-help">50 KB means at most 50 KB. A smaller photo can stay smaller.</p>
             <label for="target"><span id="target-label">Maximum file size</span> <span class="optional" id="target-optional">optional</span></label>
             <div class="input-unit"><input id="target" type="number" min="1" max="25000" step="1" value="100" placeholder="No limit" aria-describedby="size-help"><span>KB</span></div>
             <div class="presets" aria-label="File size presets"><button type="button" data-size="50" aria-pressed="false">50 KB</button><button type="button" data-size="100" aria-pressed="true">100 KB</button><button type="button" data-size="200" aria-pressed="false">200 KB</button><button type="button" data-size="500" aria-pressed="false">500 KB</button></div>
+</fieldset>
+            <fieldset data-tools="crop">
             <label for="dimension-preset">Quick size presets</label><select id="dimension-preset"><option value="">Custom dimensions</option><option value="1080x1080">Square · 1080 × 1080</option><option value="1080x1350">Portrait · 1080 × 1350</option><option value="1080x1920">Story · 1080 × 1920</option><option value="1280x720">Video thumbnail · 1280 × 720</option></select>
             <p class="field-help">Presets crop to fit without stretching. Check the framing in the preview. Small photos may be enlarged.</p>
+</fieldset>
+            <fieldset data-tools="resize crop">
             <div class="field-heading"><span>Dimensions <span class="optional">pixels</span></span><label class="checkbox-label" for="lock"><input id="lock" type="checkbox" checked> Keep ratio</label></div>
             <div class="dimension-row"><div><label for="width" class="small-label">Width</label><input id="width" type="number" min="1" max="4096" step="1" required></div><span aria-hidden="true">×</span><div><label for="height" class="small-label">Height</label><input id="height" type="number" min="1" max="4096" step="1" required></div></div>
             <div class="presets scale-presets" aria-label="Resize relative to current crop"><button type="button" data-scale="0.5">50%</button><button type="button" data-scale="1">100%</button><button type="button" data-scale="2">200%</button></div>
             <p class="field-help">Percentages use the current crop’s original pixels. Enlarging adds pixels, not extra detail. Up to 4,096 px per side.</p>
-            <label for="format">Save as</label><select id="format"><option value="image/jpeg">JPG — great for photos</option><option value="image/webp">WebP — smaller modern images</option><option value="image/png">PNG — lossless, supports transparency</option></select>
+</fieldset>
+                        <label for="format">Save as</label><select id="format"><option value="image/jpeg">JPG — great for photos</option><option value="image/webp">WebP — smaller modern images</option><option value="image/png">PNG — lossless, supports transparency</option></select>
             <p class="field-help" id="format-help">Transparent areas become white in JPG.</p>
             <label for="output-name">Download filename <span class="optional">optional</span></label><input id="output-name" type="text" maxlength="100" placeholder="Use original name" autocomplete="off" aria-describedby="download-name-preview"><p id="download-name-preview" class="field-help">The extension follows your selected format.</p>
+<fieldset data-tools="compress exact">
             <label class="checkbox-label resize-option" for="auto-resize"><input id="auto-resize" type="checkbox"> Allow smaller dimensions to meet the size limit</label>
-            <button type="submit" id="process" class="button primary process-button">Prepare my photo <span aria-hidden="true">→</span></button>
+</fieldset>
+                        <button type="submit" id="process" class="button primary process-button">Prepare my photo <span aria-hidden="true">→</span></button>
             <p class="settings-footnote">Choose a photo to get started.</p>
           </fieldset>
         </form>
@@ -118,12 +144,12 @@
       <p id="status" role="status" aria-live="polite" hidden></p>
       <section id="result" class="result" aria-labelledby="result-heading" hidden>
         <div class="result-preview"><img id="result-image" alt="Processed photo preview"></div>
-        <div class="result-content"><span class="tiny-label">YOUR PREPARED PHOTO</span><h3 id="result-heading">Ready for the next step.</h3><p id="result-summary"></p><div id="result-checks" class="result-checks"></div><p id="result-warning" hidden></p><p id="size-note" class="field-help" hidden></p><a id="download" class="button primary" download>Download photo <span aria-hidden="true">↓</span></a><p class="field-help">Check the preview before submitting your application.</p></div>
+        <div class="result-content"><span class="tiny-label">YOUR PREPARED PHOTO</span><h3 id="result-heading">Ready for the next step.</h3><p id="result-summary"></p><div id="result-checks" class="result-checks"></div><p id="result-warning" hidden></p><p id="size-note" class="field-help" hidden></p><a id="download" class="button primary" download>Download photo <span aria-hidden="true">↓</span></a><p class="field-help">Check the preview before using your photo.</p></div>
       </section>
     </section>
 
-    <section id="batch-tool" class="workspace batch-tool wrap" aria-labelledby="batch-heading">
-      <div class="workspace-heading"><div><span class="tiny-label">MORE PHOTOS. LESS REPETITION.</span><h2 id="batch-heading">Compress a whole batch</h2></div><span class="local-badge">Private &amp; free</span></div>
+    <section id="batch-tool" class="workspace batch-tool wrap" aria-labelledby="batch-heading" hidden>
+      <div class="workspace-heading"><div><span class="tiny-label">MORE PHOTOS. LESS REPETITION.</span><h1 id="batch-heading" tabindex="-1">Batch compressor</h1></div><span class="local-badge">Private &amp; free</span></div>
       <div class="batch-body">
         <p>Resize, compress, or convert up to 20 photos together. Download them individually or in one ZIP.</p>
         <input id="batch-input" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden>
@@ -136,7 +162,7 @@
               <div><label for="batch-edge">Longest side (px)</label><input id="batch-edge" type="number" min="1" max="4096" step="1" value="1920" placeholder="Up to 4,096"></div>
               <div><label for="batch-format">Save every photo as</label><select id="batch-format"><option value="image/jpeg">JPG</option><option value="image/webp">WebP</option><option value="image/png">PNG</option></select></div>
             </div>
-            <p class="field-help">Each photo keeps its ratio and is never enlarged. JPG turns transparency white. Single-photo edits above do not apply here. Leave the size limit blank to convert without a KB target.</p>
+            <p class="field-help">Each photo keeps its ratio and is never enlarged. JPG turns transparency white. Each photo uses these batch settings. Leave the size limit blank to convert without a KB target.</p>
             <label class="checkbox-label resize-option" for="batch-resize"><input id="batch-resize" type="checkbox" checked> Allow further resizing to meet the size limit</label>
             <button id="batch-process" type="submit" class="button primary" disabled>Compress batch →</button>
           </fieldset>
@@ -150,9 +176,8 @@
       </div>
     </section>
 
-    <section id="how-it-works" class="how-section wrap"><div class="section-intro"><span class="tiny-label">FROM “FILE TOO LARGE” TO DONE</span><h2>Three steps. Zero headaches.</h2></div><div class="how-grid"><article><span class="how-number">01</span><h3>Pick your photo</h3><p>A portrait, a signature, or a scan. Choose a JPG, PNG, or WebP from your device.</p></article><article><span class="how-number">02</span><h3>Set the requirements</h3><p>Enter the size and dimensions your form asks for. We’ll do the resizing and compression.</p></article><article><span class="how-number">03</span><h3>Download and carry on</h3><p>Check your preview, save the new file, and get back to what you were doing.</p></article></div></section>
-    <section id="questions" class="faq-section wrap"><div><span class="tiny-label">GOOD TO KNOW</span><h2>A little clarity.</h2><p>Small answers to common questions.</p></div><div class="faq-list"><details><summary>Is it really free?</summary><p>Yes. Every feature here is free to use, with no account, subscription, or forced watermark. Add your own text watermark only if you choose.</p></details><details><summary>Where do my photos go?</summary><p>They stay in your browser. The tool doesn’t upload or store your photos on a server. Download any result you want to keep before closing or refreshing the page.</p></details><details><summary>How do I crop or adjust a photo?</summary><p>Choose one photo, then use Crop &amp; frame to pick a shape, zoom in, and move the framing. Open Light &amp; color to change brightness or contrast, or switch to black &amp; white. Quick size presets set the crop and output dimensions together. Check the preview, then select Prepare my photo to create your download. These edits apply to the single-photo tool.</p></details><details><summary>Can I add my name or choose a background?</summary><p>Open Text watermark to add a name or brand, then choose its position, color, size, and opacity. Transparency background fills transparent pixels with a color; it does not remove an existing background. These controls apply to one photo at a time. You can also enter a download filename, and the tool adds the correct extension.</p></details><details><summary>Can I make a small file bigger?</summary><p>Yes. Choose “Make smaller or bigger — exact KB (JPG)” and enter the size you need, such as 50 KB. The tool saves a JPG at that size, adding non-image data if needed. This increases the file size without adding detail or improving quality. To change the photo’s dimensions instead, use Width and Height.</p></details><details><summary>Will it always reach my target size?</summary><p>Exact mode saves a JPG at your chosen size when the image can fit within that target. Very small targets may need smaller dimensions. Maximum mode only keeps the result under a limit, so a smaller file can stay smaller. We’ll clearly show when a target cannot be met. Here, 1 KB means 1,000 bytes. Other websites may change file size if they reprocess the image.</p></details><details><summary>Can I use this for an application form?</summary><p>Yes. Follow the form’s own format, dimension, and size requirements. This tool can resize and compress a photo; it doesn’t check official photo rules, remove backgrounds, or guarantee acceptance.</p></details></div></section>
+    <noscript><p class="wrap">Enable JavaScript to open these tools. Photo processing happens in your browser.</p></noscript>
   </main>
-  <footer class="wrap"><a class="brand" href="./"><span class="brand-icon" aria-hidden="true">♥</span><span class="brand-name"><small>I Love</small><strong>Free Compressor</strong></span></a><p>A little tool for getting on with life.</p><span>Made to be useful. Free to use.</span></footer>
+  <footer class="wrap"><a class="brand" href="#/"><span class="brand-icon" aria-hidden="true">♥</span><span class="brand-name"><small>I Love</small><strong>Free Compressor</strong></span></a><p>A little tool for getting on with life.</p><span>Made to be useful. Free to use.</span></footer>
 </body>
 </html>

@@ -8,6 +8,14 @@ Source code: https://github.com/KATHIRVELM387/i-love-free-compressor
 
 A free, mobile-friendly photo resizing and compression tool. All photo processing happens in the browser. No paid APIs, backend, database, accounts, uploads, analytics, external fonts, or runtime packages.
 
+## Choose a tool
+
+The homepage shows ten tool cards. Selecting a card opens a dedicated view with only the controls needed for that task: compression, exact KB, resizing, cropping/presets, rotation/flipping, format conversion, light/color, watermarks, transparency backgrounds, or batches.
+
+Use **All tools** to return to the menu. Browser Back/Forward and direct links such as `https://ilovefreecompressor.vercel.app/#/crop` work on Vercel and GitHub Pages without server rewrites. Unknown tool links return to the menu. These are views within the static app, not separately indexed pages.
+
+Switching tools retains the original uploaded photo and starts fresh settings, so hidden adjustments and size limits cannot affect another tool. Download and reopen a result to use it as the starting photo for another tool. Reloading the page clears photos from memory. Leaving a running batch stops it after the current photo.
+
 ## Run locally
 
 From this folder, run:
@@ -32,7 +40,7 @@ Open http://localhost:4173. Python 3 is needed only for the local server. Altern
 - Optional background color for existing transparent pixels. Turning it off restores transparency for PNG/WebP; JPG defaults to white. This does not remove an existing photo background.
 - Custom download filenames with an automatic format extension. Renaming a prepared result does not reprocess the image. Names are normalized to remove path characters; a new photo clears the custom name.
 - Resize to 50%, 100%, or 200% of the current crop's original pixels, keeping its ratio and browser dimension limits. Enlargement does not restore missing detail.
-- Batch resize, compression, and format conversion for up to 20 photos (25 MB each, 100 MB total). Each photo preserves its ratio and is never enlarged; individual controls above the batch section do not apply to a batch.
+- Batch resize, compression, and format conversion for up to 20 photos (25 MB each, 100 MB total). Each photo preserves its ratio and is never enlarged; single-photo tool settings do not apply to a batch.
 - Individual batch downloads and a ZIP download with unique Unicode filenames. Corrupt files are skipped with an explanation; outputs above the requested size are visibly marked and included in the ZIP. Stop processing after the current photo and keep completed results.
 - JPG, PNG and WebP export; PNG and WebP preserve transparency unless a background color is enabled, and JPG uses white by default behind transparent pixels.
 - Quality search for JPG/WebP. Optional dimension reduction when quality alone cannot meet a limit.
@@ -42,7 +50,7 @@ Open http://localhost:4173. Python 3 is needed only for the local server. Altern
 
 The app never claims success for an output above the target. Exact dimensions take priority unless the user enables dimension reduction. PNG is lossless, so encoding-quality adjustments do not reduce PNG file size. No guarantee of official form acceptance. PDF conversion and background removal are not included.
 
-To make a 25 KB file 50 KB, select **Make smaller or bigger — exact KB (JPG)**, enter **50**, and prepare the photo. To make a larger file smaller, use the same mode with a smaller target or use the maximum-size mode. If the encoded image still exceeds the target at minimum quality, the result is explicitly marked as not meeting the target; optional dimension reduction can help.
+To make a 25 KB file 50 KB, select **Exact file size** from the menu, enter **50**, and prepare the photo. To make a larger file smaller, use the same mode with a smaller target or use the maximum-size mode. If the encoded image still exceeds the target at minimum quality, the result is explicitly marked as not meeting the target; optional dimension reduction can help.
 
 Exact JPG output uses the highest quality found within the target, then adds valid JPEG comment segments and marker fill bytes before the end-of-image marker when needed. Padding preserves the encoded pixels and does not improve quality. The UI discloses when non-image data is added. Some receiving sites re-encode images or strip metadata, so the size can change after uploading elsewhere. Format reference: https://www.w3.org/Graphics/JPEG/itu-t81.pdf (marker fill bytes and COM segments).
 

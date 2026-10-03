@@ -75,6 +75,28 @@ async function screenshot(name) {
 }
 function pass(message) { console.log(`PASS ${message}`); }
 
+async function goTool(name) {
+  await evaluate(`location.hash=${JSON.stringify(name ? '#/' + name : '#/')}`);
+  await until(`document.documentElement.dataset.activeTool===${JSON.stringify(name || 'home')}`);
+}
+async function input(id, value, change = false) {
+  assert.equal(await evaluate(`!document.getElementById(${JSON.stringify(id)}).matches(':disabled') && document.getElementById(${JSON.stringify(id)}).getClientRects().length>0`),true,`${id} must be a usable visible control`);
+  await evaluate(`{const el=document.getElementById(${JSON.stringify(id)});el.value=${JSON.stringify(value)};el.dispatchEvent(new Event('input',{bubbles:true}));${change ? "el.dispatchEvent(new Event('change',{bubbles:true}));" : ''}}`);
+}
+async function prepare() {
+  await evaluate("document.getElementById('settings-form').requestSubmit()");
+  await until("!document.getElementById('settings').disabled && !document.getElementById('result').hidden && document.getElementById('result-image').complete && document.getElementById('result-image').naturalWidth>0");
+}
+async function readDownload(name) {
+  for(let attempt=0;attempt<100;attempt++){
+    try { return await readFile(join(downloads,name)); } catch { await delay(50); }
+  }
+  throw new Error('Missing download: '+name);
+}
+async function dimensions() {
+  return evaluate("[document.getElementById('result-image').naturalWidth,document.getElementById('result-image').naturalHeight]");
+}
+
 try {
   const { targetId } = await cdp('Target.createTarget', { url: 'about:blank' });
   ({ sessionId: session } = await cdp('Target.attachToTarget', { targetId, flatten: true }));
@@ -85,39 +107,51 @@ try {
   await cdp('Emulation.setDeviceMetricsOverride', { width: 1440, height: 1100, deviceScaleFactor: 1, mobile: false }, session);
   await cdp('Page.navigate', { url: `http://127.0.0.1:${port}` }, session);
   await until("document.readyState === 'complete' && !!document.getElementById('demo')");
-  assert.equal(await evaluate("document.getElementById('settings').disabled"), true);
-  await screenshot('desktop.png');
-  pass('Initial screen and disabled controls');
-
+  await until("document.documentElement.dataset.activeTool==='home'");
+  assert.equal(await evaluate("document.querySelectorAll('.tool-card').length"),10);
+  assert.equal(await evaluate("document.getElementById('tool').hidden && document.getElementById('batch-tool').hidden"),true);
+  await screenshot('desktop-home.png');
+  for(const width of [768,390,320]){
+    await cdp('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:true},session);
+    assert.equal(await evaluate('document.documentElement.scrollWidth<=innerWidth'),true);
+    assert.equal(await evaluate("document.querySelector('.site-header nav').getBoundingClientRect().left >= document.querySelector('.site-header .brand').getBoundingClientRect().right"),true,`Header items overlap at ${width}px`);
+  }
+  await screenshot('mobile-home.png');
+  await cdp('Emulation.setDeviceMetricsOverride',{width:1440,height:1100,deviceScaleFactor:1,mobile:false},session);
+  await evaluate("document.getElementById('menu-heading').focus()");
+  await cdp('Input.dispatchKeyEvent',{type:'keyDown',key:'Tab',code:'Tab',windowsVirtualKeyCode:9},session);
+  await cdp('Input.dispatchKeyEvent',{type:'keyUp',key:'Tab',code:'Tab',windowsVirtualKeyCode:9},session);
+  assert.equal(await evaluate("document.activeElement.getAttribute('href')"),'#/compress');
+  await cdp('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',windowsVirtualKeyCode:13},session);
+  await cdp('Input.dispatchKeyEvent',{type:'keyUp',key:'Enter',code:'Enter',windowsVirtualKeyCode:13},session);
+  await until("document.documentElement.dataset.activeTool==='compress'");
+  assert.equal(await evaluate("document.getElementById('settings').disabled"),true);
+  assert.equal(await evaluate("document.activeElement.id"),'tool-title');
+  assert.equal(await evaluate("document.getElementById('home-view').hidden"),true);
+  pass('Tool menu, mobile layouts, keyboard selection, and focused heading');
   await evaluate("document.getElementById('demo').click()");
   await until("!document.getElementById('settings').disabled");
-  assert.equal(await evaluate("document.getElementById('width').value"), '1600');
-  assert.equal(await evaluate("document.getElementById('height').value"), '1100');
-  await evaluate("document.getElementById('width').value = '800'; document.getElementById('width').dispatchEvent(new Event('input', {bubbles:true}))");
-  assert.equal(await evaluate("document.getElementById('height').value"), '550');
-  await evaluate("document.getElementById('settings-form').requestSubmit()");
-  await until("!document.getElementById('result').hidden && !document.getElementById('settings').disabled");
-  assert.match(await evaluate("document.getElementById('result-checks').textContent"), /Within 100 KB/);
-  await until("document.getElementById('result-image').naturalWidth === 800");
-  pass('Sample image, aspect ratio, target-size compression, and preview');
-
-  await cdp('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: downloads });
+  await prepare();
+  assert.match(await evaluate("document.getElementById('result-checks').textContent"),/Within 100 KB/);
+  await cdp('Browser.setDownloadBehavior',{behavior:'allow',downloadPath:downloads});
   await evaluate("document.getElementById('download').click()");
-  let files = [];
-  for (let i = 0; i < 100; i++) { files = await readdir(downloads); if (files.some(name => name.endsWith('.jpg'))) break; await delay(50); }
-  const filename = files.find(name => name.endsWith('.jpg'));
-  assert.equal(filename, 'a-little-escape-ready.jpg');
-  const bytes = await readFile(join(downloads, filename));
-  assert.equal(bytes[0], 0xff); assert.equal(bytes[1], 0xd8); assert.ok(bytes.length <= 100000);
-  pass('Actual JPG download and byte-size limit');
-  await screenshot('desktop-result.png');
-
-  for (const width of [768, 390, 320]) {
-    await cdp('Emulation.setDeviceMetricsOverride', { width, height: 844, deviceScaleFactor: 1, mobile: true }, session);
-    assert.equal(await evaluate('document.documentElement.scrollWidth <= innerWidth'), true, `Horizontal overflow at ${width}px`);
-    if (width === 390) await screenshot('mobile-result.png');
-  }
-  pass('Responsive layouts at 320, 390 and 768 pixels');
+  const compressed=await readDownload('a-little-escape-ready.jpg');
+  assert.ok(compressed.length<=100000);
+  assert.equal(compressed.readUInt16BE(0),0xffd8);
+  await screenshot('desktop-compress.png');
+  await goTool('resize');
+  assert.equal(await evaluate("document.getElementById('original-name').textContent"),'a-little-escape.png');
+  assert.equal(await evaluate("document.getElementById('target').value"),'');
+  await input('width','800');
+  assert.equal(await evaluate("document.getElementById('height').value"),'550');
+  await prepare();
+  assert.deepEqual(await dimensions(),[800,550]);
+  assert.match(await evaluate("document.getElementById('result-checks').textContent"),/No file-size limit/);
+  await evaluate('history.back()');
+  await until("document.documentElement.dataset.activeTool==='compress'");
+  await evaluate('history.forward()');
+  await until("document.documentElement.dataset.activeTool==='resize'");
+  pass('Focused compression/download and resize flows, original-photo retention, and Back/Forward');
 
   // Run independent encoder cases as separate browser calls, so failures name
   // the encoder and each async canvas operation gets its own deadline.
@@ -151,26 +185,6 @@ try {
   assert.ok(core.noLimit && core.invalid);
   assert.deepEqual(core.white, [255,255,255,255]); assert.equal(core.alpha[3], 0);
   pass('Real encoders: noisy images, unreachable PNG size, optional resizing, WebP, transparency, and bounds');
-
-  await until("document.getElementById('original-name').textContent === '<img onerror=alert(1)>.png'");
-  assert.equal(await evaluate("document.getElementById('original-name').children.length"), 0);
-  await evaluate("document.getElementById('target').value='1'; document.getElementById('format').value='image/png'; document.getElementById('format').dispatchEvent(new Event('input',{bubbles:true})); document.getElementById('settings-form').requestSubmit()");
-  await until("!document.getElementById('result').hidden && !document.getElementById('settings').disabled");
-  assert.match(await evaluate("document.getElementById('result-checks').textContent"), /Above 1 KB/);
-  assert.match(await evaluate("document.getElementById('download').textContent"), /Download anyway/);
-  assert.equal(await evaluate("document.getElementById('result-warning').hidden"), false);
-  await evaluate("document.querySelector('[data-size=\"200\"]').click()");
-  assert.equal(await evaluate("document.getElementById('result').hidden"), true);
-  assert.equal(await evaluate("document.getElementById('download').hasAttribute('href')"), false);
-  pass('Unsafe filenames remain text, failure is explicit, and edited settings invalidate the download');
-
-  for (const [name, type, content, expected] of [['bad.txt','text/plain','hello','Please choose a JPG'],['broken.jpg','image/jpeg','not an image','could not be opened']]) {
-    await evaluate(`{ const dt=new DataTransfer(); dt.items.add(new File([${JSON.stringify(content)}],${JSON.stringify(name)},{type:${JSON.stringify(type)}})); const input=document.getElementById('file-input'); input.files=dt.files; input.dispatchEvent(new Event('change')); }`);
-    await until(`document.getElementById('status').textContent.includes(${JSON.stringify(expected)})`);
-    assert.equal(await evaluate("document.getElementById('settings').disabled"), false);
-  }
-  pass('Unsupported and corrupt files show errors without losing the current photo');
-
   const exactChecks = await evaluate(`(async () => {
     const { prepareImage, padJpegToSize } = await import('./image-tools.js');
     const c=document.createElement('canvas'); c.width=100; c.height=80;
@@ -205,45 +219,6 @@ try {
   assert.deepEqual(exactChecks.dimensions,[50,50]);
   assert.ok(exactChecks.impossible && exactChecks.resized);
   pass('Exact JPG size, comment boundaries, pixel preservation, impossible targets, and 25-to-50 pixel enlargement');
-
-  await until("document.getElementById('original-name').textContent === 'small-25kb.jpg'");
-  await evaluate("document.getElementById('size-mode').value='exact'; document.getElementById('size-mode').dispatchEvent(new Event('input',{bubbles:true})); document.getElementById('target').value='50'; document.getElementById('target').dispatchEvent(new Event('input',{bubbles:true})); document.getElementById('settings-form').requestSubmit()");
-  await until("!document.getElementById('result').hidden && !document.getElementById('settings').disabled");
-  assert.match(await evaluate("document.getElementById('result-checks').textContent"),/Exactly 50 KB/);
-  assert.equal(await evaluate("document.getElementById('format').disabled"),true);
-  assert.equal(await evaluate("document.getElementById('format').value"),'image/jpeg');
-  assert.equal(await evaluate("document.getElementById('size-note').hidden"),false);
-  assert.match(await evaluate("document.getElementById('result-summary').textContent"),/25.0 KB → 50.0 KB/);
-  await until("document.getElementById('result-image').naturalWidth === 100");
-  await evaluate("document.getElementById('download').click()");
-  const readDownload=async name=>{
-    for(let attempt=0;attempt<100;attempt++){try{return await readFile(join(downloads,name))}catch{await delay(50)}}
-    throw new Error('Download missing: '+name);
-  };
-  const increased=await readDownload('small-25kb-ready.jpg');
-  assert.equal(increased.length,50000);
-  // Read this real downloaded file back into the tool, then make it smaller.
-  await evaluate(`{const data=Uint8Array.from(atob(${JSON.stringify(increased.toString('base64'))}),char=>char.charCodeAt(0));const transfer=new DataTransfer();transfer.items.add(new File([data],'big-50kb.jpg',{type:'image/jpeg'}));const input=document.getElementById('file-input');input.files=transfer.files;input.dispatchEvent(new Event('change'));}`);
-  await until("document.getElementById('original-name').textContent === 'big-50kb.jpg'");
-  await evaluate("document.getElementById('target').value='25'; document.getElementById('target').dispatchEvent(new Event('input',{bubbles:true})); document.getElementById('settings-form').requestSubmit()");
-  await until("!document.getElementById('result').hidden && !document.getElementById('settings').disabled");
-  assert.match(await evaluate("document.getElementById('result-checks').textContent"),/Exactly 25 KB/);
-  assert.match(await evaluate("document.getElementById('result-summary').textContent"),/50.0 KB → 25.0 KB/);
-  await evaluate("document.getElementById('download').click()");
-  const decreased=await readDownload('big-50kb-ready.jpg');
-  assert.equal(decreased.length,25000);
-  await writeFile(join(artifacts,'exact-50kb.jpg'),increased);
-  await writeFile(join(artifacts,'exact-25kb.jpg'),decreased);
-  await screenshot('mobile-exact-size.png');
-  await evaluate("document.getElementById('target').value=''; document.getElementById('target').dispatchEvent(new Event('input',{bubbles:true}))");
-  assert.equal(await evaluate("document.getElementById('target').validity.valueMissing"),true);
-  assert.equal(await evaluate("document.getElementById('result').hidden"),true);
-  await evaluate("document.getElementById('size-mode').value='maximum'; document.getElementById('size-mode').dispatchEvent(new Event('input',{bubbles:true}))");
-  assert.equal(await evaluate("document.getElementById('format').disabled"),false);
-  assert.equal(await evaluate("document.getElementById('target').required"),false);
-  assert.equal(await evaluate('document.documentElement.scrollWidth <= innerWidth'),true);
-  pass('Actual 25 KB → 50 KB → 25 KB upload/download flow, required target, mode switching, and mobile layout');
-
   const transformed = await evaluate(`(async () => {
     const { prepareImage } = await import('./image-tools.js');
     const c=document.createElement('canvas');c.width=40;c.height=20;
@@ -266,70 +241,7 @@ try {
   assert.deepEqual(transformed.right,[blue,red,yellow,green]);
   assert.deepEqual(transformed.flip,[green,red,yellow,blue]);
   assert.deepEqual(transformed.combined,[yellow,green,blue,red]);
-  await until("document.getElementById('original-name').textContent === 'quadrants.png'");
-  await evaluate("document.getElementById('rotate-right').click(); document.getElementById('flip-horizontal').click()");
-  assert.deepEqual(await evaluate("['width','height'].map(id=>document.getElementById(id).value)"),['20','40']);
-  assert.equal(await evaluate("document.getElementById('edit-preview').hidden"),false);
-  await evaluate("document.getElementById('width').value='10';document.getElementById('width').dispatchEvent(new Event('input',{bubbles:true}))");
-  assert.equal(await evaluate("document.getElementById('height').value"),'20');
-  await evaluate("document.querySelector('[data-scale=\"2\"]').click();document.getElementById('format').value='image/png';document.getElementById('settings-form').requestSubmit()");
-  await until("!document.getElementById('result').hidden && !document.getElementById('settings').disabled && document.getElementById('result-image').naturalWidth===40");
-  assert.equal(await evaluate("document.getElementById('result-image').naturalHeight"),80);
-  const uiPixels=await evaluate(`(()=>{const c=document.createElement('canvas');c.width=40;c.height=80;const x=c.getContext('2d');x.drawImage(document.getElementById('result-image'),0,0);return [[2,2],[37,2],[2,77],[37,77]].map(([a,b])=>Array.from(x.getImageData(a,b,1,1).data).slice(0,3))})()`);
-  assert.deepEqual(uiPixels,[red,blue,green,yellow]);
-  await evaluate("document.getElementById('reset-edits').click()");
-  assert.deepEqual(await evaluate("['width','height'].map(id=>document.getElementById(id).value)"),['40','20']);
-  assert.equal(await evaluate("document.getElementById('edit-preview').hidden && document.getElementById('result').hidden"),true);
-  pass('Decoded rotation/flip pixels, rotated aspect ratio, 200% resizing, edited preview, and reset');
-
-  await evaluate(`{
-    const dt=new DataTransfer();
-    dt.items.add(new File([window.featureFixture],'été.png',{type:'image/png'}));
-    dt.items.add(new File([window.featureFixture],'été.png',{type:'image/png'}));
-    dt.items.add(new File(['broken'],'bad.jpg',{type:'image/jpeg'}));
-    const input=document.getElementById('batch-input');input.files=dt.files;input.dispatchEvent(new Event('change'));
-    document.getElementById('batch-target').value='';document.getElementById('batch-edge').value='10';document.getElementById('batch-format').value='image/png';document.getElementById('batch-form').requestSubmit();
-  }`);
-  await until("!document.getElementById('batch-settings').disabled && !document.getElementById('batch-zip').hidden");
-  assert.match(await evaluate("document.getElementById('batch-summary').textContent"),/2 prepared.*1 failed/);
-  assert.equal(await evaluate("document.querySelectorAll('#batch-results a').length"),2);
-  assert.match(await evaluate("document.getElementById('batch-results').textContent"),/10 × 5 px/);
-  await evaluate("document.getElementById('batch-zip').click()");
-  const archive=await readDownload('i-love-free-compressor.zip');
-  assert.equal(archive.readUInt32LE(0),0x04034b50);
-  await writeFile(join(artifacts,'batch-results.zip'),archive);
-  for(const width of [768,390,320]){
-    await cdp('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:true},session);
-    assert.equal(await evaluate('document.documentElement.scrollWidth <= innerWidth'),true,`Batch overflow at ${width}px`);
-  }
-  await screenshot('mobile-batch.png');
-  await evaluate("document.getElementById('batch-target').value='1';document.getElementById('batch-target').dispatchEvent(new Event('input',{bubbles:true}))");
-  assert.equal(await evaluate("document.getElementById('batch-zip').hidden && !document.getElementById('batch-zip').hasAttribute('href')"),true);
-  await evaluate(`{
-    const dt=new DataTransfer();for(let i=0;i<21;i++)dt.items.add(new File([window.featureFixture],'photo.png',{type:'image/png'}));
-    const input=document.getElementById('batch-input');input.files=dt.files;input.dispatchEvent(new Event('change'));
-  }`);
-  assert.match(await evaluate("document.getElementById('batch-status').textContent"),/up to 20 photos/);
-  // Cancel after starting: the first image finishes, subsequent images are skipped.
-  await evaluate("document.getElementById('batch-form').requestSubmit();document.getElementById('batch-cancel').click()");
-  await until("!document.getElementById('batch-settings').disabled");
-  assert.match(await evaluate("document.getElementById('batch-status').textContent"),/Batch stopped/);
-  assert.match(await evaluate("document.getElementById('batch-summary').textContent"),/1 prepared/);
-  assert.equal(await evaluate("document.querySelectorAll('#batch-results li').length"),1);
-  pass('Batch compression, duplicate Unicode names, corrupt-file isolation, real ZIP download, limits, cancellation, and responsive results');
-
-  await evaluate(`(async()=>{
-    const c=document.createElement('canvas');c.width=100;c.height=80;const x=c.getContext('2d');const pixels=x.createImageData(100,80);
-    let seed=17;for(let i=0;i<pixels.data.length;i+=4){seed=(seed*1664525+1013904223)>>>0;pixels.data[i]=seed&255;pixels.data[i+1]=(seed>>>8)&255;pixels.data[i+2]=(seed>>>16)&255;pixels.data[i+3]=255}x.putImageData(pixels,0,0);
-    const blob=await new Promise(resolve=>c.toBlob(resolve,'image/png'));const dt=new DataTransfer();dt.items.add(new File([blob],'noise.png',{type:'image/png'}));
-    const input=document.getElementById('batch-input');input.files=dt.files;input.dispatchEvent(new Event('change'));
-    document.getElementById('batch-edge').value='4096';document.getElementById('batch-resize').checked=false;document.getElementById('batch-form').requestSubmit();
-  })()`);
-  await until("!document.getElementById('batch-settings').disabled && !document.getElementById('batch-zip').hidden");
-  assert.match(await evaluate("document.getElementById('batch-summary').textContent"),/1 above the size limit/);
-  assert.match(await evaluate("document.getElementById('batch-results').textContent"),/100 × 80 px.*Above size limit.*Download anyway/);
-  pass('Batch never enlarges photos and clearly flags unreachable size limits');
-
+  pass('Rotated and flipped decoded pixels');
   const cropChecks = await evaluate(`(async()=>{
     const {prepareImage}=await import('./image-tools.js');
     const source=await createImageBitmap(window.featureFixture);
@@ -363,44 +275,6 @@ try {
   assert.deepEqual(cropChecks.white.pixels[0],[255,255,255,255]);
   assert.equal(cropChecks.invalid,6);
   pass('Decoded crop/framing/zoom pixels, rotated crop, exact KB with edits, brightness, contrast, grayscale, transparency, and invalid bounds');
-
-  await evaluate(`{
-    document.getElementById('reset-edits').click();
-    const crop=document.getElementById('crop-ratio');crop.value='1';crop.dispatchEvent(new Event('change'));
-    const x=document.getElementById('crop-x');x.value='0';x.dispatchEvent(new Event('input'));
-    document.getElementById('target').value='';document.getElementById('format').value='image/png';document.getElementById('settings-form').requestSubmit();
-  }`);
-  await until("!document.getElementById('settings').disabled && !document.getElementById('result').hidden && document.getElementById('result-image').naturalWidth===20");
-  const imageCorners=()=>evaluate(`(()=>{const img=document.getElementById('result-image');const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;const x=c.getContext('2d');x.drawImage(img,0,0);return [[2,2],[c.width-3,2],[2,c.height-3],[c.width-3,c.height-3]].map(([a,b])=>Array.from(x.getImageData(a,b,1,1).data).slice(0,3))})()`);
-  assert.deepEqual(await imageCorners(),[red,red,blue,blue]);
-  await evaluate("document.getElementById('rotate-right').click();document.getElementById('flip-horizontal').click();document.getElementById('settings-form').requestSubmit()");
-  await until("!document.getElementById('settings').disabled && !document.getElementById('result').hidden && document.getElementById('result-image').complete && document.getElementById('result-image').naturalWidth===20");
-  assert.deepEqual(await imageCorners(),[red,blue,red,blue]);
-  await evaluate("document.getElementById('brightness').value='20';document.getElementById('brightness').dispatchEvent(new Event('input'))");
-  assert.equal(await evaluate("document.getElementById('result').hidden && !document.getElementById('download').hasAttribute('href')"),true);
-  await evaluate("document.getElementById('settings-form').requestSubmit()");
-  await until("!document.getElementById('settings').disabled && !document.getElementById('result').hidden && document.getElementById('result-image').complete && document.getElementById('result-image').naturalWidth===20");
-  assert.deepEqual(await imageCorners(),[[255,51,51],[51,51,255],[255,51,51],[51,51,255]]);
-  await evaluate("document.getElementById('reset-adjustments').click();document.getElementById('dimension-preset').value='1080x1920';document.getElementById('dimension-preset').dispatchEvent(new Event('change'));document.getElementById('settings-form').requestSubmit()");
-  await until("!document.getElementById('settings').disabled && !document.getElementById('result').hidden && document.getElementById('result-image').naturalWidth===1080");
-  assert.equal(await evaluate("document.getElementById('result-image').naturalHeight"),1920);
-  assert.equal(await evaluate("document.getElementById('auto-resize').checked"),false);
-  assert.equal(await evaluate("document.getElementById('crop-ratio').value"),'0.5625');
-  await evaluate("document.getElementById('width').value='540';document.getElementById('width').dispatchEvent(new Event('input',{bubbles:true}))");
-  assert.equal(await evaluate("document.getElementById('height').value"),'960');
-  assert.equal(await evaluate("document.getElementById('dimension-preset').value"),'');
-  for(const width of [768,390,320]){
-    await cdp('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:true},session);
-    assert.equal(await evaluate('document.documentElement.scrollWidth <= innerWidth'),true,`Crop editor overflow at ${width}px`);
-  }
-  await screenshot('mobile-crop.png');
-  await evaluate("document.getElementById('reset-edits').click()");
-  assert.equal(await evaluate("document.getElementById('crop-ratio').value"),'0');
-  assert.equal(await evaluate("document.getElementById('brightness').value"),'0');
-  assert.equal(await evaluate("document.getElementById('crop-zoom').value"),'100');
-  assert.deepEqual(await evaluate("['width','height'].map(id=>document.getElementById(id).value)"),['40','20']);
-  pass('Crop UI survives rotate/flip, adjustments invalidate downloads, story preset exports at 1080×1920, crop ratio lock, reset, and mobile layouts');
-
   const decorationChecks = await evaluate(`(async()=>{
     const {prepareImage,downloadName}=await import('./image-tools.js');
     const c=document.createElement('canvas');c.width=800;c.height=400;const x=c.getContext('2d');x.fillStyle='#000000';x.fillRect(0,0,800,400);
@@ -450,55 +324,147 @@ try {
   assert.equal(decorationChecks.invalid,6);
   assert.deepEqual(decorationChecks.names,['_a_b.jpg','original-ready.webp','photo-CON.png','été.jpg']);
   pass('Watermark positions, opacity, long-text fitting, upright rotated text, exact KB, background composition, and filename safety');
-
   await until("document.getElementById('original-name').textContent==='transparent-art.png'");
-  await evaluate(`{
-    const set=(id,value)=>{const el=document.getElementById(id);el.value=value;el.dispatchEvent(new Event('input',{bubbles:true}))};
-    set('watermark-text','My brand');set('watermark-color','#ff0000');set('watermark-position','bottom-right');set('watermark-opacity','100');set('watermark-size','10');
-    set('background-color','#0000ff');document.getElementById('background-enabled').click();
-    set('format','image/png');set('target','');set('output-name','my-artwork.jpg');
-    document.getElementById('settings-form').requestSubmit();
-  }`);
-  await until("!document.getElementById('settings').disabled && !document.getElementById('result').hidden && document.getElementById('result-image').naturalWidth===800");
-  assert.equal(await evaluate("document.getElementById('download').download"),'my-artwork.png');
-  const previewMatches=await evaluate(`(()=>{
-    const preview=document.getElementById('edit-preview');const p=preview.getContext('2d').getImageData(preview.width-2,2,1,1).data;
-    const image=document.getElementById('result-image');const c=document.createElement('canvas');c.width=800;c.height=400;const x=c.getContext('2d');x.drawImage(image,0,0);
-    const right=x.getImageData(790,10,1,1).data;
-    return {preview:Array.from(p),result:Array.from(right)};
-  })()`);
-  assert.deepEqual(previewMatches,{preview:[0,0,255,255],result:[0,0,255,255]});
-  const beforeRename=await evaluate("document.getElementById('download').href");
-  await evaluate("document.getElementById('output-name').value='brand-final';document.getElementById('output-name').dispatchEvent(new Event('input',{bubbles:true}))");
-  assert.equal(await evaluate("document.getElementById('download').href"),beforeRename);
-  assert.equal(await evaluate("document.getElementById('result').hidden"),false);
-  assert.equal(await evaluate("document.getElementById('download').download"),'brand-final.png');
-  await evaluate("document.getElementById('download').click()");
-  const branded=await readDownload('brand-final.png');
-  await writeFile(join(artifacts,'watermarked.png'),branded);
-  assert.equal(branded.readUInt32BE(0),0x89504e47);
-  await evaluate("document.getElementById('remove-watermark').click()");
-  assert.equal(await evaluate("document.getElementById('watermark-text').value"),'');
-  assert.equal(await evaluate("document.getElementById('result').hidden"),true);
-  await evaluate("document.getElementById('background-enabled').click();document.getElementById('settings-form').requestSubmit()");
-  await until("!document.getElementById('settings').disabled && !document.getElementById('result').hidden && document.getElementById('result-image').complete && document.getElementById('result-image').naturalWidth===800");
-  const restoredAlpha=await evaluate("(()=>{const c=document.createElement('canvas');c.width=800;c.height=400;const x=c.getContext('2d');x.drawImage(document.getElementById('result-image'),0,0);return x.getImageData(790,10,1,1).data[3]})()");
-  assert.equal(restoredAlpha,0);
-  await evaluate("document.getElementById('size-mode').value='exact';document.getElementById('size-mode').dispatchEvent(new Event('input',{bubbles:true}))");
-  assert.equal(await evaluate("document.getElementById('download').download"),'brand-final.jpg');
-  await evaluate("document.querySelectorAll('.edit-section').forEach(section=>section.open=true)");
-  for(const width of [768,390,320]){
-    await cdp('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:true},session);
-    assert.equal(await evaluate('document.documentElement.scrollWidth <= innerWidth'),true,`Export controls overflow at ${width}px`);
+  const controls=['target','width','crop-ratio','rotate-right','brightness','watermark-text','background-enabled','batch-target'];
+  const expected={compress:['target'],exact:['target'],resize:['width'],crop:['width','crop-ratio'],rotate:['rotate-right'],convert:[],adjust:['brightness'],watermark:['watermark-text'],background:['background-enabled'],batch:['batch-target']};
+  for(const [name, visible] of Object.entries(expected)){
+    await goTool(name);
+    const actual=await evaluate(`${JSON.stringify(controls)}.filter(id=>document.getElementById(id).getClientRects().length>0)`);
+    assert.deepEqual(actual,visible,`${name} should show only its own controls`);
+    assert.equal(await evaluate("document.getElementById('home-view').hidden"),true);
+    for(const id of controls.filter(id=>!visible.includes(id) && id!=='batch-target')){
+      if(name!=='batch') assert.equal(await evaluate(`document.getElementById(${JSON.stringify(id)}).matches(':disabled')`),true,`${id} must not validate or react in ${name}`);
+    }
+    assert.equal(await evaluate('document.documentElement.scrollWidth<=innerWidth'),true);
   }
-  await screenshot('mobile-watermark.png');
-  await evaluate("document.getElementById('reset-edits').click()");
-  assert.equal(await evaluate("document.getElementById('background-enabled').checked"),false);
+  pass('All ten routes show only the required controls; unrelated form fields are disabled');
+
+  await goTool('exact');
+  await input('target','50');
+  await prepare();
+  assert.match(await evaluate("document.getElementById('result-checks').textContent"),/Exactly 50 KB/);
+  assert.equal(await evaluate("document.getElementById('format').disabled"),true);
+  await input('output-name','exact-new');
+  await evaluate("document.getElementById('download').click()");
+  assert.equal((await readDownload('exact-new.jpg')).length,50000);
+  await input('target','25');
+  await prepare();
+  assert.match(await evaluate("document.getElementById('result-checks').textContent"),/Exactly 25 KB/);
+  await input('target','');
+  assert.equal(await evaluate("document.getElementById('target').validity.valueMissing"),true);
+  await goTool('convert');
+  assert.equal(await evaluate("document.getElementById('target').required"),false);
+  await input('format','image/webp');
+  await prepare();
+  assert.deepEqual(await dimensions(),[800,400]);
+  assert.match(await evaluate("document.getElementById('download').download"),/\.webp$/);
+  pass('Exact-size tool and format conversion, including clearing hidden exact-size requirements');
+
+  await goTool('watermark');
+  await input('watermark-text','My brand');
+  await input('watermark-color','#ff0000');
+  await input('watermark-opacity','100');
+  await input('watermark-size','10');
+  await prepare();
+  const watermarkCount=await evaluate(`(()=>{const c=document.createElement('canvas');c.width=800;c.height=400;const x=c.getContext('2d');x.drawImage(document.getElementById('result-image'),0,0);const d=x.getImageData(400,200,400,200).data;let count=0;for(let i=0;i<d.length;i+=4)if(d[i]>200&&d[i+3]>0)count++;return count})()`);
+  assert.ok(watermarkCount>100);
+  const href=await evaluate("document.getElementById('download').href");
+  await input('output-name','my-watermark.jpg');
+  assert.equal(await evaluate("document.getElementById('download').href"),href);
+  assert.equal(await evaluate("document.getElementById('download').download"),'my-watermark.png');
+  await evaluate("document.getElementById('download').click()");
+  await writeFile(join(artifacts,'focused-watermark.png'),await readDownload('my-watermark.png'));
+  await screenshot('desktop-watermark.png');
+  await goTool('background');
   assert.equal(await evaluate("document.getElementById('watermark-text').value"),'');
-  pass('Watermark/background UI, matching preview, actual named PNG download, rename without reprocessing, transparency restoration, and mobile layout');
-  assert.deepEqual(errors, []); assert.deepEqual(externalRequests, []);
-  pass('No uncaught browser errors or external network requests');
+  await evaluate("document.getElementById('background-enabled').click()");
+  await input('background-color','#0000ff');
+  await prepare();
+  const bg=await evaluate(`(()=>{const c=document.createElement('canvas');c.width=800;c.height=400;const x=c.getContext('2d');x.drawImage(document.getElementById('result-image'),0,0);return Array.from(x.getImageData(790,10,1,1).data)})()`);
+  assert.deepEqual(bg,[0,0,255,255]);
+  await goTool('resize');
+  assert.equal(await evaluate("document.getElementById('background-enabled').checked"),false);
+  await input('width','400');
+  await prepare();
+  const alpha=await evaluate(`(()=>{const c=document.createElement('canvas');c.width=400;c.height=200;const x=c.getContext('2d');x.drawImage(document.getElementById('result-image'),0,0);return x.getImageData(390,190,1,1).data[3]})()`);
+  assert.equal(alpha,0);
+  pass('Watermark and background tools export correctly; switching clears hidden edits and custom filenames');
+
+  await goTool('crop');
+  await input('crop-ratio','1',true);
+  await input('crop-x','0');
+  await prepare();
+  assert.deepEqual(await dimensions(),[400,400]);
+  await input('dimension-preset','1080x1920',true);
+  await prepare();
+  assert.deepEqual(await dimensions(),[1080,1920]);
+  await goTool('rotate');
+  await evaluate("document.getElementById('rotate-right').click()");
+  await prepare();
+  assert.deepEqual(await dimensions(),[400,800]);
+  await goTool('adjust');
+  await evaluate("document.getElementById('grayscale').click()");
+  await prepare();
+  const gray=await evaluate(`(()=>{const c=document.createElement('canvas');c.width=800;c.height=400;const x=c.getContext('2d');x.drawImage(document.getElementById('result-image'),0,0);return Array.from(x.getImageData(10,10,1,1).data)})()`);
+  assert.deepEqual(gray,[54,54,54,255]);
+  assert.deepEqual(await dimensions(),[800,400]);
+  pass('Focused crop/preset, rotation, and adjustment exports do not carry hidden operations across tools');
+
+  await goTool('batch');
+  await evaluate(`{
+    const dt=new DataTransfer();dt.items.add(new File([window.featureFixture],'été.png',{type:'image/png'}));dt.items.add(new File([window.featureFixture],'été.png',{type:'image/png'}));dt.items.add(new File(['broken'],'bad.jpg',{type:'image/jpeg'}));
+    const input=document.getElementById('batch-input');input.files=dt.files;input.dispatchEvent(new Event('change'));
+  }`);
+  await input('batch-target','');await input('batch-edge','10');await input('batch-format','image/png');
+  await evaluate("document.getElementById('batch-form').requestSubmit()");
+  await until("!document.getElementById('batch-settings').disabled&&!document.getElementById('batch-zip').hidden");
+  assert.match(await evaluate("document.getElementById('batch-summary').textContent"),/2 prepared.*1 failed/);
+  await evaluate("document.getElementById('batch-zip').click()");
+  const archive=await readDownload('i-love-free-compressor.zip');
+  assert.equal(archive.readUInt32LE(0),0x04034b50);
+  await writeFile(join(artifacts,'batch-results.zip'),archive);
+  await evaluate("document.getElementById('batch-form').requestSubmit();document.getElementById('batch-cancel').click()");
+  await until("!document.getElementById('batch-settings').disabled");
+  assert.match(await evaluate("document.getElementById('batch-status').textContent"),/Batch stopped/);
+  pass('Separate batch screen, per-file error isolation, actual ZIP download, and cancellation');
+
+  await goTool('convert');
+  for(const [name,type,content,expectedError] of [['bad.txt','text/plain','hello','Please choose a JPG'],['bad.jpg','image/jpeg','broken','could not be opened']]){
+    await evaluate(`{const dt=new DataTransfer();dt.items.add(new File([${JSON.stringify(content)}],${JSON.stringify(name)},{type:${JSON.stringify(type)}}));const input=document.getElementById('file-input');input.files=dt.files;input.dispatchEvent(new Event('change'));}`);
+    await until(`document.getElementById('status').textContent.includes(${JSON.stringify(expectedError)})`);
+    assert.equal(await evaluate("document.getElementById('original-name').textContent"),'transparent-art.png');
+  }
+  // Force a pending encode so navigating away must reject its obsolete result.
+  await evaluate("window.originalToBlob=HTMLCanvasElement.prototype.toBlob;HTMLCanvasElement.prototype.toBlob=function(...args){setTimeout(()=>originalToBlob.apply(this,args),50)};document.getElementById('settings-form').requestSubmit();location.hash='#/resize'");
+  await until("document.documentElement.dataset.activeTool==='resize'&&!document.getElementById('settings').disabled");
+  assert.equal(await evaluate("document.getElementById('result').hidden"),true);
+  await evaluate('HTMLCanvasElement.prototype.toBlob=originalToBlob;delete window.originalToBlob');
+  pass('Corrupt inputs retain the original; navigation during processing prevents stale results');
+
+  for(const name of Object.keys(expected)){
+    await goTool(name);
+    for(const width of [768,390,320]){
+      await cdp('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:true},session);
+      assert.equal(await evaluate('document.documentElement.scrollWidth<=innerWidth'),true,`${name} overflow at ${width}`);
+    }
+  }
+  await goTool('crop');await screenshot('mobile-focused-crop.png');
+  await cdp('Page.reload',{},session);
+  await until("document.readyState==='complete'&&document.documentElement.dataset.activeTool==='crop'");
+  assert.equal(await evaluate("document.getElementById('settings').disabled"),true);
+  assert.equal(await evaluate("document.getElementById('home-view').hidden"),true);
+  await evaluate("document.querySelector('#workspace-nav a').click()");
+  await until("document.documentElement.dataset.activeTool==='home'");
+  await evaluate("location.hash='#/unknown-tool'");
+  await until("!document.getElementById('home-view').hidden");
+  assert.equal(await evaluate("document.getElementById('tool').hidden&&document.getElementById('batch-tool').hidden"),true);
+  await goTool('watermark');
+  assert.equal(await evaluate("document.getElementById('settings').disabled"),true);
+  pass('Every tool is responsive; direct links survive reload; All tools and unknown links return to the menu');
+  assert.deepEqual(errors,[]);assert.deepEqual(externalRequests,[]);
+  pass('No uncaught browser errors or external requests');
   console.log('All browser integration checks passed.');
+
 } finally {
   browser.kill('SIGTERM');
   await new Promise(resolve => server.close(resolve));

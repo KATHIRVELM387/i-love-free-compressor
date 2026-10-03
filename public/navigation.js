@@ -1,0 +1,45 @@
+export const TOOLS = {
+  compress: { title: 'Compress images', description: 'Choose a photo and set the maximum file size you need.', action: 'Compress photo →' },
+  exact: { title: 'Exact file size', description: 'Make a JPG smaller or bigger to reach your chosen size in KB.', action: 'Set exact file size →' },
+  resize: { title: 'Resize images', description: 'Change width and height, or choose a percentage of the original size.', action: 'Resize photo →' },
+  crop: { title: 'Crop & size presets', description: 'Choose a shape, adjust the framing, and set the output dimensions.', action: 'Crop photo →' },
+  rotate: { title: 'Rotate & flip', description: 'Rotate your photo or mirror it horizontally or vertically.', action: 'Save rotated photo →' },
+  convert: { title: 'Convert format', description: 'Choose JPG, PNG, or WebP and save your photo in that format.', action: 'Convert photo →' },
+  adjust: { title: 'Light & color', description: 'Adjust brightness and contrast, or create a black-and-white photo.', action: 'Save adjustments →' },
+  watermark: { title: 'Text watermark', description: 'Add your own text and choose its position, color, size, and opacity.', action: 'Add watermark →' },
+  background: { title: 'Transparency background', description: 'Fill transparent pixels with a color. Existing photo backgrounds stay in place.', action: 'Save background →' },
+  batch: { title: 'Batch compressor' }
+};
+
+export function startNavigation(onSelect) {
+  const $ = id => document.getElementById(id);
+  function render() {
+    const legacy = { '#tool': 'compress', '#batch-tool': 'batch' };
+    const requested = legacy[location.hash] || location.hash.slice(2);
+    const name = Object.hasOwn(TOOLS, requested) ? requested : null;
+    const config = name ? TOOLS[name] : null;
+    $('home-view').hidden = !!name;
+    $('workspace-nav').hidden = !name;
+    $('tool').hidden = !name || name === 'batch';
+    $('batch-tool').hidden = name !== 'batch';
+    document.documentElement.dataset.activeTool = name || 'home';
+    for (const group of document.querySelectorAll('[data-tools]')) {
+      const active = !!name && group.dataset.tools.split(' ').includes(name);
+      group.hidden = !active;
+      if (group.tagName === 'FIELDSET') group.disabled = !active;
+    }
+    $('edit-controls').hidden = !['crop', 'rotate', 'adjust', 'watermark', 'background'].includes(name);
+    if (config && name !== 'batch') {
+      $('tool-title').textContent = config.title;
+      $('tool-description').textContent = config.description;
+    }
+    document.title = config ? `${config.title} — I Love Free Compressor` : 'I Love Free Compressor — Free Image Tools';
+    onSelect(name, config);
+    const heading = $(name === 'batch' ? 'batch-heading' : name ? 'tool-title' : 'menu-heading');
+    heading.focus({ preventScroll: true });
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    window.dispatchEvent(new CustomEvent('toolchange', { detail: { name } }));
+  }
+  window.addEventListener('hashchange', render);
+  render();
+}

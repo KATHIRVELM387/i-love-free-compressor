@@ -6,6 +6,9 @@ let files = [];
 let running = false;
 let cancelled = false;
 let urls = [];
+window.addEventListener('toolchange', event => {
+  if (event.detail.name !== 'batch' && running) cancelled = true;
+});
 
 function clearResults() {
   urls.forEach(url => URL.revokeObjectURL(url));

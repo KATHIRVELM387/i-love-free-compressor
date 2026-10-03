@@ -1,4 +1,5 @@
 import { fitDimensions, formatBytes, prepareImage, renderImage, getCropRect, downloadName } from './image-tools.js?v=5';
+import { startNavigation, TOOLS } from './navigation.js?v=6';
 
 const $ = id => document.getElementById(id);
 const fileInput = $('file-input');
@@ -8,6 +9,7 @@ let originalURL = null;
 let resultURL = null;
 let generation = 0;
 let busy = false;
+let currentTool = null;
 const defaultEdits = () => ({ rotation: 0, flipX: false, flipY: false, cropRatio: 0, cropZoom: 1, cropX: .5, cropY: .5, brightness: 0, contrast: 0, grayscale: false, background: null, watermarkText: '', watermarkColor: '#ffffff', watermarkPosition: 'bottom-right', watermarkSize: 6, watermarkOpacity: .65 });
 let edits = defaultEdits();
 
@@ -209,7 +211,7 @@ function updateSizeControls() {
     ? `Transparent areas use your chosen background color${exact ? '. Exact size saves as JPG.' : '.'}`
     : exact
     ? 'Exact-size output uses JPG; transparent areas become white.'
-    : $('format').value === 'image/jpeg' ? 'Transparent areas become white in JPG.' : $('format').value === 'image/png' ? 'PNG is lossless. Smaller dimensions may be needed to meet your limit.' : 'WebP keeps transparency. Check that your form accepts it.';
+    : $('format').value === 'image/jpeg' ? 'Transparent areas become white in JPG.' : $('format').value === 'image/png' ? (['compress', 'exact'].includes(currentTool) ? 'PNG is lossless. Smaller dimensions may be needed to meet your limit.' : 'PNG is lossless and keeps transparency.') : 'WebP supports transparency and compact image files.';
 }
 
 async function decodeImage(file) {
@@ -240,6 +242,7 @@ async function loadFile(file) {
     $('dimension-preset').value = '';
     $('edit-controls').disabled = false;
     originalFile = file;
+    if (!['compress', 'exact'].includes(currentTool)) $('format').value = file.type;
     $('output-name').value = '';
     if (originalURL) URL.revokeObjectURL(originalURL);
     originalURL = URL.createObjectURL(file);
@@ -296,6 +299,7 @@ $('width').addEventListener('input', () => syncDimension('width'));
 $('height').addEventListener('input', () => syncDimension('height'));
 $('lock').addEventListener('change', () => { syncDimension('width'); if (source) showEdits(); clearResult(); });
 $('settings-form').addEventListener('input', event => {
+  if (event.target.closest('#edit-controls')) return;
   if (event.target.id === 'output-name') { updateDownloadName(); return; }
   clearResult();
   updatePresets();
@@ -307,7 +311,7 @@ $('settings-form').addEventListener('input', event => {
 
 $('settings-form').addEventListener('submit', async event => {
   event.preventDefault();
-  if (!source || busy) return;
+  if (!source || busy || !currentTool || currentTool === 'batch') return;
   busy = true;
   const current = ++generation;
   const requestedWidth = Number($('width').value);
@@ -350,13 +354,13 @@ $('settings-form').addEventListener('submit', async event => {
     $('download').firstChild.textContent = result.meetsTarget ? 'Download photo ' : 'Download anyway ';
     $('result').hidden = false;
     setStatus(result.meetsTarget ? 'Your photo is ready. Review the preview and download it below.' : 'Photo prepared, but the file-size limit could not be met.', !result.meetsTarget);
-  } catch (error) { setStatus(error.message || 'Something went wrong. Try a smaller image.', true); }
+  } catch (error) { if (current === generation) setStatus(error.message || 'Something went wrong. Try a smaller image.', true); }
   finally {
     busy = false;
     $('settings').disabled = !source;
     $('replace').disabled = false;
     $('edit-controls').disabled = !source;
-    $('process').textContent = 'Prepare my photo →';
+    $('process').textContent = TOOLS[currentTool]?.action || 'Prepare photo →';
     $('settings-form').removeAttribute('aria-busy');
   }
 });
@@ -381,4 +385,29 @@ $('demo').addEventListener('click', async () => {
     await loadFile(new File([blob], 'a-little-escape.png', { type: 'image/png' }));
   } catch (error) { setStatus(error.message, true); }
   finally { $('demo').disabled = false; }
+});
+
+startNavigation((name, config) => {
+  currentTool = name;
+  generation++;
+  clearResult();
+  setStatus('');
+  if (!name || name === 'batch') return;
+  edits = defaultEdits();
+  $('dimension-preset').value = '';
+  $('size-mode').value = name === 'exact' ? 'exact' : 'maximum';
+  $('target').value = ['compress', 'exact'].includes(name) ? '100' : '';
+  $('auto-resize').checked = false;
+  $('lock').checked = true;
+  $('output-name').value = '';
+  $('format').value = name === 'exact' || name === 'compress' ? 'image/jpeg' : originalFile?.type || 'image/png';
+  $('process').textContent = busy ? 'Finishing the previous photo…' : config.action;
+  $('settings').disabled = busy || !source;
+  $('edit-controls').disabled = busy || !source;
+  if (source) {
+    fitCropDimensions();
+    showEdits();
+    setStatus('Original photo ready. Choose your settings for this tool.');
+  }
+  updateSizeControls(); updatePresets(); updateDownloadName();
 });
