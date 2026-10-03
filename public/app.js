@@ -1,4 +1,4 @@
-import { fitDimensions, formatBytes, prepareImage, drawTransformed, getCropRect } from './image-tools.js?v=4';
+import { fitDimensions, formatBytes, prepareImage, renderImage, getCropRect, downloadName } from './image-tools.js?v=5';
 
 const $ = id => document.getElementById(id);
 const fileInput = $('file-input');
@@ -8,7 +8,7 @@ let originalURL = null;
 let resultURL = null;
 let generation = 0;
 let busy = false;
-const defaultEdits = () => ({ rotation: 0, flipX: false, flipY: false, cropRatio: 0, cropZoom: 1, cropX: .5, cropY: .5, brightness: 0, contrast: 0, grayscale: false });
+const defaultEdits = () => ({ rotation: 0, flipX: false, flipY: false, cropRatio: 0, cropZoom: 1, cropX: .5, cropY: .5, brightness: 0, contrast: 0, grayscale: false, background: null, watermarkText: '', watermarkColor: '#ffffff', watermarkPosition: 'bottom-right', watermarkSize: 6, watermarkOpacity: .65 });
 let edits = defaultEdits();
 
 function orientedSize() {
@@ -16,7 +16,7 @@ function orientedSize() {
 }
 
 function showEdits() {
-  const active = edits.rotation !== 0 || edits.flipX || edits.flipY || edits.cropRatio !== 0 || edits.cropZoom !== 1 || edits.brightness !== 0 || edits.contrast !== 0 || edits.grayscale;
+  const active = edits.rotation !== 0 || edits.flipX || edits.flipY || edits.cropRatio !== 0 || edits.cropZoom !== 1 || edits.brightness !== 0 || edits.contrast !== 0 || edits.grayscale || edits.background !== null || edits.watermarkText.trim() !== '' || $('format').value === 'image/jpeg';
   $('original-image').hidden = active;
   $('edit-preview').hidden = !active;
   $('preview-label').textContent = active ? 'Edited preview' : 'Original';
@@ -28,13 +28,24 @@ function showEdits() {
     $(id + '-value').textContent = id.startsWith('crop-') ? `${Math.round(value)}%` : String(Math.round(value));
   }
   $('grayscale').checked = edits.grayscale;
+  $('watermark-text').value = edits.watermarkText;
+  $('watermark-color').value = edits.watermarkColor;
+  $('watermark-position').value = edits.watermarkPosition;
+  $('watermark-size').value = edits.watermarkSize;
+  $('watermark-size-value').textContent = `${edits.watermarkSize}%`;
+  $('watermark-opacity').value = Math.round(edits.watermarkOpacity * 100);
+  $('watermark-opacity-value').textContent = `${Math.round(edits.watermarkOpacity * 100)}%`;
+  $('background-enabled').checked = edits.background !== null;
+  $('background-color').disabled = edits.background === null;
+  if (edits.background !== null) $('background-color').value = edits.background;
   if (active) {
-    const size = orientedSize();
+    const requested = { width: Number($('width').value), height: Number($('height').value) };
+    const size = requested.width >= 1 && requested.width <= 4096 && requested.height >= 1 && requested.height <= 4096 ? requested : orientedSize();
     const scale = Math.min(1, 600 / Math.max(size.width, size.height));
     const canvas = $('edit-preview');
     canvas.width = Math.max(1, Math.round(size.width * scale));
     canvas.height = Math.max(1, Math.round(size.height * scale));
-    drawTransformed(canvas.getContext('2d'), source, canvas.width, canvas.height, edits);
+    renderImage(canvas.getContext('2d'), source, canvas.width, canvas.height, { ...edits, type: $('format').value });
   }
 }
 
@@ -71,8 +82,40 @@ $('reset-edits').addEventListener('click', () => {
   const fitted = fitDimensions(size.width, size.height);
   $('width').value = fitted.width; $('height').value = fitted.height;
   showEdits(); clearResult();
-  setStatus('Crop, rotation, flips, adjustments, and dimensions reset. File-size and format settings kept.');
+  updateSizeControls();
+  setStatus('Photo edits, watermark, background, and dimensions reset. File-size and format settings kept.');
 });
+
+for (const [id, key, convert] of [['watermark-text', 'watermarkText', value => value], ['watermark-color', 'watermarkColor', value => value], ['watermark-position', 'watermarkPosition', value => value], ['watermark-size', 'watermarkSize', Number], ['watermark-opacity', 'watermarkOpacity', value => Number(value) / 100]]) {
+  $(id).addEventListener('input', () => {
+    if (!source || busy) return;
+    edits[key] = convert($(id).value);
+    showEdits(); clearResult();
+    setStatus('Watermark updated. Prepare your photo to include it in the download.');
+  });
+}
+$('remove-watermark').addEventListener('click', () => {
+  if (!source || busy) return;
+  edits.watermarkText = '';
+  showEdits(); clearResult();
+  setStatus('Watermark removed. Prepare your photo to update the download.');
+});
+for (const id of ['background-enabled', 'background-color']) {
+  $(id).addEventListener('input', () => {
+    if (!source || busy) return;
+    edits.background = $('background-enabled').checked ? $('background-color').value : null;
+    showEdits(); clearResult(); updateSizeControls();
+    setStatus('Background updated. Only transparent areas are filled.');
+  });
+}
+
+function updateDownloadName() {
+  if (!originalFile) return;
+  const extension = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }[$('format').value];
+  const name = downloadName($('output-name').value, `${originalFile.name.replace(/\.[^.]+$/, '') || 'photo'}-ready`, extension);
+  $('download').download = name;
+  $('download-name-preview').textContent = `Saves as: ${name}`;
+}
 
 function fitCropDimensions() {
   const size = orientedSize();
@@ -128,6 +171,7 @@ document.querySelectorAll('[data-scale]').forEach(button => button.addEventListe
   const fitted = fitDimensions(width, height);
   $('width').value = fitted.width; $('height').value = fitted.height;
   $('dimension-preset').value = '';
+  showEdits();
   clearResult();
   setStatus(fitted.width !== width || fitted.height !== height ? 'Dimensions limited to fit browser processing limits.' : 'Dimensions updated. Prepare your photo to see the result.');
 }));
@@ -161,7 +205,9 @@ function updateSizeControls() {
   $('size-help').textContent = exact
     ? 'Increase or decrease file size to the KB you choose. Saves as JPG. A bigger file does not improve image quality. 1 KB = 1,000 bytes.'
     : '50 KB means at most 50 KB. A smaller photo can stay smaller.';
-  $('format-help').textContent = exact
+  $('format-help').textContent = edits.background !== null
+    ? `Transparent areas use your chosen background color${exact ? '. Exact size saves as JPG.' : '.'}`
+    : exact
     ? 'Exact-size output uses JPG; transparent areas become white.'
     : $('format').value === 'image/jpeg' ? 'Transparent areas become white in JPG.' : $('format').value === 'image/png' ? 'PNG is lossless. Smaller dimensions may be needed to meet your limit.' : 'WebP keeps transparency. Check that your form accepts it.';
 }
@@ -192,9 +238,9 @@ async function loadFile(file) {
     source = decoded;
     edits = defaultEdits();
     $('dimension-preset').value = '';
-    showEdits();
     $('edit-controls').disabled = false;
     originalFile = file;
+    $('output-name').value = '';
     if (originalURL) URL.revokeObjectURL(originalURL);
     originalURL = URL.createObjectURL(file);
     $('original-image').src = originalURL;
@@ -203,6 +249,7 @@ async function loadFile(file) {
     const fitted = fitDimensions(width, height);
     $('width').value = fitted.width;
     $('height').value = fitted.height;
+    showEdits(); updateSizeControls(); updateDownloadName();
     $('dropzone').hidden = true;
     $('original-card').hidden = false;
     $('replace').hidden = false;
@@ -247,11 +294,14 @@ function syncDimension(changed) {
 }
 $('width').addEventListener('input', () => syncDimension('width'));
 $('height').addEventListener('input', () => syncDimension('height'));
-$('lock').addEventListener('change', () => { syncDimension('width'); clearResult(); });
-$('settings-form').addEventListener('input', () => {
+$('lock').addEventListener('change', () => { syncDimension('width'); if (source) showEdits(); clearResult(); });
+$('settings-form').addEventListener('input', event => {
+  if (event.target.id === 'output-name') { updateDownloadName(); return; }
   clearResult();
   updatePresets();
   updateSizeControls();
+  if (source) showEdits();
+  updateDownloadName();
   setStatus('Settings changed. Prepare your photo to see the updated result.');
 });
 
@@ -279,7 +329,7 @@ $('settings-form').addEventListener('submit', async event => {
     $('result-image').src = resultURL;
     $('download').href = resultURL;
     const extension = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }[type];
-    $('download').download = `${originalFile.name.replace(/\.[^.]+$/, '') || 'photo'}-ready.${extension}`;
+    updateDownloadName();
     const savings = Math.round((1 - result.blob.size / originalFile.size) * 100);
     $('result-heading').textContent = result.meetsTarget ? 'Ready for the next step.' : 'This needs a little more room.';
     $('result-summary').textContent = `${formatBytes(originalFile.size)} → ${formatBytes(result.blob.size)} · ${result.width.toLocaleString()} × ${result.height.toLocaleString()} px · ${extension.toUpperCase()}${savings > 0 ? ` · ${savings}% smaller` : savings < 0 ? ` · ${-savings}% larger` : ''}`;

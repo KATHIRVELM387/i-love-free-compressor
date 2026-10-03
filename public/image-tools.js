@@ -92,6 +92,50 @@ export function drawTransformed(ctx, source, width, height, edits = {}) {
   }
 }
 
+export function downloadName(name, fallback, extension) {
+  let stem = String(name).trim() || fallback;
+  stem = Array.from(stem.replace(/\.(jpe?g|png|webp)$/i, '').replace(/[\\/<>:"|?*\u0000-\u001f\u007f]/g, '_')).slice(0, 100).join('').replace(/^[. ]+|[. ]+$/g, '');
+  if (!stem) stem = 'photo';
+  if (/^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i.test(stem)) stem = `photo-${stem}`;
+  return `${stem}.${extension}`;
+}
+
+// Decorations are rendered in output coordinates after photo edits, so text
+// stays upright and backgrounds are not affected by brightness or grayscale.
+export function renderImage(ctx, source, width, height, { type = 'image/png', background = null, watermarkText = '', watermarkColor = '#ffffff', watermarkPosition = 'bottom-right', watermarkSize = 6, watermarkOpacity = .65, ...edits } = {}) {
+  if (background !== null && !/^#[0-9a-f]{6}$/i.test(background)) throw new Error('Choose a valid background color.');
+  if (typeof watermarkText !== 'string' || watermarkText.length > 80 || !/^#[0-9a-f]{6}$/i.test(watermarkColor) ||
+      !['top-left', 'top-right', 'center', 'bottom-left', 'bottom-right'].includes(watermarkPosition) ||
+      !Number.isFinite(watermarkSize) || watermarkSize < 2 || watermarkSize > 15 ||
+      !Number.isFinite(watermarkOpacity) || watermarkOpacity < 0 || watermarkOpacity > 1) throw new Error('Choose valid watermark text, color, size, opacity, and position.');
+  drawTransformed(ctx, source, width, height, edits);
+  const fill = background || (type === 'image/jpeg' ? '#ffffff' : null);
+  if (fill) {
+    ctx.save();
+    ctx.globalCompositeOperation = 'destination-over';
+    ctx.fillStyle = fill; ctx.fillRect(0, 0, width, height);
+    ctx.restore();
+  }
+  const text = watermarkText.replace(/\s+/g, ' ').trim();
+  if (!text || !watermarkOpacity) return;
+  ctx.save();
+  const margin = Math.min(width, height) * .05;
+  let fontSize = Math.min(width, height) * watermarkSize / 100;
+  ctx.font = `600 ${fontSize}px sans-serif`;
+  const measured = ctx.measureText(text).width;
+  if (measured > width - margin * 2) fontSize *= (width - margin * 2) / measured;
+  ctx.font = `600 ${fontSize}px sans-serif`;
+  ctx.globalAlpha = watermarkOpacity;
+  ctx.fillStyle = watermarkColor;
+  ctx.textBaseline = 'middle';
+  ctx.direction = 'ltr';
+  ctx.textAlign = watermarkPosition === 'center' ? 'center' : watermarkPosition.endsWith('right') ? 'right' : 'left';
+  const x = watermarkPosition === 'center' ? width / 2 : watermarkPosition.endsWith('right') ? width - margin : margin;
+  const y = watermarkPosition === 'center' ? height / 2 : watermarkPosition.startsWith('top') ? margin + fontSize / 2 : height - margin - fontSize / 2;
+  ctx.fillText(text, x, y);
+  ctx.restore();
+}
+
 export async function prepareImage(source, { width, height, type, target, allowResize, sizeMode = 'maximum', ...edits }) {
   if (!Number.isInteger(width) || !Number.isInteger(height) || width < 1 || height < 1 || width > MAX_EDGE || height > MAX_EDGE || width * height > MAX_PIXELS) {
     throw new Error('Use dimensions from 1 to 4,096 pixels, with at most 16 million pixels in total.');
@@ -110,12 +154,7 @@ export async function prepareImage(source, { width, height, type, target, allowR
       canvas.height = height;
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
-      drawTransformed(ctx, source, width, height, edits);
-      if (type === 'image/jpeg') {
-        ctx.globalCompositeOperation = 'destination-over';
-        ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, width, height);
-        ctx.globalCompositeOperation = 'source-over';
-      }
+      renderImage(ctx, source, width, height, { ...edits, type });
       const maxQuality = sizeMode === 'exact' ? 1 : .94;
       blob = await encode(canvas, type, maxQuality);
       if (!target || blob.size <= target) break;

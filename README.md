@@ -28,10 +28,13 @@ Open http://localhost:4173. Python 3 is needed only for the local server. Altern
 - Crop to square, 4:3, 3:4, 16:9, 9:16, 4:5, or 5:4. Zoom from 100–300% and adjust horizontal/vertical framing with keyboard-accessible sliders. Rotation and flipping preserve the selected content.
 - Quick size presets: square 1080×1080, portrait 1080×1350, story 1080×1920, and video thumbnail 1280×720. Presets crop to fit, preserve the image ratio, and disable automatic dimension reduction; small inputs may be enlarged.
 - Brightness, contrast, and black-and-white adjustments with a live preview and a separate color reset. PNG and WebP retain transparency; JPG composites the adjusted image on white.
+- Optional text watermarks (up to 80 characters), with five positions, color, relative size, and opacity controls. Text is drawn after photo edits, stays upright, and shrinks to fit when needed. No watermark is added unless you enter text.
+- Optional background color for existing transparent pixels. Turning it off restores transparency for PNG/WebP; JPG defaults to white. This does not remove an existing photo background.
+- Custom download filenames with an automatic format extension. Renaming a prepared result does not reprocess the image. Names are normalized to remove path characters; a new photo clears the custom name.
 - Resize to 50%, 100%, or 200% of the current crop's original pixels, keeping its ratio and browser dimension limits. Enlargement does not restore missing detail.
 - Batch resize, compression, and format conversion for up to 20 photos (25 MB each, 100 MB total). Each photo preserves its ratio and is never enlarged; individual controls above the batch section do not apply to a batch.
 - Individual batch downloads and a ZIP download with unique Unicode filenames. Corrupt files are skipped with an explanation; outputs above the requested size are visibly marked and included in the ZIP. Stop processing after the current photo and keep completed results.
-- JPG, PNG and WebP export; PNG preserves transparency, JPG uses white behind transparent pixels.
+- JPG, PNG and WebP export; PNG and WebP preserve transparency unless a background color is enabled, and JPG uses white by default behind transparent pixels.
 - Quality search for JPG/WebP. Optional dimension reduction when quality alone cannot meet a limit.
 - Original and processed previews, actual output dimensions, target checks, and downloads.
 - A generated sample illustration, keyboard controls, accessible status messages, responsive layout.
