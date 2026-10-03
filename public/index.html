@@ -6,7 +6,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob: data:; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
   <meta name="referrer" content="no-referrer">
   <meta name="google-site-verification" content="qNgvCQDjTJRYThLtSrekcbv9rR_-x0CuWfTNZg_7BCs" />
-  <meta name="description" content="I Love Free Compressor helps you compress images to 50 KB, 100 KB or 200 KB and resize JPG, PNG and WebP photos online. Free, private and no signup required.">
+  <meta name="description" content="Compress, resize, rotate and flip JPG, PNG and WebP photos for free. Process up to 20 images in a batch and download a ZIP. Private, with no signup required.">
   <meta name="robots" content="index, follow, max-image-preview:large">
   <meta name="theme-color" content="#6935ce">
   <title>I Love Free Compressor — Free Image Compressor &amp; Photo Resizer</title>
@@ -22,19 +22,21 @@
   <meta name="twitter:description" content="Compress and resize photos for free. Your images stay on your device.">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css">
-  <script type="module" src="app.js?v=2"></script>
+  <script type="module" src="app.js?v=3"></script>
+  <script type="module" src="batch.js?v=3"></script>
 </head>
 <body>
   <a class="skip-link" href="#tool">Skip to photo tool</a>
   <header class="site-header wrap">
     <a class="brand" href="./" aria-label="I Love Free Compressor home"><span class="brand-icon" aria-hidden="true">♥</span><span class="brand-name"><small>I Love</small><strong>Free Compressor</strong></span></a>
-    <nav aria-label="Main navigation"><a href="#how-it-works">How it works</a><a href="#questions">FAQs</a><span class="free-badge">100% free</span></nav>
+    <nav aria-label="Main navigation"><a href="#batch-tool">Batch tools</a><a href="#questions">FAQs</a><span class="free-badge">100% free</span></nav>
   </header>
   <main>
     <section class="hero wrap">
       <span class="eyebrow"><span class="status-dot"></span> LESS FILE FUSS. MORE GETTING THINGS DONE.</span>
       <h1>Free image compressor.<br><em>Photos that fit.</em></h1>
-      <p>I Love Free Compressor resizes and compresses JPG, PNG and WebP photos<br class="desktop-break"> for online forms. Free, simple, and just between you and your browser.</p>
+      <p>Resize, compress, rotate, and flip JPG, PNG and WebP photos.<br class="desktop-break"> One photo or a whole batch. Free, private, and no signup needed.</p>
+      <p><a class="text-button" href="#tool">Edit one photo</a> · <a class="text-button" href="#batch-tool">Compress a batch</a></p>
       <div class="hero-notes"><span>✓ No sign-up</span><span>✓ No uploads to a server</span><span>✓ No watermarks</span></div>
     </section>
 
@@ -50,7 +52,13 @@
             <button type="button" class="button primary" id="browse">Choose a photo <span aria-hidden="true">↗</span></button>
             <span class="file-hint">JPG, PNG or WebP · up to 25 MB</span>
           </div>
-          <div id="original-card" class="preview-card" hidden><div class="preview-image"><img id="original-image" alt="Your original photo"></div><div class="image-caption"><span id="original-name"></span><span class="pill">Original</span></div><p id="original-details" class="image-details"></p></div>
+          <div id="original-card" class="preview-card" hidden><div class="preview-image"><img id="original-image" alt="Your original photo"><canvas id="edit-preview" role="img" aria-label="Photo with rotation and flips applied" hidden></canvas></div><div class="image-caption"><span id="original-name"></span><span id="preview-label" class="pill">Original</span></div><p id="original-details" class="image-details"></p>
+            <fieldset id="edit-controls" class="edit-controls" disabled>
+              <legend>Rotate &amp; flip</legend>
+              <div class="edit-buttons"><button type="button" id="rotate-left">↶ Left 90°</button><button type="button" id="rotate-right">↷ Right 90°</button><button type="button" id="flip-horizontal" aria-pressed="false">↔ Flip horizontal</button><button type="button" id="flip-vertical" aria-pressed="false">↕ Flip vertical</button></div>
+              <button type="button" id="reset-edits" class="text-button">Reset photo edits</button>
+            </fieldset>
+          </div>
           <p class="demo-line" id="demo-line">Just looking around? <button id="demo" class="text-button">Try a sample photo</button></p>
           <div class="privacy-note"><span aria-hidden="true">⌁</span><p><strong>Your photos are yours.</strong> They’re processed right here in your browser and never sent to us.</p></div>
         </div>
@@ -66,6 +74,8 @@
             <div class="presets" aria-label="File size presets"><button type="button" data-size="50" aria-pressed="false">50 KB</button><button type="button" data-size="100" aria-pressed="true">100 KB</button><button type="button" data-size="200" aria-pressed="false">200 KB</button><button type="button" data-size="500" aria-pressed="false">500 KB</button></div>
             <div class="field-heading"><span>Dimensions <span class="optional">pixels</span></span><label class="checkbox-label" for="lock"><input id="lock" type="checkbox" checked> Keep ratio</label></div>
             <div class="dimension-row"><div><label for="width" class="small-label">Width</label><input id="width" type="number" min="1" max="4096" step="1" required></div><span aria-hidden="true">×</span><div><label for="height" class="small-label">Height</label><input id="height" type="number" min="1" max="4096" step="1" required></div></div>
+            <div class="presets scale-presets" aria-label="Resize relative to original photo"><button type="button" data-scale="0.5">50%</button><button type="button" data-scale="1">Original size</button><button type="button" data-scale="2">200%</button></div>
+            <p class="field-help">Resize presets keep the photo’s ratio. Enlarging adds pixels, not extra detail. Up to 4,096 px per side.</p>
             <label for="format">Save as</label><select id="format"><option value="image/jpeg">JPG — great for photos</option><option value="image/webp">WebP — smaller modern images</option><option value="image/png">PNG — lossless, supports transparency</option></select>
             <p class="field-help" id="format-help">Transparent areas become white in JPG.</p>
             <label class="checkbox-label resize-option" for="auto-resize"><input id="auto-resize" type="checkbox"> Allow smaller dimensions to meet the size limit</label>
@@ -79,6 +89,34 @@
         <div class="result-preview"><img id="result-image" alt="Processed photo preview"></div>
         <div class="result-content"><span class="tiny-label">YOUR PREPARED PHOTO</span><h3 id="result-heading">Ready for the next step.</h3><p id="result-summary"></p><div id="result-checks" class="result-checks"></div><p id="result-warning" hidden></p><p id="size-note" class="field-help" hidden></p><a id="download" class="button primary" download>Download photo <span aria-hidden="true">↓</span></a><p class="field-help">Check the preview before submitting your application.</p></div>
       </section>
+    </section>
+
+    <section id="batch-tool" class="workspace batch-tool wrap" aria-labelledby="batch-heading">
+      <div class="workspace-heading"><div><span class="tiny-label">MORE PHOTOS. LESS REPETITION.</span><h2 id="batch-heading">Compress a whole batch</h2></div><span class="local-badge">Private &amp; free</span></div>
+      <div class="batch-body">
+        <p>Resize, compress, or convert up to 20 photos together. Download them individually or in one ZIP.</p>
+        <input id="batch-input" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden>
+        <button type="button" id="batch-browse" class="button primary">Choose multiple photos</button>
+        <p id="batch-selection" class="field-help">JPG, PNG or WebP · 25 MB per photo · 100 MB per batch</p>
+        <form id="batch-form">
+          <fieldset id="batch-settings">
+            <div class="batch-fields">
+              <div><label for="batch-target">Maximum size per photo (KB)</label><input id="batch-target" type="number" min="1" max="25000" step="1" value="200" placeholder="No limit"></div>
+              <div><label for="batch-edge">Longest side (px)</label><input id="batch-edge" type="number" min="1" max="4096" step="1" value="1920" placeholder="Up to 4,096"></div>
+              <div><label for="batch-format">Save every photo as</label><select id="batch-format"><option value="image/jpeg">JPG</option><option value="image/webp">WebP</option><option value="image/png">PNG</option></select></div>
+            </div>
+            <p class="field-help">Each photo keeps its ratio and is never enlarged. JPG turns transparency white. Single-photo edits above do not apply here. Leave the size limit blank to convert without a KB target.</p>
+            <label class="checkbox-label resize-option" for="batch-resize"><input id="batch-resize" type="checkbox" checked> Allow further resizing to meet the size limit</label>
+            <button id="batch-process" type="submit" class="button primary" disabled>Compress batch →</button>
+          </fieldset>
+        </form>
+        <button id="batch-cancel" type="button" class="text-button" hidden>Stop after current photo</button>
+        <progress id="batch-progress" aria-label="Photos processed" value="0" max="20" hidden></progress>
+        <p id="batch-status" role="status" aria-live="polite">Choose photos to get started.</p>
+        <p id="batch-summary"></p>
+        <a id="batch-zip" class="button primary" download="i-love-free-compressor.zip" hidden>Download ZIP ↓</a>
+        <ul id="batch-results" class="batch-results" aria-label="Batch results"></ul>
+      </div>
     </section>
 
     <section id="how-it-works" class="how-section wrap"><div class="section-intro"><span class="tiny-label">FROM “FILE TOO LARGE” TO DONE</span><h2>Three steps. Zero headaches.</h2></div><div class="how-grid"><article><span class="how-number">01</span><h3>Pick your photo</h3><p>A portrait, a signature, or a scan. Choose a JPG, PNG, or WebP from your device.</p></article><article><span class="how-number">02</span><h3>Set the requirements</h3><p>Enter the size and dimensions your form asks for. We’ll do the resizing and compression.</p></article><article><span class="how-number">03</span><h3>Download and carry on</h3><p>Check your preview, save the new file, and get back to what you were doing.</p></article></div></section>

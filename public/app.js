@@ -1,4 +1,4 @@
-import { fitDimensions, formatBytes, prepareImage } from './image-tools.js?v=2';
+import { fitDimensions, formatBytes, prepareImage, drawTransformed } from './image-tools.js?v=3';
 
 const $ = id => document.getElementById(id);
 const fileInput = $('file-input');
@@ -8,6 +8,70 @@ let originalURL = null;
 let resultURL = null;
 let generation = 0;
 let busy = false;
+let edits = { rotation: 0, flipX: false, flipY: false };
+
+function orientedSize() {
+  const width = source.naturalWidth || source.width;
+  const height = source.naturalHeight || source.height;
+  return edits.rotation % 180 ? { width: height, height: width } : { width, height };
+}
+
+function showEdits() {
+  const active = edits.rotation !== 0 || edits.flipX || edits.flipY;
+  $('original-image').hidden = active;
+  $('edit-preview').hidden = !active;
+  $('preview-label').textContent = active ? 'Edited preview' : 'Original';
+  $('flip-horizontal').setAttribute('aria-pressed', String(edits.flipX));
+  $('flip-vertical').setAttribute('aria-pressed', String(edits.flipY));
+  if (active) {
+    const size = orientedSize();
+    const scale = Math.min(1, 600 / Math.max(size.width, size.height));
+    const canvas = $('edit-preview');
+    canvas.width = Math.max(1, Math.round(size.width * scale));
+    canvas.height = Math.max(1, Math.round(size.height * scale));
+    drawTransformed(canvas.getContext('2d'), source, canvas.width, canvas.height, edits);
+  }
+}
+
+function rotate(degrees) {
+  if (!source || busy) return;
+  edits.rotation = (edits.rotation + degrees + 360) % 360;
+  [edits.flipX, edits.flipY] = [edits.flipY, edits.flipX];
+  const width = $('width').value;
+  $('width').value = $('height').value;
+  $('height').value = width;
+  showEdits(); clearResult();
+  setStatus('Photo rotated. Prepare your photo to save these edits.');
+}
+$('rotate-left').addEventListener('click', () => rotate(-90));
+$('rotate-right').addEventListener('click', () => rotate(90));
+for (const [id, key] of [['flip-horizontal', 'flipX'], ['flip-vertical', 'flipY']]) {
+  $(id).addEventListener('click', () => {
+    if (!source || busy) return;
+    edits[key] = !edits[key];
+    showEdits(); clearResult();
+    setStatus('Photo flipped. Prepare your photo to save these edits.');
+  });
+}
+$('reset-edits').addEventListener('click', () => {
+  if (!source || busy) return;
+  edits = { rotation: 0, flipX: false, flipY: false };
+  const size = orientedSize();
+  const fitted = fitDimensions(size.width, size.height);
+  $('width').value = fitted.width; $('height').value = fitted.height;
+  showEdits(); clearResult();
+  setStatus('Rotation, flips, and dimensions reset. File-size and format settings kept.');
+});
+document.querySelectorAll('[data-scale]').forEach(button => button.addEventListener('click', () => {
+  if (!source || busy) return;
+  const size = orientedSize();
+  const width = Math.max(1, Math.round(size.width * Number(button.dataset.scale)));
+  const height = Math.max(1, Math.round(size.height * Number(button.dataset.scale)));
+  const fitted = fitDimensions(width, height);
+  $('width').value = fitted.width; $('height').value = fitted.height;
+  clearResult();
+  setStatus(fitted.width !== width || fitted.height !== height ? 'Dimensions limited to fit browser processing limits.' : 'Dimensions updated. Prepare your photo to see the result.');
+}));
 
 function setStatus(message, error = false) {
   $('status').textContent = message;
@@ -67,6 +131,9 @@ async function loadFile(file) {
     clearResult();
     source?.close?.();
     source = decoded;
+    edits = { rotation: 0, flipX: false, flipY: false };
+    showEdits();
+    $('edit-controls').disabled = false;
     originalFile = file;
     if (originalURL) URL.revokeObjectURL(originalURL);
     originalURL = URL.createObjectURL(file);
@@ -111,7 +178,8 @@ document.querySelectorAll('[data-size]').forEach(button => button.addEventListen
 
 function syncDimension(changed) {
   if (!$('lock').checked || !source) return;
-  const ratio = (source.naturalWidth || source.width) / (source.naturalHeight || source.height);
+  const size = orientedSize();
+  const ratio = size.width / size.height;
   const value = Number($(changed).value);
   if (!value || value < 1) return;
   $(changed === 'width' ? 'height' : 'width').value = Math.max(1, Math.round(changed === 'width' ? value / ratio : value * ratio));
@@ -139,11 +207,12 @@ $('settings-form').addEventListener('submit', async event => {
   clearResult();
   $('settings').disabled = true;
   $('replace').disabled = true;
+  $('edit-controls').disabled = true;
   $('process').textContent = 'Preparing your photo…';
   $('settings-form').setAttribute('aria-busy', 'true');
   setStatus('Preparing your photo on your device…');
   try {
-    const result = await prepareImage(source, { width: requestedWidth, height: requestedHeight, target, type, sizeMode, allowResize: $('auto-resize').checked });
+    const result = await prepareImage(source, { width: requestedWidth, height: requestedHeight, target, type, sizeMode, allowResize: $('auto-resize').checked, ...edits });
     if (current !== generation) return;
     resultURL = URL.createObjectURL(result.blob);
     $('result-image').src = resultURL;
@@ -175,6 +244,7 @@ $('settings-form').addEventListener('submit', async event => {
     busy = false;
     $('settings').disabled = !source;
     $('replace').disabled = false;
+    $('edit-controls').disabled = !source;
     $('process').textContent = 'Prepare my photo →';
     $('settings-form').removeAttribute('aria-busy');
   }

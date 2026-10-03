@@ -24,6 +24,10 @@ Open http://localhost:4173. Python 3 is needed only for the local server. Altern
 - Target-size presets and custom limits; 1 KB = 1,000 bytes.
 - Two file-size modes: stay under a maximum, or make a JPG exactly the requested KB (smaller or larger). Exact mode converts PNG/WebP inputs to JPG and fills transparent areas white.
 - Width and height controls, with optional aspect-ratio lock.
+- Rotate left/right in 90-degree steps, flip horizontally/vertically, and reset edits. The preview and downloaded pixels use the same transformations.
+- Resize to 50%, original size, or 200%, keeping the photo's ratio and browser dimension limits. Enlargement does not restore missing detail.
+- Batch resize, compression, and format conversion for up to 20 photos (25 MB each, 100 MB total). Each photo preserves its ratio and is never enlarged; individual controls above the batch section do not apply to a batch.
+- Individual batch downloads and a ZIP download with unique Unicode filenames. Corrupt files are skipped with an explanation; outputs above the requested size are visibly marked and included in the ZIP. Stop processing after the current photo and keep completed results.
 - JPG, PNG and WebP export; PNG preserves transparency, JPG uses white behind transparent pixels.
 - Quality search for JPG/WebP. Optional dimension reduction when quality alone cannot meet a limit.
 - Original and processed previews, actual output dimensions, target checks, and downloads.
@@ -37,6 +41,8 @@ To make a 25 KB file 50 KB, select **Make smaller or bigger — exact KB (JPG)**
 Exact JPG output uses the highest quality found within the target, then adds valid JPEG comment segments and marker fill bytes before the end-of-image marker when needed. Padding preserves the encoded pixels and does not improve quality. The UI discloses when non-image data is added. Some receiving sites re-encode images or strip metadata, so the size can change after uploading elsewhere. Format reference: https://www.w3.org/Graphics/JPEG/itu-t81.pdf (marker fill bytes and COM segments).
 
 Input is limited to 25 MB and 40 million decoded pixels; output is limited to 4,096 pixels per side and 16 million pixels. Very large inputs may still exceed memory on older devices. Animated inputs become a still image. Refreshing discards work. The hosting provider receives ordinary website requests but the app sends no photo data.
+
+Batch processing decodes one photo at a time and caps the combined output at 100 MB. ZIP files use uncompressed entries with CRC-32 checksums, so the image bytes are preserved without extra runtime dependencies. Changing settings or choosing another batch discards old download links.
 
 ## Deploy free on Vercel
 

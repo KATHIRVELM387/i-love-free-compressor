@@ -45,7 +45,20 @@ export async function padJpegToSize(blob, target) {
   return new Blob([blob.slice(0, -2), padding, blob.slice(-2)], { type: 'image/jpeg' });
 }
 
-export async function prepareImage(source, { width, height, type, target, allowResize, sizeMode = 'maximum' }) {
+// Flip in the displayed axes after rotating, so controls match the preview.
+export function drawTransformed(ctx, source, width, height, { rotation = 0, flipX = false, flipY = false } = {}) {
+  const sideways = rotation % 180 !== 0;
+  const drawWidth = sideways ? height : width;
+  const drawHeight = sideways ? width : height;
+  ctx.save();
+  ctx.translate(width / 2, height / 2);
+  ctx.scale(flipX ? -1 : 1, flipY ? -1 : 1);
+  ctx.rotate(rotation * Math.PI / 180);
+  ctx.drawImage(source, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
+  ctx.restore();
+}
+
+export async function prepareImage(source, { width, height, type, target, allowResize, sizeMode = 'maximum', rotation = 0, flipX = false, flipY = false }) {
   if (!Number.isInteger(width) || !Number.isInteger(height) || width < 1 || height < 1 || width > MAX_EDGE || height > MAX_EDGE || width * height > MAX_PIXELS) {
     throw new Error('Use dimensions from 1 to 4,096 pixels, with at most 16 million pixels in total.');
   }
@@ -53,6 +66,7 @@ export async function prepareImage(source, { width, height, type, target, allowR
   if (target !== null && (!Number.isInteger(target) || target < 1000 || target > 25_000_000)) throw new Error('Enter a whole-number size from 1 to 25,000 KB, or leave it blank.');
   if (!['maximum', 'exact'].includes(sizeMode)) throw new Error('Choose a valid file-size mode.');
   if (sizeMode === 'exact' && (type !== 'image/jpeg' || target === null)) throw new Error('Exact size requires a target in KB and JPG output.');
+  if (![0, 90, 180, 270].includes(rotation)) throw new Error('Choose a rotation in 90-degree steps.');
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Your browser does not support image processing.');
@@ -64,7 +78,7 @@ export async function prepareImage(source, { width, height, type, target, allowR
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
       if (type === 'image/jpeg') { ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, width, height); }
-      ctx.drawImage(source, 0, 0, width, height);
+      drawTransformed(ctx, source, width, height, { rotation, flipX, flipY });
       const maxQuality = sizeMode === 'exact' ? 1 : .94;
       blob = await encode(canvas, type, maxQuality);
       if (!target || blob.size <= target) break;

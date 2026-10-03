@@ -237,6 +237,92 @@ try {
   assert.equal(await evaluate("document.getElementById('target').required"),false);
   assert.equal(await evaluate('document.documentElement.scrollWidth <= innerWidth'),true);
   pass('Actual 25 KB → 50 KB → 25 KB upload/download flow, required target, mode switching, and mobile layout');
+
+  const transformed = await evaluate(`(async () => {
+    const { prepareImage } = await import('./image-tools.js');
+    const c=document.createElement('canvas');c.width=40;c.height=20;
+    const x=c.getContext('2d');
+    for(const [color,px,py] of [['#ff0000',0,0],['#00ff00',20,0],['#0000ff',0,10],['#ffff00',20,10]]){x.fillStyle=color;x.fillRect(px,py,20,10)}
+    const inspect=async options=>{
+      const r=await prepareImage(c,{width:40,height:20,type:'image/png',target:null,allowResize:false,...options});
+      const image=await createImageBitmap(r.blob);const copy=document.createElement('canvas');copy.width=image.width;copy.height=image.height;const ctx=copy.getContext('2d');ctx.drawImage(image,0,0);image.close();
+      return [[2,2],[copy.width-3,2],[2,copy.height-3],[copy.width-3,copy.height-3]].map(([a,b])=>Array.from(ctx.getImageData(a,b,1,1).data).slice(0,3));
+    };
+    const right=await inspect({rotation:90,width:20,height:40});
+    const flip=await inspect({flipX:true});
+    const combined=await inspect({rotation:90,flipY:true,width:20,height:40});
+    const blob=await new Promise(resolve=>c.toBlob(resolve,'image/png'));
+    window.featureFixture=blob;
+    const dt=new DataTransfer();dt.items.add(new File([blob],'quadrants.png',{type:'image/png'}));const input=document.getElementById('file-input');input.files=dt.files;input.dispatchEvent(new Event('change'));
+    return {right,flip,combined};
+  })()`);
+  const red=[255,0,0], green=[0,255,0], blue=[0,0,255], yellow=[255,255,0];
+  assert.deepEqual(transformed.right,[blue,red,yellow,green]);
+  assert.deepEqual(transformed.flip,[green,red,yellow,blue]);
+  assert.deepEqual(transformed.combined,[yellow,green,blue,red]);
+  await until("document.getElementById('original-name').textContent === 'quadrants.png'");
+  await evaluate("document.getElementById('rotate-right').click(); document.getElementById('flip-horizontal').click()");
+  assert.deepEqual(await evaluate("['width','height'].map(id=>document.getElementById(id).value)"),['20','40']);
+  assert.equal(await evaluate("document.getElementById('edit-preview').hidden"),false);
+  await evaluate("document.getElementById('width').value='10';document.getElementById('width').dispatchEvent(new Event('input',{bubbles:true}))");
+  assert.equal(await evaluate("document.getElementById('height').value"),'20');
+  await evaluate("document.querySelector('[data-scale=\"2\"]').click();document.getElementById('format').value='image/png';document.getElementById('settings-form').requestSubmit()");
+  await until("!document.getElementById('result').hidden && !document.getElementById('settings').disabled && document.getElementById('result-image').naturalWidth===40");
+  assert.equal(await evaluate("document.getElementById('result-image').naturalHeight"),80);
+  const uiPixels=await evaluate(`(()=>{const c=document.createElement('canvas');c.width=40;c.height=80;const x=c.getContext('2d');x.drawImage(document.getElementById('result-image'),0,0);return [[2,2],[37,2],[2,77],[37,77]].map(([a,b])=>Array.from(x.getImageData(a,b,1,1).data).slice(0,3))})()`);
+  assert.deepEqual(uiPixels,[red,blue,green,yellow]);
+  await evaluate("document.getElementById('reset-edits').click()");
+  assert.deepEqual(await evaluate("['width','height'].map(id=>document.getElementById(id).value)"),['40','20']);
+  assert.equal(await evaluate("document.getElementById('edit-preview').hidden && document.getElementById('result').hidden"),true);
+  pass('Decoded rotation/flip pixels, rotated aspect ratio, 200% resizing, edited preview, and reset');
+
+  await evaluate(`{
+    const dt=new DataTransfer();
+    dt.items.add(new File([window.featureFixture],'été.png',{type:'image/png'}));
+    dt.items.add(new File([window.featureFixture],'été.png',{type:'image/png'}));
+    dt.items.add(new File(['broken'],'bad.jpg',{type:'image/jpeg'}));
+    const input=document.getElementById('batch-input');input.files=dt.files;input.dispatchEvent(new Event('change'));
+    document.getElementById('batch-target').value='';document.getElementById('batch-edge').value='10';document.getElementById('batch-format').value='image/png';document.getElementById('batch-form').requestSubmit();
+  }`);
+  await until("!document.getElementById('batch-settings').disabled && !document.getElementById('batch-zip').hidden");
+  assert.match(await evaluate("document.getElementById('batch-summary').textContent"),/2 prepared.*1 failed/);
+  assert.equal(await evaluate("document.querySelectorAll('#batch-results a').length"),2);
+  assert.match(await evaluate("document.getElementById('batch-results').textContent"),/10 × 5 px/);
+  await evaluate("document.getElementById('batch-zip').click()");
+  const archive=await readDownload('i-love-free-compressor.zip');
+  assert.equal(archive.readUInt32LE(0),0x04034b50);
+  await writeFile(join(artifacts,'batch-results.zip'),archive);
+  for(const width of [768,390,320]){
+    await cdp('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:true},session);
+    assert.equal(await evaluate('document.documentElement.scrollWidth <= innerWidth'),true,`Batch overflow at ${width}px`);
+  }
+  await screenshot('mobile-batch.png');
+  await evaluate("document.getElementById('batch-target').value='1';document.getElementById('batch-target').dispatchEvent(new Event('input',{bubbles:true}))");
+  assert.equal(await evaluate("document.getElementById('batch-zip').hidden && !document.getElementById('batch-zip').hasAttribute('href')"),true);
+  await evaluate(`{
+    const dt=new DataTransfer();for(let i=0;i<21;i++)dt.items.add(new File([window.featureFixture],'photo.png',{type:'image/png'}));
+    const input=document.getElementById('batch-input');input.files=dt.files;input.dispatchEvent(new Event('change'));
+  }`);
+  assert.match(await evaluate("document.getElementById('batch-status').textContent"),/up to 20 photos/);
+  // Cancel after starting: the first image finishes, subsequent images are skipped.
+  await evaluate("document.getElementById('batch-form').requestSubmit();document.getElementById('batch-cancel').click()");
+  await until("!document.getElementById('batch-settings').disabled");
+  assert.match(await evaluate("document.getElementById('batch-status').textContent"),/Batch stopped/);
+  assert.match(await evaluate("document.getElementById('batch-summary').textContent"),/1 prepared/);
+  assert.equal(await evaluate("document.querySelectorAll('#batch-results li').length"),1);
+  pass('Batch compression, duplicate Unicode names, corrupt-file isolation, real ZIP download, limits, cancellation, and responsive results');
+
+  await evaluate(`(async()=>{
+    const c=document.createElement('canvas');c.width=100;c.height=80;const x=c.getContext('2d');const pixels=x.createImageData(100,80);
+    let seed=17;for(let i=0;i<pixels.data.length;i+=4){seed=(seed*1664525+1013904223)>>>0;pixels.data[i]=seed&255;pixels.data[i+1]=(seed>>>8)&255;pixels.data[i+2]=(seed>>>16)&255;pixels.data[i+3]=255}x.putImageData(pixels,0,0);
+    const blob=await new Promise(resolve=>c.toBlob(resolve,'image/png'));const dt=new DataTransfer();dt.items.add(new File([blob],'noise.png',{type:'image/png'}));
+    const input=document.getElementById('batch-input');input.files=dt.files;input.dispatchEvent(new Event('change'));
+    document.getElementById('batch-edge').value='4096';document.getElementById('batch-resize').checked=false;document.getElementById('batch-form').requestSubmit();
+  })()`);
+  await until("!document.getElementById('batch-settings').disabled && !document.getElementById('batch-zip').hidden");
+  assert.match(await evaluate("document.getElementById('batch-summary').textContent"),/1 above the size limit/);
+  assert.match(await evaluate("document.getElementById('batch-results').textContent"),/100 × 80 px.*Above size limit.*Download anyway/);
+  pass('Batch never enlarges photos and clearly flags unreachable size limits');
   assert.deepEqual(errors, []); assert.deepEqual(externalRequests, []);
   pass('No uncaught browser errors or external network requests');
   console.log('All browser integration checks passed.');
