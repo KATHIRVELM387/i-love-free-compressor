@@ -10,11 +10,19 @@ A free, mobile-friendly photo resizing and compression tool. All photo processin
 
 ## Choose a tool
 
-The homepage shows ten tool cards. Selecting a card opens a dedicated view with only the controls needed for that task: compression, exact KB, resizing, cropping/presets, rotation/flipping, format conversion, light/color, watermarks, transparency backgrounds, or batches.
+The homepage shows twelve tool cards. Selecting a card opens a dedicated view with only the controls needed for that task: compression, exact KB, resizing, cropping/presets, rotation/flipping, format conversion, light/color, watermarks, transparency backgrounds, batches, collages, or images to PDF.
 
 Use **All tools** to return to the menu. Browser Back/Forward and direct links such as `https://ilovefreecompressor.vercel.app/#/crop` work on Vercel and GitHub Pages without server rewrites. Unknown tool links return to the menu. These are views within the static app, not separately indexed pages.
 
 Switching tools retains the original uploaded photo and starts fresh settings, so hidden adjustments and size limits cannot affect another tool. Download and reopen a result to use it as the starting photo for another tool. Reloading the page clears photos from memory. Leaving a running batch stops it after the current photo.
+
+## Collages and PDF documents
+
+**Photo collage** (`#/collage`) combines 2–9 photos into a 1–3 column grid, with square, portrait, or landscape canvases; spacing, background color, whole-photo or fill-cell framing; and JPG/PNG/WebP export. Empty cells retain the background color.
+
+**Images to PDF** (`#/pdf`) combines 1–20 photos into a downloadable PDF with one photo per A4 or US Letter page, in portrait or landscape. Pages fit each photo without cropping and use 24-point margins. Images are converted to JPG with white transparency and a maximum 2,048-pixel longest side; the PDF is image-only (no OCR or selectable text).
+
+Both tools support adding more photos, moving them up/down, removing individual photos, and clearing the selection. They keep their own selections, decode one photo at a time, allow stopping after the current photo, and cancel unfinished output when leaving the tool. Limits: 25 MB per photo, 40 million decoded pixels per photo, 100 MB combined input/output. Changing a selection or option discards the previous result. Corrupt photos produce an error; remove them and retry. PDF output is written locally using JPEG image streams and byte-counted PDF objects/cross-reference tables, with no external library or service.
 
 ## Run locally
 
@@ -48,7 +56,7 @@ Open http://localhost:4173. Python 3 is needed only for the local server. Altern
 - A generated sample illustration, keyboard controls, accessible status messages, responsive layout.
 - A Content Security Policy in the HTML blocks outbound connections from page scripts on GitHub Pages and other static hosts. Cloudflare also applies the additional headers in `public/_headers`.
 
-The app never claims success for an output above the target. Exact dimensions take priority unless the user enables dimension reduction. PNG is lossless, so encoding-quality adjustments do not reduce PNG file size. No guarantee of official form acceptance. PDF conversion and background removal are not included.
+The app never claims success for an output above the target. Exact dimensions take priority unless the user enables dimension reduction. PNG is lossless, so encoding-quality adjustments do not reduce PNG file size. No guarantee of official form acceptance. Background removal and PDF-to-image conversion are not included.
 
 To make a 25 KB file 50 KB, select **Exact file size** from the menu, enter **50**, and prepare the photo. To make a larger file smaller, use the same mode with a smaller target or use the maximum-size mode. If the encoded image still exceeds the target at minimum quality, the result is explicitly marked as not meeting the target; optional dimension reduction can help.
 

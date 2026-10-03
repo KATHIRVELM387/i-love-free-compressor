@@ -8,7 +8,9 @@ export const TOOLS = {
   adjust: { title: 'Light & color', description: 'Adjust brightness and contrast, or create a black-and-white photo.', action: 'Save adjustments →' },
   watermark: { title: 'Text watermark', description: 'Add your own text and choose its position, color, size, and opacity.', action: 'Add watermark →' },
   background: { title: 'Transparency background', description: 'Fill transparent pixels with a color. Existing photo backgrounds stay in place.', action: 'Save background →' },
-  batch: { title: 'Batch compressor' }
+  batch: { title: 'Batch compressor', view: 'batch' },
+  collage: { title: 'Photo collage', view: 'collage' },
+  pdf: { title: 'Images to PDF', view: 'pdf' }
 };
 
 export function startNavigation(onSelect) {
@@ -20,8 +22,8 @@ export function startNavigation(onSelect) {
     const config = name ? TOOLS[name] : null;
     $('home-view').hidden = !!name;
     $('workspace-nav').hidden = !name;
-    $('tool').hidden = !name || name === 'batch';
-    $('batch-tool').hidden = name !== 'batch';
+    $('tool').hidden = !name || !!config.view;
+    for (const view of ['batch', 'collage', 'pdf']) $(view + '-tool').hidden = name !== view;
     document.documentElement.dataset.activeTool = name || 'home';
     for (const group of document.querySelectorAll('[data-tools]')) {
       const active = !!name && group.dataset.tools.split(' ').includes(name);
@@ -29,13 +31,13 @@ export function startNavigation(onSelect) {
       if (group.tagName === 'FIELDSET') group.disabled = !active;
     }
     $('edit-controls').hidden = !['crop', 'rotate', 'adjust', 'watermark', 'background'].includes(name);
-    if (config && name !== 'batch') {
+    if (config && !config.view) {
       $('tool-title').textContent = config.title;
       $('tool-description').textContent = config.description;
     }
     document.title = config ? `${config.title} — I Love Free Compressor` : 'I Love Free Compressor — Free Image Tools';
     onSelect(name, config);
-    const heading = $(name === 'batch' ? 'batch-heading' : name ? 'tool-title' : 'menu-heading');
+    const heading = $(config?.view ? config.view + '-heading' : name ? 'tool-title' : 'menu-heading');
     heading.focus({ preventScroll: true });
     window.scrollTo({ top: 0, behavior: 'auto' });
     window.dispatchEvent(new CustomEvent('toolchange', { detail: { name } }));

@@ -6,7 +6,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob: data:; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
   <meta name="referrer" content="no-referrer">
   <meta name="google-site-verification" content="qNgvCQDjTJRYThLtSrekcbv9rR_-x0CuWfTNZg_7BCs" />
-  <meta name="description" content="Compress, resize, crop and adjust JPG, PNG and WebP photos for free. Rotate, flip, or process up to 20 images in a batch with ZIP downloads. Private, no signup.">
+  <meta name="description" content="Compress, resize, crop and adjust JPG, PNG and WebP photos for free. Create collages, combine images into PDFs, or download a batch as ZIP. Private, no signup.">
   <meta name="robots" content="index, follow, max-image-preview:large">
   <meta name="theme-color" content="#6935ce">
   <title>I Love Free Compressor — Free Image Compressor &amp; Photo Resizer</title>
@@ -22,8 +22,9 @@
   <meta name="twitter:description" content="Compress and resize photos for free. Your images stay on your device.">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css">
-  <script type="module" src="app.js?v=6"></script>
+  <script type="module" src="app.js?v=7"></script>
   <script type="module" src="batch.js?v=6"></script>
+  <script type="module" src="collections.js?v=1"></script>
 </head>
 <body>
   <a class="skip-link" href="#main-content">Skip to content</a>
@@ -52,11 +53,13 @@
       <a class="tool-card" href="#/watermark"><span class="tool-icon" aria-hidden="true">Aa</span><h3>Text watermark</h3><p>Add your name or brand to a photo.</p><span class="tool-open">Open tool →</span></a>
       <a class="tool-card" href="#/background"><span class="tool-icon" aria-hidden="true">◐</span><h3>Transparency background</h3><p>Fill transparent areas with your chosen color.</p><span class="tool-open">Open tool →</span></a>
       <a class="tool-card" href="#/batch"><span class="tool-icon" aria-hidden="true">▦</span><h3>Batch compressor</h3><p>Process up to 20 photos and download a ZIP.</p><span class="tool-open">Open tool →</span></a>
+      <a class="tool-card" href="#/collage"><span class="tool-icon" aria-hidden="true">▧</span><h3>Photo collage</h3><p>Arrange up to 9 photos in a colorful grid.</p><span class="tool-open">Open tool →</span></a>
+      <a class="tool-card" href="#/pdf"><span class="tool-icon" aria-hidden="true">PDF</span><h3>Images to PDF</h3><p>Combine up to 20 photos into one document.</p><span class="tool-open">Open tool →</span></a>
     </div></section>
     <section id="how-it-works" class="how-section wrap"><div class="section-intro"><span class="tiny-label">FROM “FILE TOO LARGE” TO DONE</span><h2>Three steps. Zero headaches.</h2></div><div class="how-grid"><article><span class="how-number">01</span><h3>Pick your photo</h3><p>A portrait, a signature, or a scan. Choose a JPG, PNG, or WebP from your device.</p></article><article><span class="how-number">02</span><h3>Set the requirements</h3><p>Enter the size and dimensions your form asks for. We’ll do the resizing and compression.</p></article><article><span class="how-number">03</span><h3>Download and carry on</h3><p>Check your preview, save the new file, and get back to what you were doing.</p></article></div></section>
     <section id="questions" class="faq-section wrap"><div><span class="tiny-label">GOOD TO KNOW</span><h2>A little clarity.</h2><p>Small answers to common questions.</p></div><div class="faq-list"><details><summary>Is it really free?</summary><p>Yes. Every feature here is free to use, with no account, subscription, or forced watermark. Add your own text watermark only if you choose.</p></details><details><summary>Where do my photos go?</summary><p>They stay in your browser. The tool doesn’t upload or store your photos on a server. Download any result you want to keep before closing or refreshing the page.</p></details><details><summary>How do I crop or adjust a photo?</summary><p>Choose Crop &amp; size presets from the tool menu, then use Crop &amp; frame to pick a shape, zoom in, and move the framing. Choose Light &amp; color from the menu to change brightness or contrast, or switch to black &amp; white. Quick size presets set the crop and output dimensions together. Check the preview, then use the tool’s action button to create your download. These edits apply to the single-photo tool.</p></details><details><summary>Can I add my name or choose a background?</summary><p>Choose Text watermark from the menu to add a name or brand, then choose its position, color, size, and opacity. Transparency background fills transparent pixels with a color; it does not remove an existing background. Each tool opens its own workspace for one photo at a time. You can also enter a download filename, and the tool adds the correct extension.</p></details><details><summary>Can I make a small file bigger?</summary><p>Yes. Choose “Exact file size” from the menu and enter the size you need, such as 50 KB. The tool saves a JPG at that size, adding non-image data if needed. This increases the file size without adding detail or improving quality. To change the photo’s dimensions instead, use Width and Height.</p></details><details><summary>Will it always reach my target size?</summary><p>Exact mode saves a JPG at your chosen size when the image can fit within that target. Very small targets may need smaller dimensions. Maximum mode only keeps the result under a limit, so a smaller file can stay smaller. We’ll clearly show when a target cannot be met. Here, 1 KB means 1,000 bytes. Other websites may change file size if they reprocess the image.</p></details><details><summary>Can I use this for an application form?</summary><p>Yes. Follow the form’s own format, dimension, and size requirements. This tool can resize and compress a photo; it doesn’t check official photo rules, remove backgrounds, or guarantee acceptance.</p></details></div></section>
     </div>
-    <div id="workspace-nav" class="workspace-nav wrap" hidden><a href="#/" class="text-button">← All tools</a><span>Switching tools keeps your original photo and starts fresh settings.</span></div>
+    <div id="workspace-nav" class="workspace-nav wrap" hidden><a href="#/" class="text-button">← All tools</a><span>Single-photo tools keep your original photo. Collage, PDF, and batch tools have their own photo selections.</span></div>
     <section class="workspace wrap" id="tool" aria-labelledby="tool-title" hidden>
       <div class="workspace-heading"><div><span class="tiny-label">YOUR SELECTED TOOL</span><h1 id="tool-title" tabindex="-1">Compress images</h1><p id="tool-description"></p></div><span class="local-badge"><span aria-hidden="true">◈</span> Stays on your device</span></div>
       <div class="editor-grid">
@@ -174,6 +177,60 @@
         <a id="batch-zip" class="button primary" download="i-love-free-compressor.zip" hidden>Download ZIP ↓</a>
         <ul id="batch-results" class="batch-results" aria-label="Batch results"></ul>
       </div>
+    </section>
+
+    <section id="collage-tool" class="workspace wrap collection-tool" aria-labelledby="collage-heading" hidden>
+      <div class="workspace-heading"><div><span class="tiny-label">MAKE SOMETHING TOGETHER</span><h1 id="collage-heading" tabindex="-1">Photo collage</h1><p>Your favorite photos, together. Choose a layout and make it yours.</p></div><span class="local-badge">Private &amp; free</span></div>
+      <form id="collage-form" class="collection-body">
+        <fieldset id="collage-settings"><legend class="sr-only">Photo collage settings</legend>
+          <div class="collection-grid"><div class="collection-selection">
+            <h2>1. Add &amp; arrange photos</h2>
+            <p class="field-help">JPG, PNG or WebP · 25 MB per photo · 100 MB total · up to 9 photos</p>
+            <input id="collage-input" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden>
+            <div class="collection-actions"><button id="collage-browse" type="button" class="button primary">Add photos +</button><button id="collage-clear" type="button" class="text-button">Clear all</button></div>
+            <p id="collage-selection" class="field-help">No photos selected. Add photos again to include more.</p>
+            <ol id="collage-list" class="photo-list" aria-label="Photos in output order"></ol>
+          </div><div class="collection-options"><h2>2. Make it yours</h2><div id="collage-options" class="collection-fields">
+<div><label for="collage-columns">Columns</label><select id="collage-columns"><option value="1">1 column</option><option value="2" selected>2 columns</option><option value="3">3 columns</option></select></div>
+<div><label for="collage-size">Canvas size</label><select id="collage-size"><option value="1080x1080">Square · 1080 × 1080</option><option value="1600x1200">Landscape · 1600 × 1200</option><option value="1200x1600">Portrait · 1200 × 1600</option></select></div>
+<div><label for="collage-fit">Photo fit</label><select id="collage-fit"><option value="contain">Show whole photo</option><option value="cover">Fill cell (crop edges)</option></select></div>
+<div><label for="collage-gap">Spacing (px)</label><input id="collage-gap" type="number" min="0" max="80" step="1" value="16" required></div>
+<div><label for="collage-color">Background color</label><input id="collage-color" type="color" value="#eee4ff"></div>
+<div><label for="collage-format">Save as</label><select id="collage-format"><option value="image/jpeg">JPG</option><option value="image/png">PNG</option><option value="image/webp">WebP</option></select></div></div>
+            <p class="field-help">Choose 2–9 photos. Photos fill the grid from left to right, then top to bottom. Unused cells show your background color.</p>
+            <button id="collage-process" type="submit" class="button primary" disabled>Create collage →</button>
+          </div></div>
+        </fieldset>
+        <button id="collage-cancel" type="button" class="text-button" hidden>Stop after current photo</button>
+        <progress id="collage-progress" aria-label="Photos processed" hidden></progress>
+        <p id="collage-status" role="status" aria-live="polite">Choose at least 2 photos to get started.</p>
+        <div id="collage-result" class="collection-result" hidden><img id="collage-preview" alt="Your finished photo collage"><div><h2>Your collage is ready</h2><p id="collage-summary"></p><a id="collage-download" class="button primary" download>Download collage ↓</a></div></div>
+      </form>
+    </section>
+
+    <section id="pdf-tool" class="workspace wrap collection-tool" aria-labelledby="pdf-heading" hidden>
+      <div class="workspace-heading"><div><span class="tiny-label">MAKE SOMETHING TOGETHER</span><h1 id="pdf-heading" tabindex="-1">Images to PDF</h1><p>Turn photos, scans, or notes into one easy-to-share document.</p></div><span class="local-badge">Private &amp; free</span></div>
+      <form id="pdf-form" class="collection-body">
+        <fieldset id="pdf-settings"><legend class="sr-only">Images to PDF settings</legend>
+          <div class="collection-grid"><div class="collection-selection">
+            <h2>1. Add &amp; arrange photos</h2>
+            <p class="field-help">JPG, PNG or WebP · 25 MB per photo · 100 MB total · up to 20 photos</p>
+            <input id="pdf-input" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden>
+            <div class="collection-actions"><button id="pdf-browse" type="button" class="button primary">Add photos +</button><button id="pdf-clear" type="button" class="text-button">Clear all</button></div>
+            <p id="pdf-selection" class="field-help">No photos selected. Add photos again to include more.</p>
+            <ol id="pdf-list" class="photo-list" aria-label="Photos in output order"></ol>
+          </div><div class="collection-options"><h2>2. Make it yours</h2><div id="pdf-options" class="collection-fields">
+<div><label for="pdf-paper">Paper size</label><select id="pdf-paper"><option value="a4">A4</option><option value="letter">US Letter</option></select></div>
+<div><label for="pdf-orientation">Page orientation</label><select id="pdf-orientation"><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select></div></div>
+            <p class="field-help">One photo per page, fitted without cropping. Transparent areas become white. Photos are saved as JPG up to 2,048 px on the longest side. This creates an image-only PDF; text is not selectable.</p>
+            <button id="pdf-process" type="submit" class="button primary" disabled>Create PDF →</button>
+          </div></div>
+        </fieldset>
+        <button id="pdf-cancel" type="button" class="text-button" hidden>Stop after current photo</button>
+        <progress id="pdf-progress" aria-label="Photos processed" hidden></progress>
+        <p id="pdf-status" role="status" aria-live="polite">Choose a photo to get started.</p>
+        <div id="pdf-result" class="collection-result" hidden><div class="pdf-result-icon" aria-hidden="true">PDF ✓</div><div><h2>Your PDF is ready</h2><p id="pdf-summary"></p><a id="pdf-download" class="button primary" download>Download PDF ↓</a></div></div>
+      </form>
     </section>
 
     <noscript><p class="wrap">Enable JavaScript to open these tools. Photo processing happens in your browser.</p></noscript>

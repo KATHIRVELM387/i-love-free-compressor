@@ -1,5 +1,5 @@
 import { fitDimensions, formatBytes, prepareImage, renderImage, getCropRect, downloadName } from './image-tools.js?v=5';
-import { startNavigation, TOOLS } from './navigation.js?v=6';
+import { startNavigation, TOOLS } from './navigation.js?v=7';
 
 const $ = id => document.getElementById(id);
 const fileInput = $('file-input');
@@ -311,7 +311,7 @@ $('settings-form').addEventListener('input', event => {
 
 $('settings-form').addEventListener('submit', async event => {
   event.preventDefault();
-  if (!source || busy || !currentTool || currentTool === 'batch') return;
+  if (!source || busy || !currentTool || TOOLS[currentTool]?.view) return;
   busy = true;
   const current = ++generation;
   const requestedWidth = Number($('width').value);
@@ -392,7 +392,7 @@ startNavigation((name, config) => {
   generation++;
   clearResult();
   setStatus('');
-  if (!name || name === 'batch') return;
+  if (!name || config.view) return;
   edits = defaultEdits();
   $('dimension-preset').value = '';
   $('size-mode').value = name === 'exact' ? 'exact' : 'maximum';

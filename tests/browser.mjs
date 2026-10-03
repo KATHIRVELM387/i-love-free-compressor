@@ -108,7 +108,7 @@ try {
   await cdp('Page.navigate', { url: `http://127.0.0.1:${port}` }, session);
   await until("document.readyState === 'complete' && !!document.getElementById('demo')");
   await until("document.documentElement.dataset.activeTool==='home'");
-  assert.equal(await evaluate("document.querySelectorAll('.tool-card').length"),10);
+  assert.equal(await evaluate("document.querySelectorAll('.tool-card').length"),12);
   assert.equal(await evaluate("document.getElementById('tool').hidden && document.getElementById('batch-tool').hidden"),true);
   await screenshot('desktop-home.png');
   for(const width of [768,390,320]){
@@ -325,19 +325,19 @@ try {
   assert.deepEqual(decorationChecks.names,['_a_b.jpg','original-ready.webp','photo-CON.png','été.jpg']);
   pass('Watermark positions, opacity, long-text fitting, upright rotated text, exact KB, background composition, and filename safety');
   await until("document.getElementById('original-name').textContent==='transparent-art.png'");
-  const controls=['target','width','crop-ratio','rotate-right','brightness','watermark-text','background-enabled','batch-target'];
-  const expected={compress:['target'],exact:['target'],resize:['width'],crop:['width','crop-ratio'],rotate:['rotate-right'],convert:[],adjust:['brightness'],watermark:['watermark-text'],background:['background-enabled'],batch:['batch-target']};
+  const controls=['target','width','crop-ratio','rotate-right','brightness','watermark-text','background-enabled','batch-target','collage-columns','pdf-paper'];
+  const expected={compress:['target'],exact:['target'],resize:['width'],crop:['width','crop-ratio'],rotate:['rotate-right'],convert:[],adjust:['brightness'],watermark:['watermark-text'],background:['background-enabled'],batch:['batch-target'],collage:['collage-columns'],pdf:['pdf-paper']};
   for(const [name, visible] of Object.entries(expected)){
     await goTool(name);
     const actual=await evaluate(`${JSON.stringify(controls)}.filter(id=>document.getElementById(id).getClientRects().length>0)`);
     assert.deepEqual(actual,visible,`${name} should show only its own controls`);
     assert.equal(await evaluate("document.getElementById('home-view').hidden"),true);
-    for(const id of controls.filter(id=>!visible.includes(id) && id!=='batch-target')){
-      if(name!=='batch') assert.equal(await evaluate(`document.getElementById(${JSON.stringify(id)}).matches(':disabled')`),true,`${id} must not validate or react in ${name}`);
+    for(const id of controls.filter(id=>!visible.includes(id) && !['batch-target','collage-columns','pdf-paper'].includes(id))){
+      if(!['batch','collage','pdf'].includes(name)) assert.equal(await evaluate(`document.getElementById(${JSON.stringify(id)}).matches(':disabled')`),true,`${id} must not validate or react in ${name}`);
     }
     assert.equal(await evaluate('document.documentElement.scrollWidth<=innerWidth'),true);
   }
-  pass('All ten routes show only the required controls; unrelated form fields are disabled');
+  pass('All twelve routes show only the required controls; unrelated form fields are disabled');
 
   await goTool('exact');
   await input('target','50');
@@ -428,6 +428,100 @@ try {
   assert.match(await evaluate("document.getElementById('batch-status').textContent"),/Batch stopped/);
   pass('Separate batch screen, per-file error isolation, actual ZIP download, and cancellation');
 
+  // Actual exported pixels and documents, with user-visible order and error recovery.
+  await evaluate(`(async()=>{window.collectionFixtures=await (async()=>{
+    const c=document.createElement('canvas');c.width=200;c.height=100;const x=c.getContext('2d');
+    const result=[];for(const [name,color] of [['red.png','#ff0000'],['blue.png','#0000ff']]){
+      x.fillStyle=color;x.fillRect(0,0,200,100);result.push(new File([await new Promise(r=>c.toBlob(r,'image/png'))],name,{type:'image/png'}));
+    }return result;
+  })()})()`);
+  async function addCollection(kind, expression='window.collectionFixtures') {
+    await evaluate(`{const d=new DataTransfer();for(const f of ${expression})d.items.add(f);const i=document.getElementById('${kind}-input');i.files=d.files;i.dispatchEvent(new Event('change'));}`);
+  }
+  async function buildCollection(kind) {
+    await evaluate(`document.getElementById('${kind}-form').requestSubmit()`);
+    await until(`!document.getElementById('${kind}-settings').disabled&&!document.getElementById('${kind}-result').hidden`);
+  }
+  async function collagePixels() {
+    await until("document.getElementById('collage-preview').complete&&document.getElementById('collage-preview').naturalWidth>0");
+    return evaluate(`(()=>{const image=document.getElementById('collage-preview');const c=document.createElement('canvas');c.width=image.naturalWidth;c.height=image.naturalHeight;const x=c.getContext('2d');x.drawImage(image,0,0);return {size:[c.width,c.height],pixels:[[10,10],[100,100],[270,540],[810,540]].map(p=>Array.from(x.getImageData(...p,1,1).data))}})()`);
+  }
+  await goTool('collage');
+  await addCollection('collage');
+  await input('collage-gap','0');await input('collage-color','#00ff00');await input('collage-format','image/png');
+  await buildCollection('collage');
+  let collage=await collagePixels();
+  assert.deepEqual(collage.size,[1080,1080]);
+  assert.deepEqual(collage.pixels,[[0,255,0,255],[0,255,0,255],[255,0,0,255],[0,0,255,255]]);
+  await screenshot('desktop-collage.png');
+  await input('collage-fit','cover');
+  assert.equal(await evaluate("document.getElementById('collage-result').hidden"),true);
+  await evaluate("document.querySelector('#collage-list li:last-child [data-action=up]').click()");
+  assert.match(await evaluate("document.querySelector('#collage-list li').textContent"),/blue.png/);
+  await buildCollection('collage');
+  collage=await collagePixels();
+  assert.deepEqual(collage.pixels,[[0,0,255,255],[0,0,255,255],[0,0,255,255],[255,0,0,255]]);
+  await evaluate("document.getElementById('collage-download').click()");
+  await writeFile(join(artifacts,'collage.png'),await readDownload('my-collage.png'));
+  for (const type of ['image/jpeg','image/webp']) {
+    await input('collage-format',type); await buildCollection('collage');
+    await evaluate("document.getElementById('collage-download').click()");
+    const bytes=await readDownload(type==='image/jpeg'?'my-collage.jpg':'my-collage.webp');
+    if(type==='image/jpeg')assert.equal(bytes.readUInt16BE(0),0xffd8);else assert.equal(bytes.toString('ascii',8,12),'WEBP');
+  }
+  await addCollection('collage',"[new File(['bad'],'broken.jpg',{type:'image/jpeg'})]");
+  await evaluate("document.getElementById('collage-form').requestSubmit()");
+  await until("!document.getElementById('collage-settings').disabled&&document.getElementById('collage-status').textContent.includes('could not be opened')");
+  assert.equal(await evaluate("document.getElementById('collage-result').hidden"),true);
+  await evaluate("document.querySelector('#collage-list li:last-child [data-action=remove]').click()");
+  await buildCollection('collage');
+  await addCollection('collage','Array(8).fill(window.collectionFixtures[0])');
+  assert.match(await evaluate("document.getElementById('collage-status').textContent"),/up to 9/);
+  assert.equal(await evaluate("document.querySelectorAll('#collage-list li').length"),2);
+  await addCollection('collage',"[new File(['bad'],'bad.txt',{type:'text/plain'})]");
+  assert.match(await evaluate("document.getElementById('collage-status').textContent"),/choose JPG/);
+  await addCollection('collage',"[new File([new Uint8Array(25000001)],'large.png',{type:'image/png'})]");
+  assert.match(await evaluate("document.getElementById('collage-status').textContent"),/25 MB/);
+  await evaluate("document.getElementById('collage-form').requestSubmit();document.getElementById('collage-cancel').click()");
+  await until("!document.getElementById('collage-settings').disabled");
+  assert.match(await evaluate("document.getElementById('collage-status').textContent"),/Stopped/);
+  assert.equal(await evaluate("document.getElementById('collage-result').hidden"),true);
+  pass('Collage fit/fill pixels, photo order, all three formats, corrupt-photo recovery, upload limits, and cancellation');
+
+  await goTool('pdf');await addCollection('pdf');
+  await evaluate("document.querySelector('#pdf-list li:last-child [data-action=up]').click()");
+  await buildCollection('pdf');
+  assert.match(await evaluate("document.getElementById('pdf-summary').textContent"),/2 pages.*A4.*Portrait/);
+  await evaluate("document.getElementById('pdf-download').click()");
+  const pdf=await readDownload('my-photos.pdf');
+  assert.equal(pdf.toString('ascii',0,8),'%PDF-1.4');
+  await writeFile(join(artifacts,'photos-a4.pdf'),pdf);
+  await screenshot('desktop-pdf.png');
+  await input('pdf-paper','letter');await input('pdf-orientation','landscape');
+  assert.equal(await evaluate("document.getElementById('pdf-result').hidden"),true);
+  await buildCollection('pdf');
+  await evaluate("document.getElementById('pdf-download').download='letter.pdf';document.getElementById('pdf-download').click()");
+  await writeFile(join(artifacts,'photos-letter.pdf'),await readDownload('letter.pdf'));
+  await addCollection('pdf',"[new File(['bad'],'broken.jpg',{type:'image/jpeg'})]");
+  await evaluate("document.getElementById('pdf-form').requestSubmit()");
+  await until("!document.getElementById('pdf-settings').disabled&&document.getElementById('pdf-status').textContent.includes('could not be opened')");
+  assert.equal(await evaluate("document.getElementById('pdf-result').hidden"),true);
+  await evaluate("document.querySelector('#pdf-list li:last-child [data-action=remove]').click()");
+  await buildCollection('pdf');
+  await evaluate("window.originalToBlob=HTMLCanvasElement.prototype.toBlob;HTMLCanvasElement.prototype.toBlob=function(...args){setTimeout(()=>originalToBlob.apply(this,args),100)};document.getElementById('pdf-form').requestSubmit();location.hash='#/collage'");
+  await until("document.documentElement.dataset.activeTool==='collage'&&!document.getElementById('pdf-settings').disabled");
+  assert.equal(await evaluate("document.getElementById('pdf-result').hidden"),true);
+  assert.match(await evaluate("document.getElementById('pdf-status').textContent"),/Stopped/);
+  await evaluate('HTMLCanvasElement.prototype.toBlob=originalToBlob;delete window.originalToBlob');
+  await goTool('pdf');
+  await addCollection('pdf','Array(19).fill(window.collectionFixtures[0])');
+  assert.match(await evaluate("document.getElementById('pdf-status').textContent"),/up to 20/);
+  await evaluate("document.getElementById('pdf-clear').click()");
+  assert.equal(await evaluate("document.querySelectorAll('#pdf-list li').length===0&&document.getElementById('pdf-process').disabled"),true);
+  await addCollection('pdf','[window.collectionFixtures[0]]');await buildCollection('pdf');
+  assert.match(await evaluate("document.getElementById('pdf-summary').textContent"),/1 page/);
+  pass('PDF downloads, page ordering, paper/orientation choices, corrupt-photo recovery, clear/add, limits, and cancellation on navigation');
+
   await goTool('convert');
   for(const [name,type,content,expectedError] of [['bad.txt','text/plain','hello','Please choose a JPG'],['bad.jpg','image/jpeg','broken','could not be opened']]){
     await evaluate(`{const dt=new DataTransfer();dt.items.add(new File([${JSON.stringify(content)}],${JSON.stringify(name)},{type:${JSON.stringify(type)}}));const input=document.getElementById('file-input');input.files=dt.files;input.dispatchEvent(new Event('change'));}`);
@@ -448,6 +542,8 @@ try {
       assert.equal(await evaluate('document.documentElement.scrollWidth<=innerWidth'),true,`${name} overflow at ${width}`);
     }
   }
+  await goTool('collage');await screenshot('mobile-collage.png');
+  await goTool('pdf');await screenshot('mobile-pdf.png');
   await goTool('crop');await screenshot('mobile-focused-crop.png');
   await cdp('Page.reload',{},session);
   await until("document.readyState==='complete'&&document.documentElement.dataset.activeTool==='crop'");
