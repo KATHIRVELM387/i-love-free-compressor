@@ -2,4 +2,5 @@ ready-to-upload.zip
 free-comprizer.zip
 test-artifacts/
 node_modules/
+.vercel/
 i-love-free-compressor.zip

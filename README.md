@@ -36,6 +36,16 @@ Exact JPG output uses the highest quality found within the target, then adds val
 
 Input is limited to 25 MB and 40 million decoded pixels; output is limited to 4,096 pixels per side and 16 million pixels. Very large inputs may still exceed memory on older devices. Animated inputs become a still image. Refreshing discards work. The hosting provider receives ordinary website requests but the app sends no photo data.
 
+## Deploy free on Vercel
+
+The root `vercel.json` deploys only `public/`, skips dependency installation and builds, and applies the same privacy headers as Cloudflare. No server functions, database, or paid APIs are used. Use Vercel's **Hobby** plan for this personal, non-commercial project.
+
+Import this repository into Vercel, use **Other** as the framework, and keep the output directory as `public`. Alternatively, sign in with the Vercel CLI and deploy this repository with `vercel --prod`. The requested project name is `ilovefreecompressor`; Vercel must confirm availability of the corresponding `vercel.app` address. `.vercel/` account/project link settings are excluded from Git.
+
+When changing the primary website address, update the canonical URL, Open Graph URL, sitemap, and Google Search Console URL-prefix property to match the assigned address.
+
+Official instructions: https://vercel.com/docs/deployments/overview and https://vercel.com/docs/plans/hobby
+
 ## Deploy free on GitHub Pages
 
 The repository includes `.github/workflows/pages.yml`. It publishes only `public/` on each push to `main`, using the official GitHub Pages actions. No build step, dependency installation, custom domain, or paid service is required. Use a public repository to stay on GitHub Free.
