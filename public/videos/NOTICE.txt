@@ -1,0 +1,15 @@
+Demo narration credits
+
+The English narration in these original website walkthroughs is computer-generated.
+Text and video scenes: I Love Free Compressor project.
+Speech engine used locally at build time: Piper 1.8.0 (GPL-3.0).
+https://github.com/OHF-Voice/piper1-gpl
+
+Voice model: en_US-ljspeech-medium, trained by Bryce Beattie from the
+public-domain LJ Speech dataset. The model and engine are not bundled with this website.
+Model card: https://huggingface.co/rhasspy/piper-voices/blob/main/en/en_US/ljspeech/medium/MODEL_CARD
+Dataset: https://keithito.com/LJ-Speech-Dataset/
+Training information: https://brycebeattie.com/files/tts/
+
+No original dataset recordings are included. The spoken text was generated
+specifically to describe the actions shown in each demo.

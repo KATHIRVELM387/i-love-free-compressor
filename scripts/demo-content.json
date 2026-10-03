@@ -1,0 +1,65 @@
+{
+  "tour": [
+    "Meet your everyday toolkit",
+    [
+      [
+        "01 / YOUR TOOLKIT",
+        "40 free tools. Start without signing up."
+      ],
+      [
+        "02 / FIND A TOOL",
+        "Search a task, then choose its tool card."
+      ],
+      [
+        "03 / YOUR WORKSPACE",
+        "Upload a photo or use the built-in sample."
+      ],
+      [
+        "04 / GET SOME GUIDANCE",
+        "Open Help for this tool for steps, examples, and limits."
+      ]
+    ]
+  ],
+  "compress": [
+    "Make an image lighter",
+    [
+      [
+        "01 / CHOOSE YOUR IMAGE",
+        "Open Compress images. Try a sample photo to practise."
+      ],
+      [
+        "02 / SET YOUR LIMIT",
+        "Enter 100 KB and choose JPG as the output format."
+      ],
+      [
+        "03 / CREATE YOUR RESULT",
+        "Select Compress photo. Check the preview and file size."
+      ],
+      [
+        "04 / READY TO DOWNLOAD",
+        "Choose Download photo. Your result stays on your device."
+      ]
+    ]
+  ],
+  "resize": [
+    "Get the dimensions just right",
+    [
+      [
+        "01 / START WITH A PHOTO",
+        "Open Resize images with a photo or the built-in sample."
+      ],
+      [
+        "02 / CHOOSE A WIDTH",
+        "Keep the aspect ratio locked. Set Width to 800 pixels."
+      ],
+      [
+        "03 / CHECK YOUR RESULT",
+        "Select Resize photo and check the output dimensions."
+      ],
+      [
+        "04 / SAVE YOUR IMAGE",
+        "Choose Download photo to keep your resized image."
+      ]
+    ]
+  ]
+}

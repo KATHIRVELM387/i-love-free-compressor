@@ -1,4 +1,4 @@
-import { TOOLS, HELP_PAGES } from './navigation.js?v=13';
+import { TOOLS, HELP_PAGES } from './navigation.js?v=14';
 import { categoryFor } from './guide-data.js';
 const $ = id => document.getElementById(id);
 const el = (tag, text) => { const n = document.createElement(tag); if (text !== undefined) n.textContent = text; return n; };

@@ -1,4 +1,4 @@
-// Small self-hosted walkthroughs. Media is requested only after a visitor chooses a demo.
+// Small self-hosted walkthroughs. Media is requested only after a visitor presses Play.
 export const DEMOS = [
   { key:'tour', title:'Meet your everyday toolkit', label:'Website tour', duration:'30 sec', route:'', description:'Find a tool, open a focused workspace, and get help when you need it.', steps:[['Your everyday toolkit','Start on All tools. Every tool works without an account.'],['Find your tool','Search for a task or choose Images, PDF, Creative, or Web, then open a tool card.'],['Open a workspace','Choose Compress images to see its upload area and settings. Try a sample photo to practise.'],['Learn as you go','Open Help for this tool for instructions, examples, and limits.']] },
   { key:'compress', title:'Make an image lighter', label:'Compression demo', duration:'30 sec', route:'compress', description:'Follow a sample image from the upload area to a smaller, downloadable result.', steps:[['Choose Compress images','Open the tool from the homepage. Use Try a sample photo to practise without uploading your own file.'],['Set your limit','Enter 100 in Maximum file size and choose JPG. A maximum is an upper limit, not an exact output size.'],['Create the result','Select Compress photo. The tool processes the sample locally and shows its size and preview.'],['Download your image','Use Download photo to save the result. Actual sizes depend on your image and settings.']] },
@@ -6,26 +6,26 @@ export const DEMOS = [
 ];
 const node=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;};
 export function mountVideoPages(register,link){
- const page=register('videos','A quick watch. A confident start.','Short walkthroughs of the actual website, with on-screen instructions. Choose a demo and follow along at your own pace.');
+ const page=register('videos','A quick watch. A confident start.','Short walkthroughs of the actual website, with spoken English instructions and captions. Choose a demo and follow along at your own pace.');
  const layout=node('div',undefined,'video-layout');
  const playlist=node('div',undefined,'video-playlist');playlist.setAttribute('aria-label','Choose a video demo');
  const player=node('section',undefined,'video-player');
  const title=node('h2');title.id='demo-title';
- const video=node('video');video.id='demo-video';video.controls=false;video.playsInline=true;video.preload='none';video.setAttribute('aria-labelledby','demo-title');video.width=1280;video.height=900;
+ const video=node('video');video.id='demo-video';video.controls=false;video.playsInline=true;video.preload='none';video.muted=false;video.volume=1;video.setAttribute('aria-labelledby','demo-title');video.width=1280;video.height=900;
  const frame=node('div',undefined,'demo-video-frame');const play=node('button','▶', 'demo-play-button');play.type='button';play.id='demo-play';play.setAttribute('aria-label','Play selected demo');frame.append(video,play);
- const fallback=node('p');fallback.append(link('Download this video','videos/tour.mp4','text-button'));video.append(fallback);
+ const fallback=node('p');fallback.append(link('Download this video','videos/tour-narrated.mp4','text-button'));video.append(fallback);
  const description=node('p',undefined,'video-description');
  const status=node('p','', 'field-help');status.id='video-status';status.setAttribute('role','status');
- const actions=node('div',undefined,'video-actions');const open=link('Try it yourself','#/','button primary');const download=link('Download video','videos/tour.mp4','button secondary');download.download='website-tour.mp4';actions.append(open,download);
+ const actions=node('div',undefined,'video-actions');const open=link('Try it yourself','#/','button primary');const download=link('Download video','videos/tour-narrated.mp4','button secondary');download.download='website-tour.mp4';const sound=node('button','Mute narration','button secondary');sound.type='button';sound.id='demo-sound';sound.setAttribute('aria-pressed','false');sound.onclick=()=>{if(video.muted||video.volume===0){video.muted=false;if(video.volume===0)video.volume=1;}else video.muted=true;};video.addEventListener('volumechange',()=>{const muted=video.muted||video.volume===0;sound.textContent=muted?'Turn narration on':'Mute narration';sound.setAttribute('aria-pressed',String(muted));});actions.append(open,download,sound);
  const transcript=node('details',undefined,'video-transcript');transcript.open=true;const summary=node('summary','Written walkthrough');const steps=node('ol');transcript.append(summary,steps);
  player.append(title,frame,description,status,actions,transcript);layout.append(playlist,player);page.append(layout);
- const note=node('p','Videos have on-screen text and optional English captions, with no audio. Playback starts only when you press Play. You can also download a clip or follow its written walkthrough.','video-note');page.append(note);
+ const note=node('p','Videos include computer-generated English narration, on-screen instructions, and optional captions. Press Play to start with sound; use Mute narration or the player’s volume control for silent viewing. Downloads include the narration. ','video-note');note.append(link('Audio credits','videos/NOTICE.txt','text-button'));page.append(note);
  let selected;
  function choose(demo,updateURL=true){
   selected=demo;video.pause();status.textContent='';title.textContent=demo.title;description.textContent=demo.description;
-  video.poster=`videos/${demo.key}.jpg`;video.dataset.source=`videos/${demo.key}.mp4`;video.removeAttribute('src');video.controls=false;play.hidden=false;play.setAttribute('aria-label','Play '+demo.label);
+  video.poster=`videos/${demo.key}.jpg`;video.dataset.source=`videos/${demo.key}-narrated.mp4`;video.removeAttribute('src');video.controls=false;play.hidden=false;play.setAttribute('aria-label','Play '+demo.label);
   video.querySelectorAll('track').forEach(t=>t.remove());const track=node('track');track.kind='captions';track.label='English';track.srclang='en';track.src=`videos/${demo.key}.vtt`;video.append(track);video.load();
-  fallback.firstChild.href=download.href=`videos/${demo.key}.mp4`;download.download=`${demo.key}-demo.mp4`;open.href='#/'+demo.route;open.textContent=demo.route?'Try '+(demo.key==='resize'?'Resize images':'Compress images'):'Explore all tools';
+  fallback.firstChild.href=download.href=`videos/${demo.key}-narrated.mp4`;download.download=`${demo.key}-demo.mp4`;open.href='#/'+demo.route;open.textContent=demo.route?'Try '+(demo.key==='resize'?'Resize images':'Compress images'):'Explore all tools';
   steps.replaceChildren();for(const [heading,text]of demo.steps){const li=node('li');li.append(node('strong',heading),node('p',text));steps.append(li);}
   for(const b of playlist.children)b.setAttribute('aria-pressed',String(b.dataset.demo===demo.key));
   if(updateURL){const url=new URL(location.href);url.hash='/videos/'+demo.key;history.replaceState(null,'',url);}

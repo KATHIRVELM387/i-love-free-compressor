@@ -214,10 +214,22 @@ All tools now supports combined search/category filtering. Each tool workspace l
 
 ## Visual design and video walkthroughs
 
-The reference-inspired design uses a white identity header, navy navigation, a blue network-pattern hero, orange accents, and white account and tool panels. Homepage summaries describe real features, and the account panel switches to dashboard links after sign-in. The existing vertical tool navigation remains available. CSS lives in `public/design.css`; the original decorative network pattern is in `public/assets/network.svg`.
+The reference-inspired design uses a white identity header, navy navigation, a blue network-pattern hero, orange accents, and white account and tool panels. Homepage summaries describe real features, and the account panel switches to dashboard links after sign-in. The same navy network-pattern heading, white panels, blue controls, and orange accents apply to all 101 tool, account, information, workflow, and guide routes. The existing vertical tool navigation remains available. CSS lives in `public/design.css`; the original decorative network pattern is in `public/assets/network.svg`.
 
-`#/videos` offers three approximately 30-second captioned walkthroughs: the website tour, compression, and resizing. Direct links are `#/videos/tour`, `#/videos/compress`, and `#/videos/resize`. Each video is an MP4 made from the actual redesigned website and built-in sample image, with on-screen instructions, four caption cues, and a complete written walkthrough. There is no audio or third-party player. The three MP4s together are approximately 800 KB; media is loaded only after pressing Play. Playback stops when leaving the page. Native controls provide seeking, volume, fullscreen, and captions after playback starts. Download links and written steps remain available if playback fails.
+`#/videos` offers three approximately 30-second captioned walkthroughs: the website tour, compression, and resizing. Direct links are `#/videos/tour`, `#/videos/compress`, and `#/videos/resize`. Each video is an MP4 made from the actual redesigned website and built-in sample image, with synchronized computer-generated English narration, on-screen instructions, four caption cues, and a complete written walkthrough. The native player starts with sound only after pressing Play and includes an explicit Mute narration button plus standard volume controls. Narration remains in downloaded MP4s. There is no third-party player. The three narrated MP4s together are approximately 1.5 MB; media is loaded only after pressing Play. Playback stops when leaving the page. Native controls provide seeking, volume, fullscreen, and captions after playback starts. Download links and written steps remain available if playback fails.
 
-Generated videos, posters, and WebVTT captions live in `public/videos/`. To refresh recordings after a UI change, run `npm run capture:demos`, then `FFMPEG_BIN=/path/to/ffmpeg python3 scripts/build-demo-videos.py`. The build requires Python Pillow, FFmpeg with H.264 encoding, and DejaVu Sans fonts (override `DEMO_FONT_DIR` if necessary). No video-generation dependencies are installed in the deployed website.
+Generated videos, posters, and WebVTT captions live in `public/videos/`. To refresh recordings after a UI change:
 
-Run `npm run test:videos` for real Chrome playback, seeking, caption parsing, explicit loading, route cleanup, failure recovery, and desktop/mobile layout checks. `ILFC_LIVE_URL=https://your-site/ npm run test:videos` checks the hosted assets too.
+```sh
+npm run capture:demos
+# In a local Python environment with piper-tts==1.8.0 and Pillow installed:
+PIPER_MODEL=/path/to/en_US-ljspeech-medium.onnx python3 scripts/generate-demo-audio.py
+FFMPEG_BIN=/path/to/ffmpeg python3 scripts/build-demo-videos.py
+FFMPEG_BIN=/path/to/ffmpeg python3 scripts/check-demo-audio.py
+```
+
+The original narration script is shared in `scripts/demo-content.json`. Speech is synthesized locally using Piper and the LJSpeech medium voice; source credits are in `public/videos/NOTICE.txt`. Download the ONNX model and matching JSON configuration from the [voice repository](https://huggingface.co/rhasspy/piper-voices/tree/main/en/en_US/ljspeech/medium). The build also requires FFmpeg with H.264/AAC encoding and DejaVu Sans fonts (override `DEMO_FONT_DIR` if necessary). WAV intermediates stay in ignored `test-artifacts/demo-audio/`. No speech engine, voice model, or video-generation dependencies are installed in the deployed website.
+
+The MP4s use `*-narrated.mp4` filenames so browsers cannot reuse the old silent assets. Audio starts 0.35 seconds into each matching scene and is normalized to -18 LUFS with a -2 dB true-peak limit. The audio checker decodes the final MP4 track and verifies audible content in every scene, unclipped peaks, and matching duration.
+
+Run `npm run test:videos` for real Chrome audio decoding, mute/volume recovery, playback, seeking, caption parsing, explicit loading, route cleanup, failure recovery, desktop/mobile layout checks, and shared banner colours on all 101 routes. `ILFC_LIVE_URL=https://your-site/ npm run test:videos` checks the hosted assets too.

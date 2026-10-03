@@ -1,4 +1,4 @@
-import { TOOLS } from './navigation.js?v=13';
+import { TOOLS } from './navigation.js?v=14';
 import { getPreferences } from './account-bridge.js?v=1';
 const $=id=>document.getElementById(id);
 const el=(tag,text)=>{const n=document.createElement(tag);if(text)n.textContent=text;return n;};

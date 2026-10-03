@@ -1,39 +1,26 @@
 """Build captioned MP4 walkthroughs from capture-demos.mjs screenshots.
-Requires Pillow and FFmpeg. Set FFMPEG_BIN when ffmpeg is not on PATH.
+Requires Pillow, FFmpeg, and WAV narration from generate-demo-audio.py. Set FFMPEG_BIN when ffmpeg is not on PATH.
 Only generated demo media is published; build tools stay local.
 """
 from pathlib import Path
-import os, subprocess
+import os, subprocess, json
 from PIL import Image, ImageDraw, ImageFont
 ROOT=Path(__file__).resolve().parent.parent
 FRAMES=ROOT/'test-artifacts/demo-frames'
 OUT=ROOT/'public/videos'
 OUT.mkdir(exist_ok=True)
 FFMPEG=os.environ.get('FFMPEG_BIN','ffmpeg')
+AUDIO=Path(os.environ.get('DEMO_AUDIO_DIR',str(ROOT/'test-artifacts/demo-audio')))
 FONT=os.environ.get('DEMO_FONT_DIR','/usr/share/fonts/truetype/dejavu')
 regular=lambda size:ImageFont.truetype(str(Path(FONT)/'DejaVuSans.ttf'),size)
 bold=lambda size:ImageFont.truetype(str(Path(FONT)/'DejaVuSans-Bold.ttf'),size)
-DATA={
- 'tour':('Meet your everyday toolkit',[
-  ('01 / YOUR TOOLKIT','40 free tools. Start without signing up.'),
-  ('02 / FIND A TOOL','Search a task, then choose its tool card.'),
-  ('03 / YOUR WORKSPACE','Upload a photo or use the built-in sample.'),
-  ('04 / GET SOME GUIDANCE','Open Help for this tool for steps, examples, and limits.')]),
- 'compress':('Make an image lighter',[
-  ('01 / CHOOSE YOUR IMAGE','Open Compress images. Try a sample photo to practise.'),
-  ('02 / SET YOUR LIMIT','Enter 100 KB and choose JPG as the output format.'),
-  ('03 / CREATE YOUR RESULT','Select Compress photo. Check the preview and file size.'),
-  ('04 / READY TO DOWNLOAD','Choose Download photo. Your result stays on your device.')]),
- 'resize':('Get the dimensions just right',[
-  ('01 / START WITH A PHOTO','Open Resize images with a photo or the built-in sample.'),
-  ('02 / CHOOSE A WIDTH','Keep the aspect ratio locked. Set Width to 800 pixels.'),
-  ('03 / CHECK YOUR RESULT','Select Resize photo and check the output dimensions.'),
-  ('04 / SAVE YOUR IMAGE','Choose Download photo to keep your resized image.')])}
+DATA=json.loads((ROOT/'scripts/demo-content.json').read_text())
 FPS=15
 FRAMES_PER_SCENE=112 # 7.467 seconds per scene, about 30 seconds total.
 def timestamp(seconds):
  ms=round(seconds*1000);return f'{ms//3600000:02}:{ms//60000%60:02}:{ms//1000%60:02}.{ms%1000:03}'
 for key,(title,scenes) in DATA.items():
+ if not (AUDIO/f'{key}.wav').is_file():raise FileNotFoundError('Generate narration first: scripts/generate-demo-audio.py')
  bases=[]
  for i,(label,instruction) in enumerate(scenes):
   frame=Image.new('RGB',(1280,900),'#f5f7fb');d=ImageDraw.Draw(frame)
@@ -49,7 +36,7 @@ for key,(title,scenes) in DATA.items():
  captions=['WEBVTT','']
  for i,(_,line) in enumerate(scenes):captions += [f'{timestamp(i*FRAMES_PER_SCENE/FPS)} --> {timestamp((i+1)*FRAMES_PER_SCENE/FPS)}',line,'']
  (OUT/f'{key}.vtt').write_text('\n'.join(captions))
- proc=subprocess.Popen([FFMPEG,'-hide_banner','-loglevel','error','-y','-f','rawvideo','-vcodec','rawvideo','-pix_fmt','rgb24','-s','1280x900','-r',str(FPS),'-i','-','-an','-c:v','libx264','-preset','veryfast','-crf','25','-pix_fmt','yuv420p','-movflags','+faststart',str(OUT/f'{key}.mp4')],stdin=subprocess.PIPE)
+ proc=subprocess.Popen([FFMPEG,'-hide_banner','-loglevel','error','-y','-f','rawvideo','-vcodec','rawvideo','-pix_fmt','rgb24','-s','1280x900','-r',str(FPS),'-i','-','-i',str(AUDIO/f'{key}.wav'),'-map','0:v:0','-map','1:a:0','-c:a','aac','-b:a','96k','-af','loudnorm=I=-18:TP=-2:LRA=7','-ar','44100','-c:v','libx264','-preset','veryfast','-crf','25','-pix_fmt','yuv420p','-movflags','+faststart',str(OUT/f'{key}-narrated.mp4')],stdin=subprocess.PIPE)
  try:
   for i,base in enumerate(bases):
    for tick in range(FRAMES_PER_SCENE):
@@ -62,4 +49,4 @@ for key,(title,scenes) in DATA.items():
     proc.stdin.write(frame.tobytes())
  finally:proc.stdin.close()
  if proc.wait()!=0:raise RuntimeError(f'Video encoding failed: {key}')
- print(f'{key}: {(OUT/f"{key}.mp4").stat().st_size/1024:.0f} KB',flush=True)
+ print(f'{key}: {(OUT/f"{key}-narrated.mp4").stat().st_size/1024:.0f} KB',flush=True)

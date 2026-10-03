@@ -121,20 +121,24 @@ try {
   assert.equal(await evaluate('location.hash'),'#/videos/'+key);
   assert.equal(await evaluate("document.querySelectorAll('.video-transcript li').length"),4);
   await evaluate("document.getElementById('demo-play').click()");
-  await until("document.getElementById('demo-video').currentTime>.2");
+  await until("document.getElementById('demo-video').currentTime>1");
+  assert.equal(await evaluate("!document.getElementById('demo-video').muted && document.getElementById('demo-video').volume===1 && document.getElementById('demo-video').webkitAudioDecodedByteCount>0"),true,'Narration must decode and start with sound');
+  await evaluate("document.getElementById('demo-sound').click()");await until("document.getElementById('demo-sound').textContent==='Turn narration on'");assert.equal(await evaluate("document.getElementById('demo-video').muted"),true);
+  await evaluate("document.getElementById('demo-sound').click();document.getElementById('demo-video').volume=0");await until("document.getElementById('demo-sound').textContent==='Turn narration on'");
+  await evaluate("document.getElementById('demo-sound').click()");await until("!document.getElementById('demo-video').muted && document.getElementById('demo-video').volume===1 && document.getElementById('demo-sound').textContent==='Mute narration'");
   const state=await evaluate("(()=>{const v=document.getElementById('demo-video');return {duration:v.duration,width:v.videoWidth,height:v.videoHeight,error:v.error?.code||null};})()");
   assert.equal(state.width,1280);assert.equal(state.height,900);assert.equal(state.error,null);assert.ok(state.duration>29&&state.duration<31);
   await evaluate("document.getElementById('demo-video').pause();document.getElementById('demo-video').currentTime=20;document.getElementById('demo-video').textTracks[0].mode='hidden'");
   await until("document.getElementById('demo-video').readyState>=2 && !document.getElementById('demo-video').seeking && document.querySelector('#demo-video track').readyState===2");
   assert.equal(await evaluate("document.getElementById('demo-video').textTracks[0].cues.length"),4);
-  assert.equal(await evaluate("document.querySelector('.video-actions a[download]').href.endsWith(location.hash.split('/').pop()+'.mp4')"),true);
-  const response=await fetch(new URL(`videos/${key}.mp4`,base));assert.equal(response.status,200);assert.ok(response.headers.get('content-type')?.includes('video/mp4'));assert.ok((await response.arrayBuffer()).byteLength>10000);
+  assert.equal(await evaluate("document.querySelector('.video-actions a[download]').href.endsWith(location.hash.split('/').pop()+'-narrated.mp4')"),true);
+  const response=await fetch(new URL(`videos/${key}-narrated.mp4`,base));assert.equal(response.status,200);assert.ok(response.headers.get('content-type')?.includes('video/mp4'));assert.ok((await response.arrayBuffer()).byteLength>10000);
  }
- pass('All three MP4 videos decode, play, seek, load four caption cues, and provide downloads');
+ pass('All three narrated MP4s decode audio, play with sound, mute/unmute, seek, load captions, and provide downloads');
  await evaluate("document.getElementById('demo-video').play()");await goTool('compress');assert.equal(await evaluate("document.getElementById('demo-video').paused"),true);
  assert.equal(await evaluate("document.getElementById('current-tool-video').getClientRects().length>0"),true);
- await evaluate("document.getElementById('current-tool-video').click()");await until("document.getElementById('demo-video').dataset.source.endsWith('/compress.mp4')");
- await evaluate('window.videoTestBeforeReload=true');await cdp('Page.reload',{},session);await until("window.videoTestBeforeReload!==true && document.documentElement?.dataset.activeTool==='videos' && document.getElementById('demo-video').dataset.source.endsWith('/compress.mp4')");
+ await evaluate("document.getElementById('current-tool-video').click()");await until("document.getElementById('demo-video').dataset.source.endsWith('/compress-narrated.mp4')");
+ await evaluate('window.videoTestBeforeReload=true');await cdp('Page.reload',{},session);await until("window.videoTestBeforeReload!==true && document.documentElement?.dataset.activeTool==='videos' && document.getElementById('demo-video').dataset.source.endsWith('/compress-narrated.mp4')");
  assert.equal(await evaluate("document.getElementById('demo-video').paused"),true);
  await evaluate("document.getElementById('demo-video').src='videos/missing-demo.mp4';document.getElementById('demo-video').load();document.getElementById('demo-video').play().catch(()=>{})");
  await until("document.getElementById('video-status').textContent.includes('written walkthrough')");
@@ -147,6 +151,13 @@ try {
   await goTool('videos');if([1440,390].includes(width))await screenshot(`redesign-videos-${width}.png`);
   await goTool('');if([1440,390].includes(width))await screenshot(`redesign-home-${width}.png`);
  }
+ const pages=await evaluate("Object.entries((await import('./navigation.js?v=14')).PAGES).map(([key,config])=>[key,config.view||'tool'])");
+ for(const [key,view] of pages){
+  await goTool(key);
+  const colours=await evaluate(`(()=>{const section=document.getElementById(${JSON.stringify(view==='tool'?'tool':view+'-tool')});const heading=section.querySelector('h1');const banner=heading.closest('.workspace-heading,.info-heading')||heading;return {background:getComputedStyle(banner).backgroundImage,colour:getComputedStyle(heading).color,width:document.documentElement.scrollWidth};})()`);
+  assert.ok(colours.background.includes('network.svg'),key+' must use shared blue banner');assert.equal(colours.colour,'rgb(255, 255, 255)',key+' heading contrast');assert.ok(colours.width<=320,key+' mobile overflow');
+ }
+ pass(`All ${pages.length} tool, account, information, and guide routes share the navy banner and fit mobile`);
  await cdp('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]},session);
  assert.equal(await evaluate("getComputedStyle(document.querySelector('.tool-card')).transitionDuration"),'0s');
  assert.deepEqual(errors,[]);if(!process.env.ILFC_LIVE_URL)assert.deepEqual(externalRequests,[]);

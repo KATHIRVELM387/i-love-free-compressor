@@ -1,4 +1,4 @@
-import { mountHelpPages } from './help-pages.js';
+import { mountHelpPages } from './help-pages.js?v=2';
 import './studio.js';
 import './workflow.js';
 import { EXTRA_TOOLS } from './studio-catalog.js';

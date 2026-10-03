@@ -1,7 +1,7 @@
 import { filesView, meter, csv, download, setWorkspaceOwner } from './workspace-accounts.js';
 import { accountConfig } from './account-config.js';
 import { results, setPreferences } from './account-bridge.js?v=1';
-import { TOOLS, ACCOUNT_PAGES } from './navigation.js?v=13';
+import { TOOLS, ACCOUNT_PAGES } from './navigation.js?v=14';
 
 const $ = id => document.getElementById(id);
 const authReturnURL = new URL('./', import.meta.url).href;

@@ -1,4 +1,4 @@
-import { mountVideoPages } from './video-pages.js';
+import { mountVideoPages } from './video-pages.js?v=2';
 import { GUIDES, CATEGORIES, categoryFor, inputLimit } from './guide-data.js';
 
 const el = (tag, text, className) => {
