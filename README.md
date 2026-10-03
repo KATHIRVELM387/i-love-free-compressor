@@ -1,8 +1,8 @@
-# Free Comprizer
+# I Love Free Compressor
 
-Live website: https://kathirvelm387.github.io/free-comprizer/
+Live website: https://kathirvelm387.github.io/i-love-free-compressor/
 
-Source code: https://github.com/KATHIRVELM387/free-comprizer
+Source code: https://github.com/KATHIRVELM387/i-love-free-compressor
 
 A free, mobile-friendly photo resizing and compression tool. All photo processing happens in the browser. No paid APIs, backend, database, accounts, uploads, analytics, external fonts, or runtime packages.
 
@@ -38,7 +38,7 @@ The repository includes `.github/workflows/pages.yml`. It publishes only `public
 1. Push this project to a public GitHub repository.
 2. Under **Settings → Pages → Build and deployment**, choose **GitHub Actions** as the source.
 3. Run **Deploy to GitHub Pages** from the **Actions** tab, or push a change to `main`.
-4. The deployment reports the live URL, normally `https://USERNAME.github.io/free-comprizer/`.
+4. The deployment reports the live URL, normally `https://USERNAME.github.io/i-love-free-compressor/`.
 
 All asset URLs are relative, so the site works under a repository subpath. GitHub Pages ignores the Cloudflare `_headers` file; the HTML Content Security Policy still applies.
 
@@ -48,9 +48,9 @@ Official instructions: https://docs.github.com/en/pages/getting-started-with-git
 
 The page includes a descriptive title, description, canonical URL, indexable HTML, and social sharing metadata. `public/sitemap.xml` lists the production homepage. These features help discovery and interpretation; they do not guarantee indexing or a particular ranking.
 
-1. In https://search.google.com/search-console, add a **URL-prefix** property for `https://kathirvelm387.github.io/free-comprizer/`.
+1. In https://search.google.com/search-console, add a **URL-prefix** property for `https://kathirvelm387.github.io/i-love-free-compressor/`.
 2. Choose **HTML tag** verification. Add the exact `google-site-verification` meta tag supplied by Google to the head of `public/index.html`, deploy, and click **Verify** in Search Console.
-3. Submit `https://kathirvelm387.github.io/free-comprizer/sitemap.xml` under **Sitemaps**.
+3. Submit `https://kathirvelm387.github.io/i-love-free-compressor/sitemap.xml` under **Sitemaps**.
 4. Inspect the homepage URL and select **Request indexing**. Monitor the result in Search Console; crawling may take days or weeks and is not guaranteed.
 
 The sitemap must be submitted directly: a `robots.txt` inside a GitHub project subpath does not control the host's crawler policy. If the production address changes, update the canonical URL, Open Graph URL, and sitemap together.
@@ -63,8 +63,8 @@ No build step is needed: `public/` is the complete site.
 
 1. Create or sign into your free Cloudflare account.
 2. Open **Workers & Pages**, create an application, and choose **Pages / Drag and drop your files** (dashboard labels may vary).
-3. Name the project, for example `free-comprizer`.
-4. Upload the `public` folder, or generate an archive with `python3 scripts/package.py` and upload `free-comprizer.zip`.
+3. Name the project, for example `i-love-free-compressor`.
+4. Upload the `public` folder, or generate an archive with `python3 scripts/package.py` and upload `i-love-free-compressor.zip`.
 5. Select **Deploy site**. Cloudflare provides a `pages.dev` URL. Use the free plan and supplied subdomain; no custom domain or paid service is required.
 
 Upload only `public/` or the generated archive, not the whole repository. A Direct Upload project cannot later be switched to Git integration; automatic Git deployments need a new project. If using Git integration from the start, set the output directory to `public`, with no build command or framework.
