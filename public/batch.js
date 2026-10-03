@@ -1,4 +1,4 @@
-import { fitDimensions, formatBytes, prepareImage } from './image-tools.js?v=3';
+import { fitDimensions, formatBytes, prepareImage } from './image-tools.js?v=4';
 import { makeZip } from './zip.js?v=3';
 
 const $ = id => document.getElementById(id);

@@ -6,7 +6,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob: data:; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
   <meta name="referrer" content="no-referrer">
   <meta name="google-site-verification" content="qNgvCQDjTJRYThLtSrekcbv9rR_-x0CuWfTNZg_7BCs" />
-  <meta name="description" content="Compress, resize, rotate and flip JPG, PNG and WebP photos for free. Process up to 20 images in a batch and download a ZIP. Private, with no signup required.">
+  <meta name="description" content="Compress, resize, crop and adjust JPG, PNG and WebP photos for free. Rotate, flip, or process up to 20 images in a batch with ZIP downloads. Private, no signup.">
   <meta name="robots" content="index, follow, max-image-preview:large">
   <meta name="theme-color" content="#6935ce">
   <title>I Love Free Compressor — Free Image Compressor &amp; Photo Resizer</title>
@@ -22,8 +22,8 @@
   <meta name="twitter:description" content="Compress and resize photos for free. Your images stay on your device.">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css">
-  <script type="module" src="app.js?v=3"></script>
-  <script type="module" src="batch.js?v=3"></script>
+  <script type="module" src="app.js?v=4"></script>
+  <script type="module" src="batch.js?v=4"></script>
 </head>
 <body>
   <a class="skip-link" href="#tool">Skip to photo tool</a>
@@ -35,7 +35,7 @@
     <section class="hero wrap">
       <span class="eyebrow"><span class="status-dot"></span> LESS FILE FUSS. MORE GETTING THINGS DONE.</span>
       <h1>Free image compressor.<br><em>Photos that fit.</em></h1>
-      <p>Resize, compress, rotate, and flip JPG, PNG and WebP photos.<br class="desktop-break"> One photo or a whole batch. Free, private, and no signup needed.</p>
+      <p>Resize, compress, crop, and brighten JPG, PNG and WebP photos.<br class="desktop-break"> One photo or a whole batch. Free, private, and no signup needed.</p>
       <p><a class="text-button" href="#tool">Edit one photo</a> · <a class="text-button" href="#batch-tool">Compress a batch</a></p>
       <div class="hero-notes"><span>✓ No sign-up</span><span>✓ No uploads to a server</span><span>✓ No watermarks</span></div>
     </section>
@@ -52,10 +52,24 @@
             <button type="button" class="button primary" id="browse">Choose a photo <span aria-hidden="true">↗</span></button>
             <span class="file-hint">JPG, PNG or WebP · up to 25 MB</span>
           </div>
-          <div id="original-card" class="preview-card" hidden><div class="preview-image"><img id="original-image" alt="Your original photo"><canvas id="edit-preview" role="img" aria-label="Photo with rotation and flips applied" hidden></canvas></div><div class="image-caption"><span id="original-name"></span><span id="preview-label" class="pill">Original</span></div><p id="original-details" class="image-details"></p>
+          <div id="original-card" class="preview-card" hidden><div class="preview-image"><img id="original-image" alt="Your original photo"><canvas id="edit-preview" role="img" aria-label="Photo with crop, rotation, flips, and adjustments applied" hidden></canvas></div><div class="image-caption"><span id="original-name"></span><span id="preview-label" class="pill">Original</span></div><p id="original-details" class="image-details"></p>
             <fieldset id="edit-controls" class="edit-controls" disabled>
-              <legend>Rotate &amp; flip</legend>
+              <legend>Edit your photo</legend>
               <div class="edit-buttons"><button type="button" id="rotate-left">↶ Left 90°</button><button type="button" id="rotate-right">↷ Right 90°</button><button type="button" id="flip-horizontal" aria-pressed="false">↔ Flip horizontal</button><button type="button" id="flip-vertical" aria-pressed="false">↕ Flip vertical</button></div>
+              <details class="edit-section" open><summary>Crop &amp; frame</summary>
+                <label for="crop-ratio">Crop shape</label>
+                <select id="crop-ratio"><option value="0">Original ratio</option><option value="1">Square · 1:1</option><option value="1.3333333333333333">Landscape · 4:3</option><option value="0.75">Portrait · 3:4</option><option value="1.7777777777777777">Widescreen · 16:9</option><option value="0.5625">Tall · 9:16</option><option value="0.8">Portrait · 4:5</option><option value="1.25">Landscape · 5:4</option></select>
+                <label class="slider-label" for="crop-zoom">Zoom <output id="crop-zoom-value" for="crop-zoom">100%</output></label><input id="crop-zoom" type="range" min="100" max="300" value="100" step="1">
+                <label class="slider-label" for="crop-x">Horizontal position <output id="crop-x-value" for="crop-x">50%</output></label><input id="crop-x" type="range" min="0" max="100" value="50" step="1">
+                <label class="slider-label" for="crop-y">Vertical position <output id="crop-y-value" for="crop-y">50%</output></label><input id="crop-y" type="range" min="0" max="100" value="50" step="1">
+                <p class="field-help">The preview shows what you’ll keep. Position sliders move the crop when there is room; zoom in to tighten the framing.</p>
+              </details>
+              <details class="edit-section"><summary>Light &amp; color</summary>
+                <label class="slider-label" for="brightness">Brightness <output id="brightness-value" for="brightness">0</output></label><input id="brightness" type="range" min="-100" max="100" value="0" step="1">
+                <label class="slider-label" for="contrast">Contrast <output id="contrast-value" for="contrast">0</output></label><input id="contrast" type="range" min="-100" max="100" value="0" step="1">
+                <label class="checkbox-label effect-option" for="grayscale"><input id="grayscale" type="checkbox"> Black &amp; white</label>
+                <button id="reset-adjustments" type="button" class="text-button">Reset light &amp; color</button>
+              </details>
               <button type="button" id="reset-edits" class="text-button">Reset photo edits</button>
             </fieldset>
           </div>
@@ -72,10 +86,12 @@
             <label for="target"><span id="target-label">Maximum file size</span> <span class="optional" id="target-optional">optional</span></label>
             <div class="input-unit"><input id="target" type="number" min="1" max="25000" step="1" value="100" placeholder="No limit" aria-describedby="size-help"><span>KB</span></div>
             <div class="presets" aria-label="File size presets"><button type="button" data-size="50" aria-pressed="false">50 KB</button><button type="button" data-size="100" aria-pressed="true">100 KB</button><button type="button" data-size="200" aria-pressed="false">200 KB</button><button type="button" data-size="500" aria-pressed="false">500 KB</button></div>
+            <label for="dimension-preset">Quick size presets</label><select id="dimension-preset"><option value="">Custom dimensions</option><option value="1080x1080">Square · 1080 × 1080</option><option value="1080x1350">Portrait · 1080 × 1350</option><option value="1080x1920">Story · 1080 × 1920</option><option value="1280x720">Video thumbnail · 1280 × 720</option></select>
+            <p class="field-help">Presets crop to fit without stretching. Check the framing in the preview. Small photos may be enlarged.</p>
             <div class="field-heading"><span>Dimensions <span class="optional">pixels</span></span><label class="checkbox-label" for="lock"><input id="lock" type="checkbox" checked> Keep ratio</label></div>
             <div class="dimension-row"><div><label for="width" class="small-label">Width</label><input id="width" type="number" min="1" max="4096" step="1" required></div><span aria-hidden="true">×</span><div><label for="height" class="small-label">Height</label><input id="height" type="number" min="1" max="4096" step="1" required></div></div>
-            <div class="presets scale-presets" aria-label="Resize relative to original photo"><button type="button" data-scale="0.5">50%</button><button type="button" data-scale="1">Original size</button><button type="button" data-scale="2">200%</button></div>
-            <p class="field-help">Resize presets keep the photo’s ratio. Enlarging adds pixels, not extra detail. Up to 4,096 px per side.</p>
+            <div class="presets scale-presets" aria-label="Resize relative to current crop"><button type="button" data-scale="0.5">50%</button><button type="button" data-scale="1">100%</button><button type="button" data-scale="2">200%</button></div>
+            <p class="field-help">Percentages use the current crop’s original pixels. Enlarging adds pixels, not extra detail. Up to 4,096 px per side.</p>
             <label for="format">Save as</label><select id="format"><option value="image/jpeg">JPG — great for photos</option><option value="image/webp">WebP — smaller modern images</option><option value="image/png">PNG — lossless, supports transparency</option></select>
             <p class="field-help" id="format-help">Transparent areas become white in JPG.</p>
             <label class="checkbox-label resize-option" for="auto-resize"><input id="auto-resize" type="checkbox"> Allow smaller dimensions to meet the size limit</label>
@@ -120,7 +136,7 @@
     </section>
 
     <section id="how-it-works" class="how-section wrap"><div class="section-intro"><span class="tiny-label">FROM “FILE TOO LARGE” TO DONE</span><h2>Three steps. Zero headaches.</h2></div><div class="how-grid"><article><span class="how-number">01</span><h3>Pick your photo</h3><p>A portrait, a signature, or a scan. Choose a JPG, PNG, or WebP from your device.</p></article><article><span class="how-number">02</span><h3>Set the requirements</h3><p>Enter the size and dimensions your form asks for. We’ll do the resizing and compression.</p></article><article><span class="how-number">03</span><h3>Download and carry on</h3><p>Check your preview, save the new file, and get back to what you were doing.</p></article></div></section>
-    <section id="questions" class="faq-section wrap"><div><span class="tiny-label">GOOD TO KNOW</span><h2>A little clarity.</h2><p>Small answers to common questions.</p></div><div class="faq-list"><details><summary>Is it really free?</summary><p>Yes. Every feature here is free to use, with no account, subscription, or watermark.</p></details><details><summary>Where do my photos go?</summary><p>They stay in your browser. The tool doesn’t upload or store your photos on a server. Download any result you want to keep before closing or refreshing the page.</p></details><details><summary>Can I make a small file bigger?</summary><p>Yes. Choose “Make smaller or bigger — exact KB (JPG)” and enter the size you need, such as 50 KB. The tool saves a JPG at that size, adding non-image data if needed. This increases the file size without adding detail or improving quality. To change the photo’s dimensions instead, use Width and Height.</p></details><details><summary>Will it always reach my target size?</summary><p>Exact mode saves a JPG at your chosen size when the image can fit within that target. Very small targets may need smaller dimensions. Maximum mode only keeps the result under a limit, so a smaller file can stay smaller. We’ll clearly show when a target cannot be met. Here, 1 KB means 1,000 bytes. Other websites may change file size if they reprocess the image.</p></details><details><summary>Can I use this for an application form?</summary><p>Yes. Follow the form’s own format, dimension, and size requirements. This tool can resize and compress a photo; it doesn’t check official photo rules, crop backgrounds, or guarantee acceptance.</p></details></div></section>
+    <section id="questions" class="faq-section wrap"><div><span class="tiny-label">GOOD TO KNOW</span><h2>A little clarity.</h2><p>Small answers to common questions.</p></div><div class="faq-list"><details><summary>Is it really free?</summary><p>Yes. Every feature here is free to use, with no account, subscription, or watermark.</p></details><details><summary>Where do my photos go?</summary><p>They stay in your browser. The tool doesn’t upload or store your photos on a server. Download any result you want to keep before closing or refreshing the page.</p></details><details><summary>How do I crop or adjust a photo?</summary><p>Choose one photo, then use Crop &amp; frame to pick a shape, zoom in, and move the framing. Open Light &amp; color to change brightness or contrast, or switch to black &amp; white. Quick size presets set the crop and output dimensions together. Check the preview, then select Prepare my photo to create your download. These edits apply to the single-photo tool.</p></details><details><summary>Can I make a small file bigger?</summary><p>Yes. Choose “Make smaller or bigger — exact KB (JPG)” and enter the size you need, such as 50 KB. The tool saves a JPG at that size, adding non-image data if needed. This increases the file size without adding detail or improving quality. To change the photo’s dimensions instead, use Width and Height.</p></details><details><summary>Will it always reach my target size?</summary><p>Exact mode saves a JPG at your chosen size when the image can fit within that target. Very small targets may need smaller dimensions. Maximum mode only keeps the result under a limit, so a smaller file can stay smaller. We’ll clearly show when a target cannot be met. Here, 1 KB means 1,000 bytes. Other websites may change file size if they reprocess the image.</p></details><details><summary>Can I use this for an application form?</summary><p>Yes. Follow the form’s own format, dimension, and size requirements. This tool can resize and compress a photo; it doesn’t check official photo rules, remove backgrounds, or guarantee acceptance.</p></details></div></section>
   </main>
   <footer class="wrap"><a class="brand" href="./"><span class="brand-icon" aria-hidden="true">♥</span><span class="brand-name"><small>I Love</small><strong>Free Compressor</strong></span></a><p>A little tool for getting on with life.</p><span>Made to be useful. Free to use.</span></footer>
 </body>

@@ -1,4 +1,4 @@
-import { fitDimensions, formatBytes, prepareImage, drawTransformed } from './image-tools.js?v=3';
+import { fitDimensions, formatBytes, prepareImage, drawTransformed, getCropRect } from './image-tools.js?v=4';
 
 const $ = id => document.getElementById(id);
 const fileInput = $('file-input');
@@ -8,21 +8,26 @@ let originalURL = null;
 let resultURL = null;
 let generation = 0;
 let busy = false;
-let edits = { rotation: 0, flipX: false, flipY: false };
+const defaultEdits = () => ({ rotation: 0, flipX: false, flipY: false, cropRatio: 0, cropZoom: 1, cropX: .5, cropY: .5, brightness: 0, contrast: 0, grayscale: false });
+let edits = defaultEdits();
 
 function orientedSize() {
-  const width = source.naturalWidth || source.width;
-  const height = source.naturalHeight || source.height;
-  return edits.rotation % 180 ? { width: height, height: width } : { width, height };
+  return getCropRect(source, edits);
 }
 
 function showEdits() {
-  const active = edits.rotation !== 0 || edits.flipX || edits.flipY;
+  const active = edits.rotation !== 0 || edits.flipX || edits.flipY || edits.cropRatio !== 0 || edits.cropZoom !== 1 || edits.brightness !== 0 || edits.contrast !== 0 || edits.grayscale;
   $('original-image').hidden = active;
   $('edit-preview').hidden = !active;
   $('preview-label').textContent = active ? 'Edited preview' : 'Original';
   $('flip-horizontal').setAttribute('aria-pressed', String(edits.flipX));
   $('flip-vertical').setAttribute('aria-pressed', String(edits.flipY));
+  $('crop-ratio').value = Array.from($('crop-ratio').options).find(option => Math.abs(Number(option.value) - edits.cropRatio) < .000001)?.value || '0';
+  for (const [id, value] of [['crop-zoom', edits.cropZoom * 100], ['crop-x', edits.cropX * 100], ['crop-y', edits.cropY * 100], ['brightness', edits.brightness], ['contrast', edits.contrast]]) {
+    $(id).value = Math.round(value);
+    $(id + '-value').textContent = id.startsWith('crop-') ? `${Math.round(value)}%` : String(Math.round(value));
+  }
+  $('grayscale').checked = edits.grayscale;
   if (active) {
     const size = orientedSize();
     const scale = Math.min(1, 600 / Math.max(size.width, size.height));
@@ -37,6 +42,9 @@ function rotate(degrees) {
   if (!source || busy) return;
   edits.rotation = (edits.rotation + degrees + 360) % 360;
   [edits.flipX, edits.flipY] = [edits.flipY, edits.flipX];
+  if (edits.cropRatio) edits.cropRatio = 1 / edits.cropRatio;
+  [edits.cropX, edits.cropY] = degrees > 0 ? [1 - edits.cropY, edits.cropX] : [edits.cropY, 1 - edits.cropX];
+  $('dimension-preset').value = '';
   const width = $('width').value;
   $('width').value = $('height').value;
   $('height').value = width;
@@ -49,18 +57,68 @@ for (const [id, key] of [['flip-horizontal', 'flipX'], ['flip-vertical', 'flipY'
   $(id).addEventListener('click', () => {
     if (!source || busy) return;
     edits[key] = !edits[key];
+    if (key === 'flipX') edits.cropX = 1 - edits.cropX;
+    else edits.cropY = 1 - edits.cropY;
     showEdits(); clearResult();
     setStatus('Photo flipped. Prepare your photo to save these edits.');
   });
 }
 $('reset-edits').addEventListener('click', () => {
   if (!source || busy) return;
-  edits = { rotation: 0, flipX: false, flipY: false };
+  edits = defaultEdits();
+  $('dimension-preset').value = '';
   const size = orientedSize();
   const fitted = fitDimensions(size.width, size.height);
   $('width').value = fitted.width; $('height').value = fitted.height;
   showEdits(); clearResult();
-  setStatus('Rotation, flips, and dimensions reset. File-size and format settings kept.');
+  setStatus('Crop, rotation, flips, adjustments, and dimensions reset. File-size and format settings kept.');
+});
+
+function fitCropDimensions() {
+  const size = orientedSize();
+  const fitted = fitDimensions(Math.max(1, Math.round(size.width)), Math.max(1, Math.round(size.height)));
+  $('width').value = fitted.width; $('height').value = fitted.height;
+}
+$('crop-ratio').addEventListener('change', () => {
+  if (!source || busy) return;
+  edits.cropRatio = Number($('crop-ratio').value);
+  edits.cropX = edits.cropY = .5;
+  edits.cropZoom = 1;
+  $('dimension-preset').value = '';
+  $('lock').checked = true;
+  fitCropDimensions(); showEdits(); clearResult();
+  setStatus('Crop shape changed. Adjust the framing, then prepare your photo.');
+});
+for (const [id, key, divisor] of [['crop-zoom', 'cropZoom', 100], ['crop-x', 'cropX', 100], ['crop-y', 'cropY', 100], ['brightness', 'brightness', 1], ['contrast', 'contrast', 1]]) {
+  $(id).addEventListener('input', () => {
+    if (!source || busy) return;
+    edits[key] = Number($(id).value) / divisor;
+    showEdits(); clearResult();
+    setStatus('Preview updated. Prepare your photo to save these edits.');
+  });
+}
+$('grayscale').addEventListener('change', () => {
+  if (!source || busy) return;
+  edits.grayscale = $('grayscale').checked;
+  showEdits(); clearResult();
+  setStatus('Color effect updated. Prepare your photo to save it.');
+});
+$('reset-adjustments').addEventListener('click', () => {
+  if (!source || busy) return;
+  edits.brightness = edits.contrast = 0; edits.grayscale = false;
+  showEdits(); clearResult();
+  setStatus('Brightness, contrast, and black & white reset.');
+});
+$('dimension-preset').addEventListener('change', () => {
+  if (!source || busy || !$('dimension-preset').value) return;
+  const [width, height] = $('dimension-preset').value.split('x').map(Number);
+  edits.cropRatio = width / height;
+  edits.cropZoom = 1; edits.cropX = edits.cropY = .5;
+  $('width').value = width; $('height').value = height;
+  $('lock').checked = true;
+  $('auto-resize').checked = false;
+  showEdits(); clearResult();
+  setStatus('Size preset applied. Check the crop preview and adjust its framing if needed.');
 });
 document.querySelectorAll('[data-scale]').forEach(button => button.addEventListener('click', () => {
   if (!source || busy) return;
@@ -69,6 +127,7 @@ document.querySelectorAll('[data-scale]').forEach(button => button.addEventListe
   const height = Math.max(1, Math.round(size.height * Number(button.dataset.scale)));
   const fitted = fitDimensions(width, height);
   $('width').value = fitted.width; $('height').value = fitted.height;
+  $('dimension-preset').value = '';
   clearResult();
   setStatus(fitted.width !== width || fitted.height !== height ? 'Dimensions limited to fit browser processing limits.' : 'Dimensions updated. Prepare your photo to see the result.');
 }));
@@ -131,7 +190,8 @@ async function loadFile(file) {
     clearResult();
     source?.close?.();
     source = decoded;
-    edits = { rotation: 0, flipX: false, flipY: false };
+    edits = defaultEdits();
+    $('dimension-preset').value = '';
     showEdits();
     $('edit-controls').disabled = false;
     originalFile = file;
@@ -177,6 +237,7 @@ document.querySelectorAll('[data-size]').forEach(button => button.addEventListen
 }));
 
 function syncDimension(changed) {
+  $('dimension-preset').value = '';
   if (!$('lock').checked || !source) return;
   const size = orientedSize();
   const ratio = size.width / size.height;

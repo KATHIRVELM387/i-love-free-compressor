@@ -45,20 +45,54 @@ export async function padJpegToSize(blob, target) {
   return new Blob([blob.slice(0, -2), padding, blob.slice(-2)], { type: 'image/jpeg' });
 }
 
-// Flip in the displayed axes after rotating, so controls match the preview.
-export function drawTransformed(ctx, source, width, height, { rotation = 0, flipX = false, flipY = false } = {}) {
-  const sideways = rotation % 180 !== 0;
-  const drawWidth = sideways ? height : width;
-  const drawHeight = sideways ? width : height;
-  ctx.save();
-  ctx.translate(width / 2, height / 2);
-  ctx.scale(flipX ? -1 : 1, flipY ? -1 : 1);
-  ctx.rotate(rotation * Math.PI / 180);
-  ctx.drawImage(source, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
-  ctx.restore();
+export function getCropRect(source, { rotation = 0, cropRatio = 0, cropZoom = 1, cropX = .5, cropY = .5 } = {}) {
+  if (![0, 90, 180, 270].includes(rotation)) throw new Error('Choose a rotation in 90-degree steps.');
+  if (!Number.isFinite(cropRatio) || cropRatio < 0 || cropRatio > 20 ||
+      !Number.isFinite(cropZoom) || cropZoom < 1 || cropZoom > 3 ||
+      !Number.isFinite(cropX) || cropX < 0 || cropX > 1 ||
+      !Number.isFinite(cropY) || cropY < 0 || cropY > 1) throw new Error('Choose a valid crop and framing position.');
+  const sw = source.naturalWidth || source.width;
+  const sh = source.naturalHeight || source.height;
+  const fullWidth = rotation % 180 ? sh : sw;
+  const fullHeight = rotation % 180 ? sw : sh;
+  const ratio = cropRatio || fullWidth / fullHeight;
+  const width = Math.min(fullWidth, fullHeight * ratio) / cropZoom;
+  const height = width / ratio;
+  return { x: (fullWidth - width) * cropX, y: (fullHeight - height) * cropY, width, height, fullWidth, fullHeight };
 }
 
-export async function prepareImage(source, { width, height, type, target, allowResize, sizeMode = 'maximum', rotation = 0, flipX = false, flipY = false }) {
+// Crop coordinates and flips use the displayed axes after rotation.
+export function drawTransformed(ctx, source, width, height, edits = {}) {
+  const { rotation = 0, flipX = false, flipY = false, brightness = 0, contrast = 0, grayscale = false } = edits;
+  if (![brightness, contrast].every(value => Number.isFinite(value) && value >= -100 && value <= 100)) throw new Error('Use brightness and contrast between -100 and 100.');
+  const crop = getCropRect(source, edits);
+  const sw = source.naturalWidth || source.width;
+  const sh = source.naturalHeight || source.height;
+  ctx.save();
+  ctx.scale(width / crop.width, height / crop.height);
+  ctx.translate(crop.fullWidth / 2 - crop.x, crop.fullHeight / 2 - crop.y);
+  ctx.scale(flipX ? -1 : 1, flipY ? -1 : 1);
+  ctx.rotate(rotation * Math.PI / 180);
+  ctx.drawImage(source, -sw / 2, -sh / 2, sw, sh);
+  ctx.restore();
+  // Pixel adjustments also work in browsers without canvas filter support.
+  if (brightness || contrast || grayscale) {
+    const pixels = ctx.getImageData(0, 0, width, height);
+    const data = pixels.data;
+    const gain = 1 + contrast / 100;
+    const lift = brightness * 2.55;
+    for (let i = 0; i < data.length; i += 4) {
+      for (let channel = 0; channel < 3; channel++) data[i + channel] = (data[i + channel] - 128) * gain + 128 + lift;
+      if (grayscale) {
+        const gray = Math.round(data[i] * .2126 + data[i + 1] * .7152 + data[i + 2] * .0722);
+        data[i] = data[i + 1] = data[i + 2] = gray;
+      }
+    }
+    ctx.putImageData(pixels, 0, 0);
+  }
+}
+
+export async function prepareImage(source, { width, height, type, target, allowResize, sizeMode = 'maximum', ...edits }) {
   if (!Number.isInteger(width) || !Number.isInteger(height) || width < 1 || height < 1 || width > MAX_EDGE || height > MAX_EDGE || width * height > MAX_PIXELS) {
     throw new Error('Use dimensions from 1 to 4,096 pixels, with at most 16 million pixels in total.');
   }
@@ -66,7 +100,6 @@ export async function prepareImage(source, { width, height, type, target, allowR
   if (target !== null && (!Number.isInteger(target) || target < 1000 || target > 25_000_000)) throw new Error('Enter a whole-number size from 1 to 25,000 KB, or leave it blank.');
   if (!['maximum', 'exact'].includes(sizeMode)) throw new Error('Choose a valid file-size mode.');
   if (sizeMode === 'exact' && (type !== 'image/jpeg' || target === null)) throw new Error('Exact size requires a target in KB and JPG output.');
-  if (![0, 90, 180, 270].includes(rotation)) throw new Error('Choose a rotation in 90-degree steps.');
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Your browser does not support image processing.');
@@ -77,8 +110,12 @@ export async function prepareImage(source, { width, height, type, target, allowR
       canvas.height = height;
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
-      if (type === 'image/jpeg') { ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, width, height); }
-      drawTransformed(ctx, source, width, height, { rotation, flipX, flipY });
+      drawTransformed(ctx, source, width, height, edits);
+      if (type === 'image/jpeg') {
+        ctx.globalCompositeOperation = 'destination-over';
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, width, height);
+        ctx.globalCompositeOperation = 'source-over';
+      }
       const maxQuality = sizeMode === 'exact' ? 1 : .94;
       blob = await encode(canvas, type, maxQuality);
       if (!target || blob.size <= target) break;

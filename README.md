@@ -25,7 +25,10 @@ Open http://localhost:4173. Python 3 is needed only for the local server. Altern
 - Two file-size modes: stay under a maximum, or make a JPG exactly the requested KB (smaller or larger). Exact mode converts PNG/WebP inputs to JPG and fills transparent areas white.
 - Width and height controls, with optional aspect-ratio lock.
 - Rotate left/right in 90-degree steps, flip horizontally/vertically, and reset edits. The preview and downloaded pixels use the same transformations.
-- Resize to 50%, original size, or 200%, keeping the photo's ratio and browser dimension limits. Enlargement does not restore missing detail.
+- Crop to square, 4:3, 3:4, 16:9, 9:16, 4:5, or 5:4. Zoom from 100–300% and adjust horizontal/vertical framing with keyboard-accessible sliders. Rotation and flipping preserve the selected content.
+- Quick size presets: square 1080×1080, portrait 1080×1350, story 1080×1920, and video thumbnail 1280×720. Presets crop to fit, preserve the image ratio, and disable automatic dimension reduction; small inputs may be enlarged.
+- Brightness, contrast, and black-and-white adjustments with a live preview and a separate color reset. PNG and WebP retain transparency; JPG composites the adjusted image on white.
+- Resize to 50%, 100%, or 200% of the current crop's original pixels, keeping its ratio and browser dimension limits. Enlargement does not restore missing detail.
 - Batch resize, compression, and format conversion for up to 20 photos (25 MB each, 100 MB total). Each photo preserves its ratio and is never enlarged; individual controls above the batch section do not apply to a batch.
 - Individual batch downloads and a ZIP download with unique Unicode filenames. Corrupt files are skipped with an explanation; outputs above the requested size are visibly marked and included in the ZIP. Stop processing after the current photo and keep completed results.
 - JPG, PNG and WebP export; PNG preserves transparency, JPG uses white behind transparent pixels.
@@ -34,7 +37,7 @@ Open http://localhost:4173. Python 3 is needed only for the local server. Altern
 - A generated sample illustration, keyboard controls, accessible status messages, responsive layout.
 - A Content Security Policy in the HTML blocks outbound connections from page scripts on GitHub Pages and other static hosts. Cloudflare also applies the additional headers in `public/_headers`.
 
-The app never claims success for an output above the target. Exact dimensions take priority unless the user enables dimension reduction. PNG is lossless, so quality adjustments do not reduce PNG file size. No guarantee of official form acceptance. PDF conversion and cropping are not included in this first version.
+The app never claims success for an output above the target. Exact dimensions take priority unless the user enables dimension reduction. PNG is lossless, so encoding-quality adjustments do not reduce PNG file size. No guarantee of official form acceptance. PDF conversion and background removal are not included.
 
 To make a 25 KB file 50 KB, select **Make smaller or bigger — exact KB (JPG)**, enter **50**, and prepare the photo. To make a larger file smaller, use the same mode with a smaller target or use the maximum-size mode. If the encoded image still exceeds the target at minimum quality, the result is explicitly marked as not meeting the target; optional dimension reduction can help.
 

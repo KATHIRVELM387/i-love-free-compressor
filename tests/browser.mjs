@@ -323,6 +323,77 @@ try {
   assert.match(await evaluate("document.getElementById('batch-summary').textContent"),/1 above the size limit/);
   assert.match(await evaluate("document.getElementById('batch-results').textContent"),/100 × 80 px.*Above size limit.*Download anyway/);
   pass('Batch never enlarges photos and clearly flags unreachable size limits');
+
+  const cropChecks = await evaluate(`(async()=>{
+    const {prepareImage}=await import('./image-tools.js');
+    const source=await createImageBitmap(window.featureFixture);
+    const inspect=async (image,options)=>{
+      const r=await prepareImage(image,{width:20,height:20,type:'image/png',target:null,allowResize:false,...options});
+      const bitmap=await createImageBitmap(r.blob);const c=document.createElement('canvas');c.width=bitmap.width;c.height=bitmap.height;const x=c.getContext('2d');x.drawImage(bitmap,0,0);bitmap.close();
+      return {size:r.blob.size,pixels:[[2,2],[c.width-3,2],[2,c.height-3],[c.width-3,c.height-3]].map(([a,b])=>Array.from(x.getImageData(a,b,1,1).data))};
+    };
+    const left=await inspect(source,{cropRatio:1,cropX:0});
+    const right=await inspect(source,{cropRatio:1,cropX:1});
+    const zoom=await inspect(source,{cropRatio:1,cropZoom:2,cropX:1,cropY:1});
+    const rotated=await inspect(source,{rotation:90,cropRatio:1,cropY:1});
+    const exact=await inspect(source,{cropRatio:1,cropX:0,brightness:20,type:'image/jpeg',target:5000,sizeMode:'exact'});
+    const c=document.createElement('canvas');c.width=c.height=20;const x=c.getContext('2d');x.fillStyle='rgb(100,100,100)';x.fillRect(0,0,20,20);
+    const bright=await inspect(c,{brightness:20});const contrast=await inspect(c,{contrast:50});
+    x.fillStyle='#ff0000';x.fillRect(0,0,20,20);const gray=await inspect(c,{grayscale:true});
+    x.clearRect(0,0,20,20);const transparent=await inspect(c,{brightness:-100,contrast:100,grayscale:true});const white=await inspect(c,{brightness:-100,type:'image/jpeg'});
+    let invalid=0;for(const options of [{cropRatio:-1},{cropX:2},{cropY:NaN},{cropZoom:0},{brightness:101},{contrast:Infinity}]){try{await inspect(source,options)}catch{invalid++}}
+    source.close();return {left,right,zoom,rotated,exact,bright,contrast,gray,transparent,white,invalid};
+  })()`);
+  const rgba=rgb=>[...rgb,255];
+  assert.deepEqual(cropChecks.left.pixels,[red,red,blue,blue].map(rgba));
+  assert.deepEqual(cropChecks.right.pixels,[green,green,yellow,yellow].map(rgba));
+  assert.deepEqual(cropChecks.zoom.pixels,[yellow,yellow,yellow,yellow].map(rgba));
+  assert.deepEqual(cropChecks.rotated.pixels,[yellow,green,yellow,green].map(rgba));
+  assert.equal(cropChecks.exact.size,5000);
+  assert.deepEqual(cropChecks.bright.pixels[0],[151,151,151,255]);
+  assert.deepEqual(cropChecks.contrast.pixels[0],[86,86,86,255]);
+  assert.deepEqual(cropChecks.gray.pixels[0],[54,54,54,255]);
+  assert.equal(cropChecks.transparent.pixels[0][3],0);
+  assert.deepEqual(cropChecks.white.pixels[0],[255,255,255,255]);
+  assert.equal(cropChecks.invalid,6);
+  pass('Decoded crop/framing/zoom pixels, rotated crop, exact KB with edits, brightness, contrast, grayscale, transparency, and invalid bounds');
+
+  await evaluate(`{
+    document.getElementById('reset-edits').click();
+    const crop=document.getElementById('crop-ratio');crop.value='1';crop.dispatchEvent(new Event('change'));
+    const x=document.getElementById('crop-x');x.value='0';x.dispatchEvent(new Event('input'));
+    document.getElementById('target').value='';document.getElementById('format').value='image/png';document.getElementById('settings-form').requestSubmit();
+  }`);
+  await until("!document.getElementById('settings').disabled && !document.getElementById('result').hidden && document.getElementById('result-image').naturalWidth===20");
+  const imageCorners=()=>evaluate(`(()=>{const img=document.getElementById('result-image');const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;const x=c.getContext('2d');x.drawImage(img,0,0);return [[2,2],[c.width-3,2],[2,c.height-3],[c.width-3,c.height-3]].map(([a,b])=>Array.from(x.getImageData(a,b,1,1).data).slice(0,3))})()`);
+  assert.deepEqual(await imageCorners(),[red,red,blue,blue]);
+  await evaluate("document.getElementById('rotate-right').click();document.getElementById('flip-horizontal').click();document.getElementById('settings-form').requestSubmit()");
+  await until("!document.getElementById('settings').disabled && !document.getElementById('result').hidden && document.getElementById('result-image').complete && document.getElementById('result-image').naturalWidth===20");
+  assert.deepEqual(await imageCorners(),[red,blue,red,blue]);
+  await evaluate("document.getElementById('brightness').value='20';document.getElementById('brightness').dispatchEvent(new Event('input'))");
+  assert.equal(await evaluate("document.getElementById('result').hidden && !document.getElementById('download').hasAttribute('href')"),true);
+  await evaluate("document.getElementById('settings-form').requestSubmit()");
+  await until("!document.getElementById('settings').disabled && !document.getElementById('result').hidden && document.getElementById('result-image').complete && document.getElementById('result-image').naturalWidth===20");
+  assert.deepEqual(await imageCorners(),[[255,51,51],[51,51,255],[255,51,51],[51,51,255]]);
+  await evaluate("document.getElementById('reset-adjustments').click();document.getElementById('dimension-preset').value='1080x1920';document.getElementById('dimension-preset').dispatchEvent(new Event('change'));document.getElementById('settings-form').requestSubmit()");
+  await until("!document.getElementById('settings').disabled && !document.getElementById('result').hidden && document.getElementById('result-image').naturalWidth===1080");
+  assert.equal(await evaluate("document.getElementById('result-image').naturalHeight"),1920);
+  assert.equal(await evaluate("document.getElementById('auto-resize').checked"),false);
+  assert.equal(await evaluate("document.getElementById('crop-ratio').value"),'0.5625');
+  await evaluate("document.getElementById('width').value='540';document.getElementById('width').dispatchEvent(new Event('input',{bubbles:true}))");
+  assert.equal(await evaluate("document.getElementById('height').value"),'960');
+  assert.equal(await evaluate("document.getElementById('dimension-preset').value"),'');
+  for(const width of [768,390,320]){
+    await cdp('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:true},session);
+    assert.equal(await evaluate('document.documentElement.scrollWidth <= innerWidth'),true,`Crop editor overflow at ${width}px`);
+  }
+  await screenshot('mobile-crop.png');
+  await evaluate("document.getElementById('reset-edits').click()");
+  assert.equal(await evaluate("document.getElementById('crop-ratio').value"),'0');
+  assert.equal(await evaluate("document.getElementById('brightness').value"),'0');
+  assert.equal(await evaluate("document.getElementById('crop-zoom').value"),'100');
+  assert.deepEqual(await evaluate("['width','height'].map(id=>document.getElementById(id).value)"),['40','20']);
+  pass('Crop UI survives rotate/flip, adjustments invalidate downloads, story preset exports at 1080×1920, crop ratio lock, reset, and mobile layouts');
   assert.deepEqual(errors, []); assert.deepEqual(externalRequests, []);
   pass('No uncaught browser errors or external network requests');
   console.log('All browser integration checks passed.');
