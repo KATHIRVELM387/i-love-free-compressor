@@ -1,4 +1,4 @@
-import { TOOLS, HELP_PAGES } from './navigation.js?v=12';
+import { TOOLS, HELP_PAGES } from './navigation.js?v=13';
 import { categoryFor } from './guide-data.js';
 const $ = id => document.getElementById(id);
 const el = (tag, text) => { const n = document.createElement(tag); if (text !== undefined) n.textContent = text; return n; };
@@ -17,12 +17,12 @@ function current() {
 window.addEventListener('toolchange', current); current();
 
 const resources = el('div'); resources.className = 'nav-group'; resources.append(el('h2', 'Learn & help'));
-for (const [name, title] of [['features','Feature guides'],['how-to-use','How to use'],['about','About'],['faq','Help & FAQ'],['privacy','Files & privacy']]) {
+for (const [name, title] of [['videos','Video demos'],['features','Feature guides'],['how-to-use','How to use'],['about','About'],['faq','Help & FAQ'],['privacy','Files & privacy']]) {
   const a = el('a', title); a.href = '#/' + name; resources.append(a);
 }
 $('side-links').append(resources);
 const footerNav = el('nav'); footerNav.className = 'footer-links'; footerNav.setAttribute('aria-label', 'Information');
-for (const [name, title] of [['about','About'],['how-to-use','How to use'],['features','Features'],['privacy','Files & privacy'],['faq','Help']]) { const a = el('a', title); a.href = '#/' + name; footerNav.append(a); }
+for (const [name, title] of [['about','About'],['videos','Video demos'],['how-to-use','How to use'],['features','Features'],['privacy','Files & privacy'],['faq','Help']]) { const a = el('a', title); a.href = '#/' + name; footerNav.append(a); }
 document.querySelector('footer').append(footerNav);
 
 const categories = el('div'); categories.className = 'category-filters'; categories.id = 'tool-categories'; categories.setAttribute('aria-label', 'Tool categories');
@@ -31,7 +31,7 @@ for (const label of ['All','Images','PDF','Creative','Web']) {
   b.addEventListener('click', () => window.dispatchEvent(new CustomEvent('tool-category-change', { detail: label })));
   categories.append(b);
 }
-$('tool-menu').querySelector('h2').after(categories);
+$('tool-menu').querySelector('.catalog-heading').after(categories);
 window.addEventListener('tool-category-state', e => { for (const b of categories.querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset.category === e.detail)); });
 // Discoverability: one guide shortcut per focused tool, rather than duplicating controls.
 for (const [key, config] of Object.entries(TOOLS)) {

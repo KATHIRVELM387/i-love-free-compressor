@@ -205,8 +205,19 @@ The studio tests exercise all twenty new tools in real Chrome, inspect PDF page 
 
 ## Navigation and feature guides
 
-The header keeps All tools, Features, How to use, About, Help, Login, and Sign up accessible on desktop and mobile. Signed-in users see My dashboard and Settings instead of registration links. `#/signup` explains free Member registration and uses the existing verified Google sign-in flow; it does not introduce a separate password system or new roles.
+The header keeps All tools, Features, How to use, About, Video demos, Login, and Sign up accessible on desktop and mobile. Signed-in users see My dashboard and Settings instead of registration links. `#/signup` explains free Member registration and uses the existing verified Google sign-in flow; it does not introduce a separate password system or new roles.
 
 Public information pages: `#/about`, `#/how-to-use`, `#/features`, `#/faq`, and `#/privacy`. The feature directory has text search and category filters. Every tool, the saved-workflow feature, and each account module has its own `#/guide/<feature>` route with individual steps, an example, limitations, related guides, and an Open feature action. Guides support link copying with a manual-copy fallback and a focused print layout. These are client-side routes, not separately generated indexable HTML pages.
 
 All tools now supports combined search/category filtering. Each tool workspace links to its matching guide. Recent-tool shortcuts can be cleared on the current device. Neither clearing recent tools nor browsing help deletes saved files or activity history.
+
+
+## Visual design and video walkthroughs
+
+The light ivory/indigo design uses mint, peach, and lavender category accents, a responsive illustrated homepage, and consistent tool, guide, and account surfaces. The existing vertical tool navigation remains available. CSS lives in `public/design.css`; the decorative landscape is an original SVG in `public/assets/`.
+
+`#/videos` offers three approximately 30-second captioned walkthroughs: the website tour, compression, and resizing. Direct links are `#/videos/tour`, `#/videos/compress`, and `#/videos/resize`. Each video is an MP4 made from the actual redesigned website and built-in sample image, with on-screen instructions, four caption cues, and a complete written walkthrough. There is no audio or third-party player. The three MP4s together are approximately 750 KB; media is loaded only after pressing Play. Playback stops when leaving the page. Native controls provide seeking, volume, fullscreen, and captions after playback starts. Download links and written steps remain available if playback fails.
+
+Generated videos, posters, and WebVTT captions live in `public/videos/`. To refresh recordings after a UI change, run `npm run capture:demos`, then `FFMPEG_BIN=/path/to/ffmpeg python3 scripts/build-demo-videos.py`. The build requires Python Pillow, FFmpeg with H.264 encoding, and DejaVu Sans fonts (override `DEMO_FONT_DIR` if necessary). No video-generation dependencies are installed in the deployed website.
+
+Run `npm run test:videos` for real Chrome playback, seeking, caption parsing, explicit loading, route cleanup, failure recovery, and desktop/mobile layout checks. `ILFC_LIVE_URL=https://your-site/ npm run test:videos` checks the hosted assets too.

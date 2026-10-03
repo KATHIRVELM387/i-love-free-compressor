@@ -1,3 +1,4 @@
+import { mountVideoPages } from './video-pages.js';
 import { GUIDES, CATEGORIES, categoryFor, inputLimit } from './guide-data.js';
 
 const el = (tag, text, className) => {
@@ -47,7 +48,7 @@ export function mountHelpPages(tools, accountPages) {
   const how = register('how-to-use', 'From file to finished.', 'Start with the basics, then open a dedicated guide for the feature you need.');
   const start = block('Your first result', 'Most tools follow these steps:');
   start.append(list(['Choose a tool from All tools, use search, or select a task in the tool finder.','Choose a supported file from your device, drag it into a supported workspace, or use an available sample.','Set the options and inspect the preview. Tool pages show their size and format limits.','Create the result and check its dimensions, file size, and any warnings.','Download the result. Sign in and choose Save to My Files only if you want a private cloud copy.'], true));
-  how.append(start);
+  how.append(link('Watch step-by-step video demos', '#/videos', 'button primary'), start);
   const journeys = el('div', undefined, 'info-card-grid');
   for (const [title, text, route] of [
     ['Fit an upload requirement', 'Use Compress for a maximum KB limit, Exact file size for a specific JPG size, or Resize for pixel dimensions.', 'exact'],
@@ -146,5 +147,6 @@ export function mountHelpPages(tools, accountPages) {
     guideCards.push([key, card, `${title} ${guide.purpose} ${guide.example}`.toLowerCase()]);
   }
   filter();
+  mountVideoPages(register, link);
   return routes;
 }

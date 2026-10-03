@@ -8,7 +8,7 @@
   <meta name="google-site-verification" content="qNgvCQDjTJRYThLtSrekcbv9rR_-x0CuWfTNZg_7BCs" />
   <meta name="description" content="Compress, resize, crop and adjust JPG, PNG and WebP photos for free. Create collages, combine images into PDFs, or download a batch as ZIP. Private, no signup.">
   <meta name="robots" content="index, follow, max-image-preview:large">
-  <meta name="theme-color" content="#2563eb">
+  <meta name="theme-color" content="#5145cd">
   <title>I Love Free Compressor — Free Image Compressor &amp; Photo Resizer</title>
   <link rel="canonical" href="https://ilovefreecompressor.vercel.app/">
   <link rel="sitemap" type="application/xml" href="sitemap.xml">
@@ -22,16 +22,17 @@
   <meta name="twitter:description" content="Compress and resize photos for free. Local image editing with optional private cloud saves.">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css?v=11">
-  <script type="module" src="app.js?v=12"></script>
-  <script type="module" src="shell.js?v=5"></script>
+  <script type="module" src="app.js?v=13"></script>
+  <script type="module" src="shell.js?v=6"></script>
   <script type="module" src="batch.js?v=9"></script>
   <script type="module" src="collections.js?v=3"></script>
   <script type="module" src="explore.js?v=2"></script>
-  <script type="module" src="accounts.js?v=4"></script>
+  <script type="module" src="accounts.js?v=5"></script>
   <link rel="stylesheet" href="professional.css?v=1">
-  <script type="module" src="productivity.js?v=2"></script>
+  <script type="module" src="productivity.js?v=3"></script>
   <link rel="stylesheet" href="help-pages.css?v=1">
-  <script type="module" src="help-navigation.js?v=1"></script>
+  <link rel="stylesheet" href="design.css?v=1">
+  <script type="module" src="help-navigation.js?v=2"></script>
 </head>
 <body>
   <a class="skip-link" href="#main-content">Skip to content</a>
@@ -53,7 +54,7 @@
       <a href="#/features" data-header-page="features">Features</a>
       <a href="#/how-to-use" data-header-page="how-to-use">How to use</a>
       <a href="#/about" data-header-page="about">About</a>
-      <a href="#/faq" data-header-page="faq">Help</a>
+      <a href="#/videos" data-header-page="videos">Video demos</a>
     </nav>
     <div class="header-account" aria-label="Account navigation">
       <a id="header-login" href="#/account" class="header-login">Login</a>
@@ -65,15 +66,31 @@
   <main id="main-content" tabindex="-1">
     <div id="home-view">
     <section class="hero wrap">
-      <span class="eyebrow"><span class="status-dot"></span> LESS FILE FUSS. MORE GETTING THINGS DONE.</span>
-      <h1>Everyday files.<br><em>Beautifully simple.</em></h1>
-      <p>Image, PDF, and creative tools in one place.<br class="desktop-break"> 40 free tools. No sign-up required. Edit on your device.</p>
-      <div class="home-search"><label for="tool-search">What do you want to do?</label><div class="search-row"><input id="tool-search" type="search" placeholder="Try compress, rounded corners, or PDF…" autocomplete="off"><button id="tool-search-clear" class="icon-button" type="button" aria-label="Clear homepage search" hidden>×</button></div></div>
-      <div class="hero-notes"><span>✓ No sign-up</span><span>✓ Save online only if you choose</span><span>✓ No forced watermarks</span></div>
+      <div class="hero-copy">
+        <span class="eyebrow"><span class="status-dot"></span> YOUR EVERYDAY FILE TOOLKIT</span>
+        <h1>Small tasks.<br><em>Big possibilities.</em></h1>
+        <p>Make images lighter, PDFs simpler, and ideas ready to share. All the tools you need, without the extra steps.</p>
+        <div class="hero-actions"><a class="button primary" href="#/compress">Start compressing <span aria-hidden="true">↗</span></a><a class="button secondary watch-demo" href="#/videos"><span class="play-small" aria-hidden="true">▶</span> Watch a demo</a></div>
+        <div class="hero-notes"><span>✓ Free to use</span><span>✓ No sign-up needed</span><span>✓ Edit on your device</span></div>
+      </div>
+      <div class="hero-art" aria-label="Illustration of an image ready to edit and download">
+        <div class="art-orbit orbit-one"></div><div class="art-orbit orbit-two"></div>
+        <div class="floating-label label-pdf"><span>PDF</span> Documents, sorted.</div>
+        <div class="preview-window"><div class="preview-toolbar"><span class="window-dots" aria-hidden="true">● ● ●</span><span>Your next great upload</span><span aria-hidden="true">↗</span></div>
+          <img src="assets/landscape.svg" width="560" height="330" alt="Illustrated mountains and a sun reflected in a calm lake">
+          <div class="preview-bottom"><span><strong>A little lighter.</strong><small>Ready for whatever comes next.</small></span><span class="ready-check" aria-hidden="true">✓</span></div>
+        </div>
+        <div class="floating-label label-image"><span aria-hidden="true">↗</span><div>Images made easy<small>Resize · Compress · Create</small></div></div>
+        <span class="art-spark" aria-hidden="true">✳</span>
+      </div>
+    </section>
+    <section class="tool-discovery wrap" aria-label="Find a tool">
+      <div><span class="tiny-label">LESS SEARCHING. MORE DOING.</span><h2>Your next task starts here.</h2></div>
+      <div class="home-search"><label for="tool-search">Find a tool</label><div class="search-row"><input id="tool-search" type="search" placeholder="Search compress, resize, PDF…" autocomplete="off"><button id="tool-search-clear" class="icon-button" type="button" aria-label="Clear homepage search" hidden>×</button></div></div>
     </section>
 
     <p id="continue-notice" class="continue-notice wrap" role="status" hidden></p>
-    <section id="tool-menu" class="tool-menu wrap" aria-labelledby="menu-heading"><h2 id="menu-heading" tabindex="-1">What would you like to do?</h2><div class="tool-grid">
+    <section id="tool-menu" class="tool-menu wrap" aria-labelledby="menu-heading"><div class="catalog-heading"><h2 id="menu-heading" tabindex="-1">A tool for every little task.</h2><span>40 free tools · One simple workspace</span></div><div class="tool-grid">
       <a class="tool-card" href="#/compress"><span class="tool-icon" aria-hidden="true">↓</span><h3>Compress images</h3><p>Reduce file size to fit a KB limit.</p><span class="tool-open">Open tool →</span></a>
       <a class="tool-card" href="#/exact"><span class="tool-icon" aria-hidden="true">KB</span><h3>Exact file size</h3><p>Make a JPG smaller or bigger to a chosen KB size.</p><span class="tool-open">Open tool →</span></a>
       <a class="tool-card" href="#/resize"><span class="tool-icon" aria-hidden="true">↔</span><h3>Resize images</h3><p>Set pixel dimensions or resize by percentage.</p><span class="tool-open">Open tool →</span></a>
@@ -95,6 +112,7 @@
       <a class="tool-card" href="#/compare"><span class="tool-icon" aria-hidden="true">⇆</span><h3>Compare images <span class="new-badge">New</span></h3><p>Compare two photos with a before-and-after slider.</p><span class="tool-open">Open tool →</span></a>
       <a class="tool-card" href="#/details"><span class="tool-icon" aria-hidden="true">ⓘ</span><h3>Image details <span class="new-badge">New</span></h3><p>Check dimensions, format, size, and transparency.</p><span class="tool-open">Open tool →</span></a>
     </div><p id="tool-search-status" role="status" hidden></p></section>
+    <section class="video-promo wrap" aria-labelledby="video-promo-heading"><a class="video-promo-art" href="#/videos" aria-label="Watch the website tour"><img src="assets/landscape.svg" width="560" height="330" alt=""><span class="large-play" aria-hidden="true">▶</span><span class="video-promo-tag">QUICK VIDEO TOUR</span></a><div><span class="tiny-label">SEE IT. TRY IT. DONE.</span><h2 id="video-promo-heading">A little guidance.<br>A lot less guesswork.</h2><p>New here? See the website in action, then follow a short demo to compress or resize your first image.</p><a class="button primary" href="#/videos">Explore video demos <span aria-hidden="true">→</span></a></div></section>
     <section id="how-it-works" class="how-section wrap"><div class="section-intro"><span class="tiny-label">FROM “FILE TOO LARGE” TO DONE</span><h2>Three steps. Zero headaches.</h2></div><div class="how-grid"><article><span class="how-number">01</span><h3>Pick your photo</h3><p>A portrait, a signature, or a scan. Choose a JPG, PNG, or WebP from your device.</p></article><article><span class="how-number">02</span><h3>Set the requirements</h3><p>Enter the size and dimensions your form asks for. We’ll do the resizing and compression.</p></article><article><span class="how-number">03</span><h3>Download and carry on</h3><p>Check your preview, save the new file, and get back to what you were doing.</p></article></div></section>
     <section id="questions" class="faq-section wrap"><div><span class="tiny-label">GOOD TO KNOW</span><h2>A little clarity.</h2><p>Small answers to common questions.</p></div><div class="faq-list"><details><summary>Is it really free?</summary><p>Yes. Every feature here is free to use, with no required account, subscription, or forced watermark. Add your own text watermark only if you choose.</p></details><details><summary>Where do my photos go?</summary><p>Editing happens in your browser. Download results to keep them on your device. Optional accounts can save activity and preferences. Files upload only when you choose “Save to My Files”; these files are private to your account. Delete saved files or your account in Settings.</p></details><details><summary>How do I crop or adjust a photo?</summary><p>Choose Crop &amp; size presets from the tool menu, then use Crop &amp; frame to pick a shape, zoom in, and move the framing. Choose Light &amp; color from the menu to change brightness or contrast, or switch to black &amp; white. Quick size presets set the crop and output dimensions together. Check the preview, then use the tool’s action button to create your download. These edits apply to the single-photo tool.</p></details><details><summary>Can I add my name or choose a background?</summary><p>Choose Text watermark from the menu to add a name or brand, then choose its position, color, size, and opacity. Transparency background fills transparent pixels with a color; it does not remove an existing background. Each tool opens its own workspace for one photo at a time. You can also enter a download filename, and the tool adds the correct extension.</p></details><details><summary>Can I make a small file bigger?</summary><p>Yes. Choose “Exact file size” from the menu and enter the size you need, such as 50 KB. The tool saves a JPG at that size, adding non-image data if needed. This increases the file size without adding detail or improving quality. To change the photo’s dimensions instead, use Width and Height.</p></details><details><summary>Will it always reach my target size?</summary><p>Exact mode saves a JPG at your chosen size when the image can fit within that target. Very small targets may need smaller dimensions. Maximum mode only keeps the result under a limit, so a smaller file can stay smaller. We’ll clearly show when a target cannot be met. Here, 1 KB means 1,000 bytes. Other websites may change file size if they reprocess the image.</p></details><details><summary>Can I use this for an application form?</summary><p>Yes. Follow the form’s own format, dimension, and size requirements. This tool can resize and compress a photo; it doesn’t check official photo rules, remove backgrounds, or guarantee acceptance.</p></details></div></section>
     </div>

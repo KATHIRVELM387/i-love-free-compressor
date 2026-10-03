@@ -40,7 +40,8 @@ export function startNavigation(onSelect) {
   const $ = id => document.getElementById(id);
   function render() {
     const legacy = { '#tool': 'compress', '#batch-tool': 'batch' };
-    const requested = legacy[location.hash] || location.hash.slice(2);
+    const raw = legacy[location.hash] || location.hash.slice(2);
+    const requested = /^videos\/(tour|compress|resize)$/.test(raw) ? 'videos' : raw;
     const name = Object.hasOwn(PAGES, requested) ? requested : null;
     const config = name ? PAGES[name] : null;
     $('home-view').hidden = !!name;

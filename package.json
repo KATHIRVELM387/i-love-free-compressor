@@ -13,7 +13,9 @@
     "test:account-ui": "node tests/accounts-browser.mjs",
     "build:tools": "node scripts/build-tools.mjs",
     "test:studio": "node tests/studio-browser.mjs",
-    "test:help": "node tests/help-browser.mjs"
+    "test:help": "node tests/help-browser.mjs",
+    "test:videos": "node tests/videos-browser.mjs",
+    "capture:demos": "node scripts/capture-demos.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.117.2",
