@@ -3,10 +3,23 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Free, private photo resizing and compression. No runtime dependencies.",
+  "description": "Free image tools with optional private accounts",
   "scripts": {
     "start": "python3 -m http.server 4173 --bind 127.0.0.1 --directory public",
     "test": "node tests/browser.mjs",
-    "package": "python3 scripts/package.py"
+    "package": "python3 scripts/package.py",
+    "build:auth": "node scripts/build-auth.mjs",
+    "test:accounts": "node tests/accounts-db.mjs && node tests/account-deletion.mjs && node tests/account-config.mjs",
+    "test:account-ui": "node tests/accounts-browser.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.117.2"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.8",
+    "esbuild": "0.28.2"
+  },
+  "engines": {
+    "node": ">=22.0.0"
   }
 }

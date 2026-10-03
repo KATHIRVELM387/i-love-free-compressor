@@ -1,0 +1,4 @@
+# JWT validation happens inside the function with Auth.getUser(), supporting
+# publishable API keys as well as legacy anon keys. Never remove that check.
+[functions.delete-account]
+verify_jwt = false

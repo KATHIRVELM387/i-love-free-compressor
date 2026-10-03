@@ -1,5 +1,6 @@
+import { registerResult, forgetResult, getPreferences } from './account-bridge.js?v=1';
 import { fitDimensions, formatBytes, prepareImage, renderImage, getCropRect, downloadName } from './image-tools.js?v=6';
-import { startNavigation, TOOLS } from './navigation.js?v=9';
+import { startNavigation, TOOLS } from './navigation.js?v=10';
 
 const $ = id => document.getElementById(id);
 const fileInput = $('file-input');
@@ -200,6 +201,7 @@ function setStatus(message, error = false) {
 }
 
 function clearResult() {
+  forgetResult('download');
   $('result').hidden = true;
   $('download').removeAttribute('href');
   $('result-image').removeAttribute('src');
@@ -259,6 +261,12 @@ async function loadFile(file) {
     $('edit-controls').disabled = false;
     originalFile = file;
     $('continue-notice').hidden = true;
+    const prefs = getPreferences();
+    if (['compress', 'exact'].includes(currentTool)) {
+      if (Number.isFinite(prefs.targetKB) && prefs.targetKB >= 1 && prefs.targetKB <= 10000) $('target').value = prefs.targetKB;
+      if (typeof prefs.allowResize === 'boolean') $('auto-resize').checked = prefs.allowResize;
+      if (currentTool !== 'exact' && ['image/jpeg','image/png','image/webp'].includes(prefs.format)) $('format').value = prefs.format;
+    }
     if (!['compress', 'exact'].includes(currentTool)) $('format').value = currentTool === 'rounded' ? 'image/png' : file.type;
     $('output-name').value = '';
     if (originalURL) URL.revokeObjectURL(originalURL);
@@ -372,6 +380,7 @@ $('settings-form').addEventListener('submit', async event => {
     $('size-note').textContent = result.paddedBytes ? 'Extra non-image data was added to reach the exact file size. This does not add detail or improve the photo’s quality.' : '';
     $('download').firstChild.textContent = result.meetsTarget ? 'Download photo ' : 'Download anyway ';
     $('result').hidden = false;
+    registerResult('download', result.blob, currentTool);
     setStatus(result.meetsTarget ? 'Your photo is ready. Review the preview and download it below.' : 'Photo prepared, but the file-size limit could not be met.', !result.meetsTarget);
   } catch (error) { if (current === generation) setStatus(error.message || 'Something went wrong. Try a smaller image.', true); }
   finally {

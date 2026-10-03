@@ -103,3 +103,36 @@ body{padding-left:248px}#app-shell{min-width:0}.wrap{width:calc(100% - 48px);max
 @media(max-width:540px){.explore-body{padding:18px}.explore-output{padding:14px}.compare-pickers{grid-template-columns:1fr;gap:12px}.details-list{grid-template-columns:1fr}.details-list dt{border:0;padding-bottom:0}.details-list dd{padding-top:5px}.palette-swatches{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.explore-downloads .button{width:100%}}
 /* Keep search and privacy notes visible while the longer tool list scrolls. */
 .sidebar{overflow:hidden}.sidebar>*{flex-shrink:0}#side-links{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-right:3px}#side-links>a,.nav-group{flex-shrink:0}.sidebar-note{margin-top:0}
+
+/* Optional accounts retain the same focused, colorful tool layout. */
+.account-nav { display:block; margin:8px 0 14px; padding:10px 12px; border-radius:12px; background:#eee5ff; color:#582cad; font-weight:700; text-decoration:none; }
+.account-page { padding-top:30px; padding-bottom:60px; }
+.account-tabs { display:flex; gap:8px; flex-wrap:wrap; margin:20px 0; }
+.account-tabs a { padding:8px 12px; border-radius:12px; background:#edf6f5; color:#27584f; text-decoration:none; }
+.account-tabs a[aria-current=page] { background:#733ddd; color:white; }
+.account-content { padding:clamp(16px,3vw,32px); border:1px solid #e5dced; border-radius:24px; background:#fff; box-shadow:0 10px 40px #7340a00a; overflow-wrap:anywhere; }
+.account-content > .button { margin:8px 8px 8px 0; }
+.account-content h2 { margin:24px 0 12px; }
+.account-summary { padding:18px; background:#eee5ff; border-radius:14px; font-weight:700; }
+.account-empty { padding:20px 0; color:#62576b; }
+.account-row { display:flex; flex-wrap:wrap; align-items:center; gap:12px; padding:18px 0; border-bottom:1px solid #e9e1ef; }
+.account-row strong { flex:1 1 160px; }
+.account-row span { flex:1 1 200px; }
+.account-form { display:grid; gap:18px; max-width:760px; }
+.account-content label { display:flex; flex-direction:column; gap:8px; font-size:14px; font-weight:600; }
+.account-content input:not([type=checkbox]), .account-content select { max-width:100%; padding:11px; border:1px solid #c9bcd7; border-radius:10px; background:white; color:#30273a; font:inherit; }
+.account-content label:has(input[type=checkbox]) { flex-direction:row-reverse; justify-content:flex-end; align-items:center; }
+.account-content input[type=checkbox] { width:18px; height:18px; flex-shrink:0; accent-color:#733ddd; }
+.favorite-options { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; border:1px solid #ded4e7; border-radius:12px; padding:16px; }
+.account-danger { margin-top:32px; padding:20px; border:1px solid #e6b5ba; background:#fff5f5; border-radius:16px; }
+.account-danger .button { margin-top:14px; }
+.account-grid { display:flex; flex-wrap:wrap; gap:10px; }
+.admin-row { align-items:flex-start; }
+.audit-entry { font-size:12px; padding:10px; background:#f5f2f8; border-radius:8px; }
+.cloud-save { margin:8px; font-size:13px; }
+.account-notice:empty { display:none; }
+.account-notice { position:fixed; bottom:18px; right:18px; max-width:min(440px,calc(100vw - 36px)); background:#322046; color:white; padding:14px 18px; border-radius:14px; z-index:20; box-shadow:0 4px 24px #0002; cursor:pointer; }
+@media(max-width:600px) { .account-row { flex-direction:column; align-items:stretch; } .account-row strong,.account-row span { flex:auto; } .account-tabs { gap:5px; } .account-tabs a { font-size:13px; padding:8px; } }
+
+.account-tabs a:not([hidden]) { display:inline-flex; }
+.account-content .field-help { font-size:12px; line-height:1.6; }

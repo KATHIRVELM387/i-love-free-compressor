@@ -4,3 +4,9 @@ test-artifacts/
 node_modules/
 .vercel/
 i-love-free-compressor.zip
+
+.env
+.env.*
+
+/supabase/.temp/
+/supabase/.branches/

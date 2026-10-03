@@ -1,3 +1,4 @@
+import { registerResult, forgetToolResults } from './account-bridge.js?v=1';
 import { prepareImage, formatBytes } from './image-tools.js?v=6';
 import { imagesToPdf } from './pdf.js?v=1';
 
@@ -26,6 +27,7 @@ function setup(kind) {
   const minimum = kind === 'collage' ? 2 : 1;
   let files = [], busy = false, cancelled = false, resultURL;
   function clearResult() {
+    forgetToolResults(kind);
     if (resultURL) URL.revokeObjectURL(resultURL);
     resultURL = null;
     $('result').hidden = true;
@@ -145,6 +147,7 @@ function setup(kind) {
       resultURL = URL.createObjectURL(blob);
       $('download').href = resultURL;
       $('download').download = kind === 'pdf' ? 'my-photos.pdf' : `my-collage.${{ 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }[blob.type]}`;
+      registerResult(kind + '-download', blob, kind);
       if (kind === 'collage') $('preview').src = resultURL;
       $('summary').textContent = `${kind === 'pdf' ? files.length + (files.length === 1 ? ' page · ' : ' pages · ') + options.paper.toUpperCase() + ' · ' + (options.landscape ? 'Landscape' : 'Portrait') : canvas.width + ' × ' + canvas.height + ' px'} · ${formatBytes(blob.size)}`;
       $('result').hidden = false; $('status').textContent = 'Ready! Download your file below.';

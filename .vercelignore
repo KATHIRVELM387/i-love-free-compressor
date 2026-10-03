@@ -6,3 +6,7 @@ tests
 scripts
 *.zip
 README.md
+
+.env
+.env.*
+supabase

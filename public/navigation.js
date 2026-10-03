@@ -21,17 +21,20 @@ export const TOOLS = {
   details: { title: 'Image details', view: 'details' }
 };
 
+export const ACCOUNT_PAGES = Object.fromEntries(['account','dashboard','files','history','profile','admin'].map(name => [name, { title: ({account:'Sign in',dashboard:'My dashboard',files:'My files',history:'Activity history',profile:'Profile & settings',admin:'Administration'})[name], view:name }]));
+export const PAGES = { ...TOOLS, ...ACCOUNT_PAGES };
+
 export function startNavigation(onSelect) {
   const $ = id => document.getElementById(id);
   function render() {
     const legacy = { '#tool': 'compress', '#batch-tool': 'batch' };
     const requested = legacy[location.hash] || location.hash.slice(2);
-    const name = Object.hasOwn(TOOLS, requested) ? requested : null;
-    const config = name ? TOOLS[name] : null;
+    const name = Object.hasOwn(PAGES, requested) ? requested : null;
+    const config = name ? PAGES[name] : null;
     $('home-view').hidden = !!name;
-    $('workspace-nav').hidden = !name;
+    $('workspace-nav').hidden = !name || !!ACCOUNT_PAGES[name];
     $('tool').hidden = !name || !!config.view;
-    for (const view of Object.values(TOOLS).filter(tool => tool.view).map(tool => tool.view)) $(view + '-tool').hidden = name !== view;
+    for (const view of Object.values(PAGES).filter(tool => tool.view).map(tool => tool.view)) $(view + '-tool').hidden = name !== view;
     document.documentElement.dataset.activeTool = name || 'home';
     for (const group of document.querySelectorAll('[data-tools]')) {
       const active = !!name && group.dataset.tools.split(' ').includes(name);

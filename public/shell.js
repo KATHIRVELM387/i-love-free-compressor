@@ -1,4 +1,4 @@
-import { TOOLS } from './navigation.js?v=9';
+import { TOOLS, PAGES } from './navigation.js?v=10';
 
 const $ = id => document.getElementById(id);
 const groups = [
@@ -101,7 +101,7 @@ $('sidebar').addEventListener('click', event => {
   // Choosing the current route does not dispatch hashchange.
   if (link.hash === location.hash || (link.hash === '#/' && !location.hash)) {
     const name = document.documentElement.dataset.activeTool;
-    const heading = $(name === 'home' ? 'menu-heading' : TOOLS[name]?.view ? name + '-heading' : 'tool-title');
+    const heading = $(name === 'home' ? 'menu-heading' : PAGES[name]?.view ? name + '-heading' : 'tool-title');
     heading?.focus({ preventScroll: true });
   }
 });
@@ -109,7 +109,7 @@ function updateCurrent() {
   const wasOpen = menuOpen;
   closeMenu();
   const name = document.documentElement.dataset.activeTool || 'home';
-  if (wasOpen) $(name === 'home' ? 'menu-heading' : TOOLS[name]?.view ? name + '-heading' : 'tool-title')?.focus({ preventScroll: true });
+  if (wasOpen) $(name === 'home' ? 'menu-heading' : PAGES[name]?.view ? name + '-heading' : 'tool-title')?.focus({ preventScroll: true });
   for (const link of $('side-links').querySelectorAll('[data-route]')) {
     if (link.dataset.route === name) link.setAttribute('aria-current', 'page');
     else link.removeAttribute('aria-current');

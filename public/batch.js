@@ -1,3 +1,4 @@
+import { registerResult, forgetToolResults } from './account-bridge.js?v=1';
 import { fitDimensions, formatBytes, prepareImage } from './image-tools.js?v=6';
 import { makeZip } from './zip.js?v=3';
 
@@ -11,6 +12,7 @@ window.addEventListener('toolchange', event => {
 });
 
 function clearResults() {
+  forgetToolResults('batch');
   urls.forEach(url => URL.revokeObjectURL(url));
   urls = [];
   $('batch-results').replaceChildren();
@@ -111,7 +113,9 @@ $('batch-form').addEventListener('submit', async event => {
         link.setAttribute('aria-label', `Download ${file.name}${result.meetsTarget ? '' : ' (above size limit)'}`);
         label.textContent = `${file.name} · ${formatBytes(file.size)} → ${formatBytes(result.blob.size)} · ${result.width} × ${result.height} px${result.meetsTarget ? '' : ' · Above size limit'}`;
         if (!result.meetsTarget) { aboveLimit++; row.classList.add('batch-warning'); }
+        link.id = 'batch-download-' + index;
         row.append(link);
+        registerResult(link.id, result.blob, 'batch');
       } catch (error) {
         failed++;
         row.classList.add('batch-warning');
@@ -130,6 +134,7 @@ $('batch-form').addEventListener('submit', async event => {
       urls.push(url);
       $('batch-zip').href = url;
       $('batch-zip').hidden = false;
+      registerResult('batch-zip', zip, 'batch');
     }
     $('batch-summary').textContent = `${output.length} prepared · ${formatBytes(totalBytes)} total${failed ? ` · ${failed} failed` : ''}${aboveLimit ? ` · ${aboveLimit} above the size limit (included in ZIP)` : ''}`;
     $('batch-status').textContent = cancelled ? 'Batch stopped. Completed photos are available below.' : 'Batch finished. Review each result before downloading.';

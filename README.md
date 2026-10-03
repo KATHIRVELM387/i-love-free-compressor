@@ -6,7 +6,7 @@ GitHub Pages mirror: https://kathirvelm387.github.io/i-love-free-compressor/
 
 Source code: https://github.com/KATHIRVELM387/i-love-free-compressor
 
-A free, mobile-friendly photo resizing and compression tool. All photo processing happens in the browser. No paid APIs, backend, database, accounts, uploads, analytics, external fonts, or runtime packages.
+A free, mobile-friendly photo resizing and compression tool. All photo processing happens in the browser. Guest tools require no account or backend and do not upload photos. Optional Google accounts add private cloud saves, preferences, activity history, and admin access through a separately configured Supabase Free project. There are no analytics or external fonts.
 
 ## Choose a tool
 
@@ -88,7 +88,7 @@ Batch processing decodes one photo at a time and caps the combined output at 100
 
 ## Deploy free on Vercel
 
-The root `vercel.json` deploys only `public/`, skips dependency installation and builds, and applies the same privacy headers as Cloudflare. No server functions, database, or paid APIs are used. Use Vercel's **Hobby** plan for this personal, non-commercial project.
+The root `vercel.json` deploys only `public/`, skips dependency installation and builds, and applies the same privacy headers as Cloudflare. Guest processing needs no server functions or database. Optional accounts use Supabase Auth, private Storage, a database, and an account-deletion Edge Function; configure these separately. Use Vercel's **Hobby** plan for this personal, non-commercial project.
 
 Import this repository into Vercel, use **Other** as the framework, and keep the output directory as `public`. Alternatively, sign in with the Vercel CLI and deploy this repository with `vercel --prod`. The deployed project is `ilovefreecompressor` in the `kathir-project` Hobby account, with production address `https://ilovefreecompressor.vercel.app/`. For this linked checkout, publish updates with `vercel deploy --prod --scope kathir-project`. `.vercel/` account/project link settings are excluded from Git.
 
@@ -145,4 +145,21 @@ Hosting is subject to the provider's current free-plan terms. This project itsel
 npm test
 ```
 
-The browser integration suite uses installed Google Chrome and Node.js 18+, without npm packages. Set `CHROME_BIN` if Chrome is not at `/usr/bin/google-chrome`. It starts its own localhost server and isolated temporary browser profile, exercises the actual browser encoder and UI, and saves desktop/mobile screenshots in `test-artifacts/`.
+The image-tool browser integration suite uses installed Google Chrome. Use Node.js 22+ and `npm ci` for the account SDK build and PostgreSQL account tests. Set `CHROME_BIN` if Chrome is not at `/usr/bin/google-chrome`. It starts its own localhost server and isolated temporary browser profile, exercises the actual browser encoder and UI, and saves desktop/mobile screenshots in `test-artifacts/`.
+
+## Optional accounts and role-based access
+
+Six dedicated views are available from **Sign in / My account**: sign-in, dashboard, private files, activity history, profile/settings, and administration. Guest image tools remain available without login. Google sign-in is enabled only after backend setup; until then the account pages clearly explain that setup is pending.
+
+Follow [supabase/SETUP.md](supabase/SETUP.md) to create the free backend, enable Google OAuth, deploy account deletion, configure public credentials/CSP, and establish the first admin. Secret/server keys never belong in the public directory.
+
+Validation:
+
+```sh
+npm ci
+npm run test:accounts   # PostgreSQL RLS/quotas + deletion handler
+npm run test:account-ui # Real Chrome + SDK, intercepted test API
+npm test               # All existing image-tool browser checks
+```
+
+Backend tests exercise the actual migration with PostgreSQL roles and policies. Browser account tests use controlled responses; the live OAuth/Storage acceptance checks in SETUP.md remain required after connecting a real project.

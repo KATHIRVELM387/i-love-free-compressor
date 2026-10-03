@@ -1,3 +1,4 @@
+import { registerResult, forgetToolResults } from './account-bridge.js?v=1';
 import { openPhoto, drawContained, extractPalette, splitLayout, hasTransparency, canvasBlob } from './analysis-tools.js?v=1';
 import { formatBytes } from './image-tools.js?v=6';
 import { makeZip } from './zip.js?v=3';
@@ -7,11 +8,12 @@ function viewer(name, ready) {
   const $ = suffix => document.getElementById(`${name}-${suffix}`);
   const state = { file: null, generation: 0, busy: false, urls: [], $, width: 0, height: 0 };
   state.clearOutput = () => {
+    forgetToolResults(name);
     state.urls.forEach(url => URL.revokeObjectURL(url)); state.urls = [];
     $('output').hidden = true;
     for (const link of $('output').querySelectorAll('a')) link.removeAttribute('href');
   };
-  state.link = (id, blob) => { const url = URL.createObjectURL(blob); state.urls.push(url); $(id).href = url; };
+  state.link = (id, blob) => { const url = URL.createObjectURL(blob); state.urls.push(url); $(id).href = url; registerResult(name + '-' + id, blob, name); };
   state.setBusy = value => { state.busy = value; $('options').disabled = value; if ($('run')) $('run').disabled = value || !state.file || !!state.invalid; };
   state.load = async file => {
     if (!file) return;
