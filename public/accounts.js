@@ -1,7 +1,7 @@
 import { filesView, meter, csv, download, setWorkspaceOwner } from './workspace-accounts.js';
 import { accountConfig } from './account-config.js';
 import { results, setPreferences } from './account-bridge.js?v=1';
-import { TOOLS, ACCOUNT_PAGES } from './navigation.js?v=11';
+import { TOOLS, ACCOUNT_PAGES } from './navigation.js?v=12';
 
 const $ = id => document.getElementById(id);
 const authReturnURL = new URL('./', import.meta.url).href;
@@ -54,7 +54,7 @@ function guard(container, admin = false) {
       container.append(button('Check again', async () => { googleEnabled = undefined; await render(); }), link('Continue as guest', '#/'));
       return false;
     }
-    empty(container, 'Sign in to keep your files, preferences, and activity together. Using the image tools never requires an account.');
+    empty(container, document.documentElement.dataset.activeTool === 'signup' ? 'Create a free Member account with Google to save files, preferences, and activity. You can still use every tool without signing up.' : 'Sign in to keep your files, preferences, and activity together. Using the image tools never requires an account.');
     container.append(button('Continue with Google', async () => {
       checked(await client.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: authReturnURL } }));
     }, 'button primary'), link('Continue as guest', '#/'));
@@ -71,6 +71,8 @@ function guard(container, admin = false) {
 }
 async function render() {
   const route = document.documentElement.dataset.activeTool;
+  for(const id of ['header-login','header-signup']) $(id).hidden = !!session;
+  for(const id of ['header-dashboard','header-profile']) $(id).hidden = !session;
   for (const node of document.querySelectorAll('[data-admin-only]')) node.hidden = !active() || profile.role !== 'admin';
   for (const node of document.querySelectorAll('[data-signout]')) node.hidden = !session;
   $('account-nav').textContent = profile ? '♡ My account' : '♡ Sign in / My account';
@@ -94,7 +96,7 @@ async function render() {
   if (!allowed && !(route === 'profile' && profile && !loading)) return;
   const current = () => token === revision && document.documentElement.dataset.activeTool === route;
   try {
-    if (route === 'account') {
+    if (route === 'account' || route === 'signup') {
       container.append(el('p', `You are signed in as ${profile.display_name || session.user.email || 'a member'}.`), link('Open my dashboard →', '#/dashboard')); return;
     }
     if (route === 'profile') { settings(container); return; }

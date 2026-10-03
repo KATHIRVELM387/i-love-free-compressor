@@ -1,5 +1,6 @@
+import { categoryFor } from './guide-data.js';
 import { EXTRA_TOOLS } from './studio-catalog.js';
-import { TOOLS, PAGES } from './navigation.js?v=11';
+import { TOOLS, PAGES } from './navigation.js?v=12';
 
 const $ = id => document.getElementById(id);
 const groups = [
@@ -48,18 +49,22 @@ function filterNavigation() {
 }
 $('nav-search').addEventListener('input', filterNavigation);
 $('nav-clear').addEventListener('click', () => { $('nav-search').value = ''; filterNavigation(); $('nav-search').focus(); });
+let toolCategory = 'All';
+window.addEventListener('tool-category-change', event => { toolCategory = event.detail; filterCards(); });
 function filterCards() {
   let count = 0;
   for (const card of document.querySelectorAll('.tool-card')) {
-    card.hidden = !matches(card.getAttribute('href').slice(2), $('tool-search').value);
+    const key = card.getAttribute('href').slice(2);
+    card.hidden = !matches(key, $('tool-search').value) || (toolCategory !== 'All' && categoryFor(key) !== toolCategory);
     if (!card.hidden) count++;
   }
   $('tool-search-clear').hidden = !$('tool-search').value;
-  $('tool-search-status').hidden = !$('tool-search').value;
+  $('tool-search-status').hidden = !$('tool-search').value && toolCategory === 'All';
+  window.dispatchEvent(new CustomEvent('tool-category-state', { detail: toolCategory }));
   $('tool-search-status').textContent = count ? `${count} tool${count === 1 ? '' : 's'} found.` : 'No matching tools. Try “compress”, “border”, or “PDF”.';
 }
 $('tool-search').addEventListener('input', filterCards);
-$('tool-search-clear').addEventListener('click', () => { $('tool-search').value = ''; filterCards(); $('tool-search').focus(); });
+$('tool-search-clear').addEventListener('click', () => { $('tool-search').value = ''; toolCategory = 'All'; filterCards(); $('tool-search').focus(); });
 
 const mobile = matchMedia('(max-width: 1000px)');
 let menuOpen = false;
@@ -124,7 +129,7 @@ function updateCurrent() {
     else if (item.bottom > area.bottom) $('side-links').scrollTop += item.bottom - area.bottom;
   }
   // Returning home always offers the complete tool menu for the next step.
-  if (name === 'home') { $('tool-search').value = ''; filterCards(); }
+  if (name === 'home') { $('tool-search').value = ''; toolCategory = 'All'; filterCards(); }
 }
 mobile.addEventListener('change', () => {
   const wasInside = $('sidebar').contains(document.activeElement);

@@ -127,7 +127,7 @@ try {
   for(const width of [768,390,320]){
     await cdp('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:true},session);
     assert.equal(await evaluate('document.documentElement.scrollWidth<=innerWidth'),true);
-    assert.equal(await evaluate("document.querySelector('.site-header nav').getBoundingClientRect().left >= document.querySelector('.site-header .brand').getBoundingClientRect().right"),true,`Header items overlap at ${width}px`);
+    assert.equal(await evaluate("(()=>{const rects=[...document.querySelectorAll('.site-header>.brand,.site-header>.primary-navigation,.site-header>.header-account')].map(n=>n.getBoundingClientRect());return rects.every((a,i)=>rects.slice(i+1).every(b=>a.right<=b.left||b.right<=a.left||a.bottom<=b.top||b.bottom<=a.top));})()"),true,`Header items overlap at ${width}px`);
   }
   await screenshot('mobile-home.png');
   await evaluate("document.getElementById('menu-toggle').click()");
@@ -164,6 +164,11 @@ try {
   await evaluate("document.getElementById('menu-heading').focus()");
   await cdp('Input.dispatchKeyEvent',{type:'keyDown',key:'Tab',code:'Tab',windowsVirtualKeyCode:9},session);
   await cdp('Input.dispatchKeyEvent',{type:'keyUp',key:'Tab',code:'Tab',windowsVirtualKeyCode:9},session);
+  for(const category of ['All','Images','PDF','Creative','Web']){
+    assert.equal(await evaluate("document.activeElement.dataset.category"),category);
+    await cdp('Input.dispatchKeyEvent',{type:'keyDown',key:'Tab',code:'Tab',windowsVirtualKeyCode:9},session);
+    await cdp('Input.dispatchKeyEvent',{type:'keyUp',key:'Tab',code:'Tab',windowsVirtualKeyCode:9},session);
+  }
   assert.equal(await evaluate("document.activeElement.getAttribute('href')"),'#/compress');
   await cdp('Input.dispatchKeyEvent',{type:'keyDown',key:'Enter',code:'Enter',windowsVirtualKeyCode:13},session);
   await cdp('Input.dispatchKeyEvent',{type:'keyUp',key:'Enter',code:'Enter',windowsVirtualKeyCode:13},session);

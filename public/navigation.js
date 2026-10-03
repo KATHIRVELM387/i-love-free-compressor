@@ -1,3 +1,4 @@
+import { mountHelpPages } from './help-pages.js';
 import './studio.js';
 import './workflow.js';
 import { EXTRA_TOOLS } from './studio-catalog.js';
@@ -25,8 +26,15 @@ export const TOOLS = {
   ...EXTRA_TOOLS
 };
 
-export const ACCOUNT_PAGES = Object.fromEntries(['account','dashboard','files','history','profile','admin'].map(name => [name, { title: ({account:'Sign in',dashboard:'My dashboard',files:'My files',history:'Activity history',profile:'Profile & settings',admin:'Administration'})[name], view:name }]));
-export const PAGES = { ...TOOLS, ...ACCOUNT_PAGES, workflow:{title:'Saved workflows',view:'workflow'} };
+export const ACCOUNT_PAGES = Object.fromEntries(['account','signup','dashboard','files','history','profile','admin'].map(name => [name, { title: ({account:'Sign in',signup:'Create account',dashboard:'My dashboard',files:'My files',history:'Activity history',profile:'Profile & settings',admin:'Administration'})[name], view:name }]));
+const signup = document.getElementById('account-tool').cloneNode(true);
+signup.id = 'signup-tool';
+signup.querySelector('#account-heading').id = 'signup-heading';
+signup.querySelector('#signup-heading').textContent = 'Create your free account';
+signup.querySelector('#account-content').id = 'signup-content';
+document.getElementById('main-content').append(signup);
+export const HELP_PAGES = mountHelpPages(TOOLS, ACCOUNT_PAGES);
+export const PAGES = { ...TOOLS, ...ACCOUNT_PAGES, ...HELP_PAGES, workflow:{title:'Saved workflows',view:'workflow'} };
 
 export function startNavigation(onSelect) {
   const $ = id => document.getElementById(id);
@@ -36,7 +44,7 @@ export function startNavigation(onSelect) {
     const name = Object.hasOwn(PAGES, requested) ? requested : null;
     const config = name ? PAGES[name] : null;
     $('home-view').hidden = !!name;
-    $('workspace-nav').hidden = !name || !!ACCOUNT_PAGES[name];
+    $('workspace-nav').hidden = !name || !!ACCOUNT_PAGES[name] || !!config?.informational;
     $('tool').hidden = !name || !!config.view;
     for (const view of Object.values(PAGES).filter(tool => tool.view).map(tool => tool.view)) $(view + '-tool').hidden = name !== view;
     document.documentElement.dataset.activeTool = name || 'home';

@@ -201,3 +201,12 @@ npm test
 ```
 
 The studio tests exercise all twenty new tools in real Chrome, inspect PDF page counts, decoded redaction pixels, QR round trips, ZIP signatures, saved workflows, and responsive layouts. The original suite continues validating image encoders and every existing tool. Account tests cover metadata ownership, admin authorization, folders/previews, Google PKCE callback handling, private data cleanup, and existing quota/deletion protections.
+
+
+## Navigation and feature guides
+
+The header keeps All tools, Features, How to use, About, Help, Login, and Sign up accessible on desktop and mobile. Signed-in users see My dashboard and Settings instead of registration links. `#/signup` explains free Member registration and uses the existing verified Google sign-in flow; it does not introduce a separate password system or new roles.
+
+Public information pages: `#/about`, `#/how-to-use`, `#/features`, `#/faq`, and `#/privacy`. The feature directory has text search and category filters. Every tool, the saved-workflow feature, and each account module has its own `#/guide/<feature>` route with individual steps, an example, limitations, related guides, and an Open feature action. Guides support link copying with a manual-copy fallback and a focused print layout. These are client-side routes, not separately generated indexable HTML pages.
+
+All tools now supports combined search/category filtering. Each tool workspace links to its matching guide. Recent-tool shortcuts can be cleared on the current device. Neither clearing recent tools nor browsing help deletes saved files or activity history.

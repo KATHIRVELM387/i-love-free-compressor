@@ -194,23 +194,27 @@ try {
   await cdp('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false},session);
   await cdp('Page.navigate',{url:`http://127.0.0.1:${port}/#/account`},session);
   await until("document.getElementById('account-content')?.textContent.includes('being set up')");
-  for(const route of ['account','dashboard','files','history','profile','admin']){
+  for(const route of ['account','signup','dashboard','files','history','profile','admin']){
     await goTool(route);
     assert.equal(await evaluate(`!document.getElementById('${route}-tool').hidden&&document.getElementById('tool').hidden&&document.getElementById('home-view').hidden`),true);
     assert.match(await evaluate(`document.getElementById('${route}-content').textContent`),/being set up/);
   }
   assert.equal(requests.length,0);
-  pass('All six account routes safely explain missing setup; no remote requests or guest login requirement');
+  pass('All seven account routes safely explain missing setup; no remote requests or guest login requirement');
   mockConfigured=true;await goTool('account');await cdp('Page.reload',{ignoreCache:true},session);
   await until("document.getElementById('account-content').textContent.includes('Google sign-in is being set up')");
+  await goTool('signup');await until("document.getElementById('signup-content').textContent.includes('being set up')");
   mockGoogleEnabled=true; await clickText('Check again');
-  await until("document.querySelector('#account-content button')?.textContent==='Continue with Google'");
+  await until("document.querySelector('#signup-content button')?.textContent==='Continue with Google'");
+  assert.match(await evaluate("document.getElementById('signup-content').textContent"),/Member account/);
+  assert.equal(await evaluate("!document.getElementById('header-login').hidden&&!document.getElementById('header-signup').hidden"),true);
   await screenshot('account-sign-in.png');
   await cdp('Page.navigate',{url:`http://127.0.0.1:${port}/index.html#/account`},session);
   await until("document.querySelector('#account-content button')?.textContent==='Continue with Google'");
   await clickText('Continue with Google');
   await until("document.documentElement?.dataset.activeTool==='dashboard' && document.getElementById('account-nav')?.textContent.startsWith('♡ My account')");
   assert.equal(await evaluate('location.search'),'');
+  assert.equal(await evaluate("document.getElementById('header-login').hidden&&document.getElementById('header-signup').hidden&&!document.getElementById('header-dashboard').hidden"),true);
   pass('Real SDK PKCE redirect, code exchange, callback cleanup, and dashboard landing with intercepted OAuth service');
   await authenticate();await goTool('dashboard');
   await until("document.getElementById('dashboard-content').textContent.includes('Welcome, Example member')");
@@ -275,6 +279,7 @@ try {
   await until("document.getElementById('account-nav').textContent==='♡ Sign in / My account' && document.documentElement.dataset.activeTool==='account'");
   assert.equal(await evaluate("['files','history','profile','admin'].every(n=>{const page=document.getElementById(n+'-content');return !page.querySelector('form,.account-row,.admin-row,.account-danger')&&!/member@example.test|Other member|bytes prepared/.test(page.textContent)})"),true);
   assert.equal(await evaluate("localStorage.getItem('sb-accounts-test-auth-token')"),null);
+  assert.equal(await evaluate("!document.getElementById('header-login').hidden&&!document.getElementById('header-signup').hidden&&document.getElementById('header-dashboard').hidden"),true);
   pass('Interrupted upload recovery, admin controls and server rejection, mobile layout, explicit deletion, and private data cleared on sign-out');
   assert.deepEqual(errors,[]);
 } finally {

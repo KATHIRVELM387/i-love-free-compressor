@@ -22,14 +22,16 @@
   <meta name="twitter:description" content="Compress and resize photos for free. Local image editing with optional private cloud saves.">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css?v=11">
-  <script type="module" src="app.js?v=11"></script>
-  <script type="module" src="shell.js?v=4"></script>
+  <script type="module" src="app.js?v=12"></script>
+  <script type="module" src="shell.js?v=5"></script>
   <script type="module" src="batch.js?v=9"></script>
   <script type="module" src="collections.js?v=3"></script>
   <script type="module" src="explore.js?v=2"></script>
-  <script type="module" src="accounts.js?v=3"></script>
+  <script type="module" src="accounts.js?v=4"></script>
   <link rel="stylesheet" href="professional.css?v=1">
-  <script type="module" src="productivity.js?v=1"></script>
+  <script type="module" src="productivity.js?v=2"></script>
+  <link rel="stylesheet" href="help-pages.css?v=1">
+  <script type="module" src="help-navigation.js?v=1"></script>
 </head>
 <body>
   <a class="skip-link" href="#main-content">Skip to content</a>
@@ -45,7 +47,20 @@
   <div id="app-shell">
   <header class="site-header wrap">
     <a class="brand" href="#/" aria-label="I Love Free Compressor home"><span class="brand-icon" aria-hidden="true">♥</span><span class="brand-name"><small>I Love</small><strong>Free Compressor</strong></span></a>
-    <nav aria-label="Main navigation"><button id="menu-toggle" type="button" class="menu-toggle" aria-controls="sidebar" aria-expanded="false">☰ Tools</button><a href="#/" class="all-tools-link">All tools</a><a href="#/batch">Batch tools</a><span class="free-badge">100% free</span></nav>
+    <nav class="primary-navigation" aria-label="Main navigation">
+      <button id="menu-toggle" type="button" class="menu-toggle" aria-controls="sidebar" aria-expanded="false">☰ Tools</button>
+      <a href="#/" class="all-tools-link" data-header-page="home">All tools</a>
+      <a href="#/features" data-header-page="features">Features</a>
+      <a href="#/how-to-use" data-header-page="how-to-use">How to use</a>
+      <a href="#/about" data-header-page="about">About</a>
+      <a href="#/faq" data-header-page="faq">Help</a>
+    </nav>
+    <div class="header-account" aria-label="Account navigation">
+      <a id="header-login" href="#/account" class="header-login">Login</a>
+      <a id="header-signup" href="#/signup" class="button primary header-signup">Sign up</a>
+      <a id="header-dashboard" href="#/dashboard" class="button primary" hidden>My dashboard</a>
+      <a id="header-profile" href="#/profile" class="header-login" hidden>Settings</a>
+    </div>
   </header>
   <main id="main-content" tabindex="-1">
     <div id="home-view">
@@ -306,7 +321,7 @@
       </div>
     </section>
     <noscript><p class="wrap">Enable JavaScript to open these tools. Photo processing happens in your browser.</p></noscript>
-<section id="account-tool" class="wrap account-page" hidden><h1 id="account-heading" tabindex="-1">Your tools. Your choice.</h1><nav class="account-tabs" aria-label="My account"><a href="#/dashboard">Dashboard</a><a href="#/files">My files</a><a href="#/history">History</a><a href="#/profile">Settings</a><a href="#/admin" data-admin-only hidden>Admin</a><button class="text-button" data-signout type="button" hidden>Sign out</button></nav><div id="account-content" class="account-content"></div></section>
+<section id="account-tool" class="wrap account-page" hidden><h1 id="account-heading" tabindex="-1">Welcome back</h1><nav class="account-tabs" aria-label="My account"><a href="#/dashboard">Dashboard</a><a href="#/files">My files</a><a href="#/history">History</a><a href="#/profile">Settings</a><a href="#/admin" data-admin-only hidden>Admin</a><button class="text-button" data-signout type="button" hidden>Sign out</button></nav><div id="account-content" class="account-content"></div></section>
 <section id="dashboard-tool" class="wrap account-page" hidden><h1 id="dashboard-heading" tabindex="-1">My dashboard</h1><nav class="account-tabs" aria-label="My account"><a href="#/dashboard">Dashboard</a><a href="#/files">My files</a><a href="#/history">History</a><a href="#/profile">Settings</a><a href="#/admin" data-admin-only hidden>Admin</a><button class="text-button" data-signout type="button" hidden>Sign out</button></nav><div id="dashboard-content" class="account-content"></div></section>
 <section id="files-tool" class="wrap account-page" hidden><h1 id="files-heading" tabindex="-1">My files</h1><nav class="account-tabs" aria-label="My account"><a href="#/dashboard">Dashboard</a><a href="#/files">My files</a><a href="#/history">History</a><a href="#/profile">Settings</a><a href="#/admin" data-admin-only hidden>Admin</a><button class="text-button" data-signout type="button" hidden>Sign out</button></nav><div id="files-content" class="account-content"></div></section>
 <section id="history-tool" class="wrap account-page" hidden><h1 id="history-heading" tabindex="-1">Activity history</h1><nav class="account-tabs" aria-label="My account"><a href="#/dashboard">Dashboard</a><a href="#/files">My files</a><a href="#/history">History</a><a href="#/profile">Settings</a><a href="#/admin" data-admin-only hidden>Admin</a><button class="text-button" data-signout type="button" hidden>Sign out</button></nav><div id="history-content" class="account-content"></div></section>

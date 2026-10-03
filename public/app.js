@@ -1,6 +1,6 @@
 import { registerResult, forgetResult, getPreferences } from './account-bridge.js?v=1';
 import { fitDimensions, formatBytes, prepareImage, renderImage, getCropRect, downloadName } from './image-tools.js?v=6';
-import { startNavigation, TOOLS } from './navigation.js?v=11';
+import { startNavigation, TOOLS } from './navigation.js?v=12';
 
 const $ = id => document.getElementById(id);
 const fileInput = $('file-input');

@@ -12,7 +12,8 @@
     "test:accounts": "node tests/accounts-db.mjs && node tests/account-deletion.mjs && node tests/account-config.mjs",
     "test:account-ui": "node tests/accounts-browser.mjs",
     "build:tools": "node scripts/build-tools.mjs",
-    "test:studio": "node tests/studio-browser.mjs"
+    "test:studio": "node tests/studio-browser.mjs",
+    "test:help": "node tests/help-browser.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.117.2",
