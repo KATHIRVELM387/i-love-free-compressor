@@ -232,4 +232,18 @@ The original narration script is shared in `scripts/demo-content.json`. Speech i
 
 The MP4s use `*-narrated.mp4` filenames so browsers cannot reuse the old silent assets. Audio starts 0.35 seconds into each matching scene and is normalized to -18 LUFS with a -2 dB true-peak limit. The audio checker decodes the final MP4 track and verifies audible content in every scene, unclipped peaks, and matching duration.
 
-Run `npm run test:videos` for real Chrome audio decoding, mute/volume recovery, playback, seeking, caption parsing, explicit loading, route cleanup, failure recovery, desktop/mobile layout checks, and shared banner colours on all 101 routes. `ILFC_LIVE_URL=https://your-site/ npm run test:videos` checks the hosted assets too.
+Run `npm run test:videos` for real Chrome audio decoding, mute/volume recovery, playback, seeking, caption parsing, explicit loading, route cleanup, failure recovery, desktop/mobile layout checks, and shared banner colours on all 113 routes. `ILFC_LIVE_URL=https://your-site/ npm run test:videos` checks the hosted assets too.
+
+
+### Six additional utilities
+
+The catalog now has 46 tools and 53 guides. Each utility has a separate route and runs locally without signing in:
+
+- `#/image-privacy`: fresh PNG pixels, excluding original camera/GPS metadata; visible content remains.
+- `#/image-dpi`: re-save JPG/PNG at 1–1,200 DPI with unchanged pixel dimensions. JPG uses high-quality re-encoding. Both image tools accept up to 25 MB and export up to 4,096 pixels per edge / 16 million pixels total.
+- `#/pdf-properties`: read/edit document title, author, subject and keywords, or clear all Info properties. Both modes remove document-level XMP. Content, annotations and attachments remain. Up to 25 MB / 200 pages, unencrypted PDFs only.
+- `#/text-cleanup`: whitespace cleanup, case conversion, exact duplicate-line removal, and live Unicode code-point / whitespace-word counts.
+- `#/json-format`: validation, indentation or minification, preserving original number tokens and duplicate keys. Up to 1 million input characters / 8 million formatted characters. Account saves use the existing plain-text storage type while retaining the `.json` filename.
+- `#/checksum`: local SHA-256 with optional expected-hash comparison; any file up to 100 MB. This is a content comparison, not a malware scan.
+
+Run `npm run test:utilities` for browser processing, known checksum vectors, metadata removal, PDF page preservation, PNG CRC/density, JPEG density, exact JSON numbers, input validation, cancellation, and mobile routes/guides.

@@ -1,5 +1,11 @@
 // Each tool owns a focused route; large codecs are loaded only when used.
 const entries = [
+ ['image-privacy','Image privacy cleaner','Remove original camera and GPS metadata by exporting fresh image pixels.','Create & draw'],
+ ['image-dpi','Image DPI editor','Set JPG or PNG print resolution without changing pixel dimensions.','Create & draw'],
+ ['pdf-properties','PDF properties editor','Read, edit, or clear document title, author, subject, and keywords.','PDF tools'],
+ ['text-cleanup','Text cleanup','Count words and characters, change case, and tidy spacing.','Web utilities'],
+ ['json-format','JSON formatter','Validate, format, or minify JSON while retaining exact number values.','Web utilities'],
+ ['checksum','File checksum','Calculate SHA-256 and compare a file with an expected checksum.','Web utilities'],
  ['merge-pdf','Merge PDFs','Combine documents in your chosen order.','PDF tools'],
  ['split-pdf','Split PDF','Extract the pages you need into a new document.','PDF tools'],
  ['pdf-images','PDF to images','Export PDF pages as JPG or PNG in a ZIP.','PDF tools'],

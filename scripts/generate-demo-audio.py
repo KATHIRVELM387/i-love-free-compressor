@@ -14,7 +14,7 @@ SLOT=112/15
 for key,(_,scenes) in DATA.items():
  pieces=[];rate=None
  for i,(_,line) in enumerate(scenes):
-  text=line.replace('40 free','Forty free').replace('100 KB','one hundred kilobytes').replace('JPG','J P G').replace('800 pixels','eight hundred pixels')
+  text=line.replace('46 free','Forty six free').replace('100 KB','one hundred kilobytes').replace('JPG','J P G').replace('800 pixels','eight hundred pixels')
   path=OUT/f'{key}-{i+1}.wav'
   with wave.open(str(path),'wb') as wav:voice.synthesize_wav(text,wav,syn_config=SynthesisConfig(length_scale=1.0))
   with wave.open(str(path),'rb') as wav:

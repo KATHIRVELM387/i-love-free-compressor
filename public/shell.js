@@ -1,6 +1,6 @@
 import { categoryFor } from './guide-data.js';
 import { EXTRA_TOOLS } from './studio-catalog.js';
-import { TOOLS, PAGES } from './navigation.js?v=14';
+import { TOOLS, PAGES } from './navigation.js?v=15';
 
 const $ = id => document.getElementById(id);
 const groups = [

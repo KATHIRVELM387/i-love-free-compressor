@@ -32,3 +32,12 @@ button,input,select,textarea,progress{accent-color:var(--brand-blue)}.storage-me
 #demo-sound{min-height:42px;margin:0}.video-note{line-height:1.8}.video-note a{color:#174c83}.pdf-result-icon{background:var(--brand-soft);color:#234e7b}.preview-image,.collection-preview,.explore-preview,.compare-stage,.drawing-stage{border-color:var(--brand-border)}
 @media(max-width:600px){.account-page>h1{padding:24px 20px;font-size:28px}.workspace-heading,.info-heading{padding:24px 20px}}
 @media print{.workspace-heading,.info-heading,.account-page>h1{background:#fff!important;color:#000!important;border:0}.workspace-heading h1,.info-heading h1,.workspace-heading p,.info-heading>p:last-child{color:#000!important}}
+
+/* Utility results sit beside their controls and stack on narrow screens. */
+.utility-tool .studio-body{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start}
+.utility-tool .studio-preview{min-width:0}
+.utility-tool .studio-preview h2{font-size:18px;color:var(--brand-navy);margin:0 0 16px}
+.utility-tool .studio-status,.utility-tool .studio-output{margin-left:0;margin-right:0;overflow-wrap:anywhere}
+.utility-tool .studio-output textarea{min-height:240px;white-space:pre-wrap}
+.utility-tool .studio-output:empty{display:none}
+@media(max-width:1000px){.utility-tool .studio-body{grid-template-columns:1fr}}

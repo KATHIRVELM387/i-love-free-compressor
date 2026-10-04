@@ -158,7 +158,7 @@ try {
   await goTool('videos');if([1440,390].includes(width))await screenshot(`redesign-videos-${width}.png`);
   await goTool('');if([1440,390].includes(width))await screenshot(`redesign-home-${width}.png`);
  }
- const pages=await evaluate("Object.entries((await import('./navigation.js?v=14')).PAGES).map(([key,config])=>[key,config.view||'tool'])");
+ const pages=await evaluate("Object.entries((await import('./navigation.js?v=15')).PAGES).map(([key,config])=>[key,config.view||'tool'])");
  for(const [key,view] of pages){
   await goTool(key);
   const colours=await evaluate(`(()=>{const section=document.getElementById(${JSON.stringify(view==='tool'?'tool':view+'-tool')});const heading=section.querySelector('h1');const banner=heading.closest('.workspace-heading,.info-heading')||heading;return {background:getComputedStyle(banner).backgroundImage,colour:getComputedStyle(heading).color,width:document.documentElement.scrollWidth};})()`);

@@ -1,3 +1,5 @@
+import { UTILITY_KEYS, processUtility, readProperties, textStats } from './utility-core.js';
+const NO_FILE = ['signature','gradient','qr','text-pdf','text-cleanup','json-format'];
 import { EXTRA_TOOLS } from './studio-catalog.js';
 import { canvas, bitmap, contain, encode, drawMarks, processPDF, processImages, pdfRenderer, renderPage } from './studio-core.js';
 import { registerResult, forgetResult } from './account-bridge.js?v=1';
@@ -25,7 +27,7 @@ function installDrawing(s){s.canvas=canvas(1200,s.key==='signature'?400:800);s.c
  paint(s);
 }
 async function load(s,incoming){if(s.busy)return;const many=['merge-pdf','contact-sheet','stitch'].includes(s.key);const files=many?[...s.files,...incoming]:[...incoming].slice(0,1);
- if(files.length>20||files.some(f=>f.size>25000000)||files.reduce((n,f)=>n+f.size,0)>100000000)throw Error('Choose up to 20 files, 25 MB each and 100 MB combined.');
+ if(files.length>20||files.some(f=>f.size>(s.key==='checksum'?100000000:25000000))||files.reduce((n,f)=>n+f.size,0)>100000000)throw Error(s.key==='checksum'?'Choose a file up to 100 MB.':'Choose up to 20 files, 25 MB each and 100 MB combined.');
  invalidate(s);const revision=s.revision;
  if(s.canvas&&s.key!=='signature'&&files[0]){const b=await bitmap(files[0]);if(revision!==s.revision){b.close();return;}const scale=Math.min(1,1600/Math.max(b.width,b.height));s.base=canvas(b.width*scale,b.height*scale);s.base.getContext('2d').drawImage(b,0,0,s.base.width,s.base.height);b.close();s.canvas.width=s.base.width;s.canvas.height=s.base.height;s.marks=[];s.redos=[];paint(s);}
  s.files=files;fileList(s);status(s,`${files.length} file${files.length===1?'':'s'} selected. Adjust settings, then create your download.`);
@@ -38,22 +40,38 @@ async function organize(s,revision){s.preview.replaceChildren();s.pages=[];s.bus
 }
 function pageList(s){s.preview.replaceChildren();const grid=node('div',undefined,'page-grid');for(const [i,p] of s.pages.entries()){const card=node('article',undefined,'page-card');card.append(p.canvas,node('p',`Page ${p.index+1} · +${p.rotation}°`));for(const [text,act] of [['Move earlier',()=>{if(i>0)[s.pages[i-1],s.pages[i]]=[s.pages[i],s.pages[i-1]];}],['Move later',()=>{if(i<s.pages.length-1)[s.pages[i+1],s.pages[i]]=[s.pages[i],s.pages[i+1]];}],['Rotate 90°',()=>p.rotation=(p.rotation+90)%360],['Remove page',()=>s.pages.splice(i,1)]])card.append(button(text,()=>{if(s.busy)return;act();invalidate(s);pageList(s);}));grid.append(card);}s.preview.append(grid);}
 async function run(s){if(s.busy||!s.form.reportValidity())return;invalidate(s);s.busy=true;s.run.disabled=true;s.controls.disabled=true;const revision=s.revision,check=()=>{if(revision!==s.revision)throw Error('Processing stopped.');};status(s,'Preparing your file…');
- try{const o=options(s);o.order=s.pages;const pdf=s.key.includes('pdf');const result=await (pdf?processPDF(s.key,s.files,o,t=>status(s,t),check):processImages(s.key,s.files,o,t=>status(s,t),check,s.marks));check();if(result.blob.size>100000000)throw Error('Output exceeds 100 MB. Use fewer files or smaller dimensions.');
+ try{const o=options(s);o.order=s.pages;const pdf=s.key.includes('pdf');const result=await (UTILITY_KEYS.includes(s.key)?processUtility(s.key,s.files,o,check):pdf?processPDF(s.key,s.files,o,t=>status(s,t),check):processImages(s.key,s.files,o,t=>status(s,t),check,s.marks));check();if(result.blob.size>100000000)throw Error('Output exceeds 100 MB. Use fewer files or smaller dimensions.');
   if(result.preview){result.preview.className='studio-result-preview';result.preview.setAttribute('aria-label','Prepared image preview');s.output.append(result.preview);}
-  if(result.text!==undefined){const text=node('textarea');text.readOnly=true;text.value=result.text;text.setAttribute('aria-label','Extracted text');s.output.append(text,button('Copy text',async()=>{await navigator.clipboard.writeText(result.text);status(s,'Copied to clipboard.');}));}
-  const summary=node('p',`Ready · ${result.name} · ${(result.blob.size/1000).toFixed(1)} KB${result.preview?` · ${result.preview.width} × ${result.preview.height} px`:''}`);s.output.append(summary);
-  const a=node('a','Download file','button primary');a.id=s.key+'-download';a.download=result.name;a.href=URL.createObjectURL(result.blob);s.urls.push(a.href);a.addEventListener('click',()=>s.dirty=false);s.output.append(a);registerResult(a.id,result.blob,s.key);status(s,'Your file is ready. Download it below, or save it to your account.');
+  if(result.text!==undefined){const text=node('textarea');text.readOnly=true;text.value=result.text;text.setAttribute('aria-label','Result text');s.output.append(text,button('Copy text',async()=>{await navigator.clipboard.writeText(result.text);status(s,'Copied to clipboard.');}));}
+  const summary=node('p',`Ready · ${result.name} · ${(result.blob.size/1000).toFixed(1)} KB${result.preview?` · ${result.preview.width} × ${result.preview.height} px`:''}`);s.output.append(summary);if(result.message)s.output.append(node('p',result.message,'field-help'));
+  const a=node('a','Download file','button primary');a.id=s.key+'-download';a.download=result.name;a.href=URL.createObjectURL(result.blob);s.urls.push(a.href);a.addEventListener('click',()=>s.dirty=false);s.output.append(a);registerResult(a.id,result.blob.type==='application/json'?result.blob.slice(0,result.blob.size,'text/plain'):result.blob,s.key);status(s,'Your file is ready. Download it below, or save it to your account.');
  }catch(e){status(s,e.message||'Could not process this file.',true);}finally{s.busy=false;s.run.disabled=false;s.controls.disabled=false;}
 }
 for(const [key,tool] of Object.entries(EXTRA_TOOLS)){
- const section=node('section',undefined,'workspace wrap studio-tool');section.id=key+'-tool';section.hidden=true;
+ const section=node('section',undefined,'workspace wrap studio-tool');section.id=key+'-tool';section.hidden=true;if(UTILITY_KEYS.includes(key))section.classList.add('utility-tool');
  const header=node('div',undefined,'workspace-heading'),intro=node('div');intro.append(node('span',tool.group.toUpperCase(),'tiny-label'));const heading=node('h1',tool.title);heading.id=key+'-heading';heading.tabIndex=-1;intro.append(heading,node('p',tool.description));header.append(intro,node('span','On your device','local-badge'));
- const form=node('form',undefined,'studio-form'),controls=node('fieldset',undefined,'studio-controls'),body=node('div',undefined,'studio-body'),preview=node('div',undefined,'studio-preview'),output=node('div',undefined,'studio-output'),list=node('div',undefined,'studio-files'),statusNode=node('p','Choose your settings to get started.','studio-status');statusNode.setAttribute('role','status');statusNode.setAttribute('aria-live','polite');
+ const form=node('form',undefined,'studio-form'),controls=node('fieldset',undefined,'studio-controls'),body=node('div',undefined,'studio-body'),preview=node('div',undefined,'studio-preview'),output=node('div',undefined,'studio-output'),list=node('div',undefined,'studio-files'),statusNode=node('p','Choose your input and settings, then select Create download. Your result will appear here.','studio-status');statusNode.setAttribute('role','status');statusNode.setAttribute('aria-live','polite');
  const s={key,section,form,controls,preview,output,list,status:statusNode,fields:{},files:[],pages:[],marks:[],redos:[],urls:[],revision:0,busy:false,dirty:false};states.set(key,s);
- if(!['signature','gradient','qr','text-pdf'].includes(key)){
-  const label=node('label','1. Choose files'),input=node('input');input.type='file';input.id=key+'-input';input.accept=key.includes('pdf')?'application/pdf': 'image/jpeg,image/png,image/webp';input.multiple=['merge-pdf','contact-sheet','stitch'].includes(key);label.append(input);controls.append(label,list);input.addEventListener('change',()=>{load(s,input.files).catch(e=>status(s,e.message,true));input.value='';});
-  controls.append(node('p','Up to 25 MB per file. Multiple-file tools: 20 files and 100 MB combined. PDF tools: up to 200 pages.','field-help'));
+ if(!NO_FILE.includes(key)){
+  const label=node('label','1. Choose files'),input=node('input');input.type='file';input.id=key+'-input';input.accept=key==='checksum'?'':key==='image-dpi'?'image/jpeg,image/png':key.includes('pdf')?'application/pdf': 'image/jpeg,image/png,image/webp';input.multiple=['merge-pdf','contact-sheet','stitch'].includes(key);label.append(input);controls.append(label,list);input.addEventListener('change',()=>{load(s,input.files).catch(e=>status(s,e.message,true));input.value='';});
+  controls.append(node('p',key==='checksum'?'Any file type, up to 100 MB.':'Up to 25 MB per file. Multiple-file tools: 20 files and 100 MB combined. PDF tools: up to 200 pages.','field-help'));
  }
+
+ if(key==='image-privacy'||key==='image-dpi')controls.append(node('p','Re-saves a single image frame. Up to 4,096 pixels per side and 16 million pixels total; larger images must be resized first. Original metadata is removed. JPG is re-encoded at high quality. DPI changes print size, not image detail.','field-help'));
+ if(key==='image-dpi')field(s,'dpi','Print resolution (DPI)','number',300,{min:1,max:1200,step:1,required:true});
+ if(key==='pdf-properties'){
+  select(s,'mode','Action',[['edit','Edit properties'],['clear','Clear all document properties']]);
+  for(const [name,label]of [['title','Title'],['author','Author'],['subject','Subject'],['keywords','Keywords (comma separated)']])field(s,name,label,'text','',{maxLength:2000});
+  controls.append(button('Read current properties',async()=>{const revision=s.revision;status(s,'Reading document properties…');const values=await readProperties(s.files[0]);if(revision!==s.revision)return;for(const [k,v]of Object.entries(values))s.fields[k].value=v;invalidate(s);status(s,'Current properties loaded. Edit them, then create your download.');}),node('p','Read current properties before editing. Blank fields clear those properties. Both actions remove the document-level XMP metadata; Clear also removes all document Info fields. This does not remove personal information from page content, annotations, or attachments.','field-help'));
+ }
+ if(key==='text-cleanup'||key==='json-format'){
+  const input=field(s,'text',key==='json-format'?'JSON input':'Your text','textarea','',{rows:10,maxLength:1000000,required:true});
+  select(s,'mode','Action',key==='json-format'?[['pretty','Format'],['minify','Minify']]:[['spaces','Clean extra spacing'],['upper','UPPERCASE'],['lower','lowercase'],['lines','Remove duplicate lines'],['count','Count only']]);
+  if(key==='json-format')select(s,'indent','Indentation',[['2','2 spaces'],['4','4 spaces']]);
+  else{const stats=node('p','0 words · 0 characters · 0 lines','field-help');controls.append(stats);input.addEventListener('input',()=>{const v=textStats(input.value);stats.textContent=`${v.words} words · ${v.characters} characters · ${v.lines} lines`;});}
+  controls.append(node('p','Up to 1 million characters. '+(key==='json-format'?'Numbers retain their original precision. Valid JSON is required.':'Words are separated by whitespace. Characters count Unicode code points.'),'field-help'));
+ }
+ if(key==='checksum')field(s,'expected','Expected SHA-256 (optional)','text','',{maxLength:64,placeholder:'Paste a 64-character checksum to compare'});
  if(['split-pdf','pdf-images','pdf-text','pdf-watermark','pdf-numbers'].includes(key))field(s,'pages','Pages (blank means all)','text','',{placeholder:'Example: 1, 3-5',maxLength:1000});
  if(key==='pdf-images'){select(s,'format','Output format',[['image/png','PNG'],['image/jpeg','JPG']]);select(s,'resolution','Maximum page edge',[['1600','1600 pixels'],['2400','2400 pixels'],['3200','3200 pixels']]);}
  if(['pdf-watermark','qr','text-pdf','base64','annotate'].includes(key))field(s,'text',key==='annotate'?'Annotation text':key==='base64'?'Base64 image data URL':key==='qr'?'Text or URL':'Text',key==='annotate'?'text':'textarea','',{maxLength:key==='base64'?34000000:key==='text-pdf'?50000:key==='qr'?2000:200,rows:5});
@@ -76,6 +94,8 @@ for(const [key,tool] of Object.entries(EXTRA_TOOLS)){
  if(key==='base64')select(s,'mode','Mode',[['encode','Image to Base64'],['decode','Base64 to image']]);
  controls.append(button('Try a sample',async()=>{
   if(s.busy)return;
+  if(key==='text-cleanup'||key==='json-format'){s.fields.text.value=key==='json-format'?'{"project":"I Love Free Compressor","free":true,"tools":46}':'  Make   your text easier to read.  \n\nTry the cleanup options.';s.fields.text.dispatchEvent(new Event('input',{bubbles:true}));return;}
+  if(key==='checksum'){await load(s,[new File(['abc'],'sample.txt',{type:'text/plain'})]);return;}
   if(key==='text-pdf'){s.fields.text.value='My notes\n\nA clear document, created on my device.';invalidate(s);return;}
   if(key==='qr'){s.fields.text.value='https://example.com/';invalidate(s);return;}
   if(key==='gradient'){s.fields.color.value='#2563eb';s.fields.color2.value='#14b8a6';invalidate(s);return;}
@@ -88,11 +108,11 @@ for(const [key,tool] of Object.entries(EXTRA_TOOLS)){
  }));
  const help=node('details',undefined,'tool-help');help.append(node('summary','How to use this tool'),node('p',`${tool.description} ${['signature','redact','annotate'].includes(key)?'Draw on the preview; undo and redo are available.':key.includes('pdf')?'Select PDFs and enter page numbers where needed. Password-protected PDFs are not supported.':'Choose your settings and create a download.'} Your files stay in this browser unless you explicitly save a result to My Files.`));
  s.run=node('button','Create download','button primary');s.run.type='submit';form.addEventListener('submit',e=>{e.preventDefault();run(s);});form.addEventListener('input',e=>{if(e.target.type!=='file')invalidate(s);});
- form.append(controls,s.run,button('Stop',()=>{if(s.busy){invalidate(s);status(s,'Stopping after the current operation…');}}));body.append(form,preview);section.append(header,body,statusNode,output,help);document.getElementById('main-content').append(section);
- section.addEventListener('dragover',e=>e.preventDefault());section.addEventListener('drop',e=>{e.preventDefault();if(e.dataTransfer.files.length&&!['signature','gradient','qr','text-pdf'].includes(key))load(s,e.dataTransfer.files).catch(err=>status(s,err.message,true));});
+ form.append(controls,s.run,button('Stop',()=>{if(s.busy){invalidate(s);status(s,'Stopping after the current operation…');}}));body.append(form,preview);if(UTILITY_KEYS.includes(key)){preview.append(node('h2','Your result'),statusNode,output);section.append(header,body,help);}else section.append(header,body,statusNode,output,help);document.getElementById('main-content').append(section);
+ section.addEventListener('dragover',e=>e.preventDefault());section.addEventListener('drop',e=>{e.preventDefault();if(e.dataTransfer.files.length&&!NO_FILE.includes(key))load(s,e.dataTransfer.files).catch(err=>status(s,err.message,true));});
  const card=node('a',undefined,'tool-card');card.href='#/'+key;card.append(node('span',tool.group==='PDF tools'?'PDF':tool.group==='Web utilities'?'</>':'✧','tool-icon'),node('h3',tool.title),node('p',tool.description),node('span','Open tool →','tool-open'));document.querySelector('.tool-grid').append(card);
 }
 window.addEventListener('toolchange',()=>{const route=document.documentElement.dataset.activeTool;for(const s of states.values())if(s.key!==route&&s.busy){invalidate(s);status(s,'Processing stopped when you left this tool.');}});
-window.addEventListener('paste',e=>{if(/INPUT|TEXTAREA/.test(e.target.tagName))return;const s=states.get(document.documentElement.dataset.activeTool);const files=[...(e.clipboardData?.files||[])];if(s&&files.length&&!s.key.includes('pdf')){e.preventDefault();load(s,files).catch(err=>status(s,err.message,true));}});
+window.addEventListener('paste',e=>{if(/INPUT|TEXTAREA/.test(e.target.tagName))return;const s=states.get(document.documentElement.dataset.activeTool);const files=[...(e.clipboardData?.files||[])];if(s&&files.length&&!s.key.includes('pdf')&&!NO_FILE.includes(s.key)){e.preventDefault();load(s,files).catch(err=>status(s,err.message,true));}});
 window.addEventListener('keydown',e=>{if(/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;const s=states.get(document.documentElement.dataset.activeTool);if(s?.canvas&&(e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();(e.shiftKey?s.redo:s.undo).click();}});
 window.addEventListener('beforeunload',e=>{if([...states.values()].some(s=>s.dirty)){e.preventDefault();e.returnValue='';}});
