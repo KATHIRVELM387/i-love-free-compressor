@@ -112,7 +112,7 @@ const otherId = '00000000-0000-4000-8000-000000000002';
 const mockUser = { id: memberId, email: 'member@example.test', aud: 'authenticated', role: 'authenticated', app_metadata:{provider:'google'}, user_metadata:{} };
 let mockProfile = {id:memberId,display_name:'Example member',role:'member',status:'active',quota_bytes:20000000,preferences:{},created_at:new Date().toISOString()};
 let mockGoogleEnabled=false;
-let files=[], activity=[], uploads=0, deletes=0, requests=[], failUpload=false, revokeAdmin=false;
+let files=[], activity=[], uploads=0, deletes=0, requests=[], failUpload=false, revokeAdmin=false, failPreferences=false;
 let idSequence=10;
 const nextId=()=>`00000000-0000-4000-8000-${String(idSequence++).padStart(12,'0')}`;
 async function respond(event) {
@@ -141,6 +141,7 @@ async function respond(event) {
   if(path==='/auth/v1/user')return reply(mockUser);
   if(path==='/auth/v1/logout')return reply({});
   if(path==='/rest/v1/account_profiles'){
+    if(request.method==='PATCH'&&failPreferences)return reply({message:'Account settings could not be saved. Try again.'},503);
     if(request.method==='PATCH')Object.assign(mockProfile,body);
     return reply(mockProfile);
   }
@@ -226,6 +227,21 @@ try {
   await until("document.getElementById('account-notice').textContent==='Settings saved.'");
   assert.equal(mockProfile.preferences.targetKB,75);assert.equal(mockProfile.preferences.format,'image/webp');
   assert.deepEqual(mockProfile.preferences.favorites,['compress']);
+  await goTool('workflow');
+  await evaluate("document.getElementById('workflow-name').value='Member pipeline';document.getElementById('workflow-save').click()");
+  await until("document.getElementById('workflow-status').textContent==='Workflow settings saved.'");
+  assert.equal(mockProfile.preferences.workflows[0].version,2);
+  assert.equal(mockProfile.preferences.workflows[0].name,'Member pipeline');
+  assert.equal(mockProfile.preferences.workflows[0].steps.length,4);
+  assert.equal(uploads,0,'Saving workflow settings must not upload a file');
+  assert.equal(await evaluate("localStorage.getItem('ilfc-guest-workflows')"),null,'Member recipes must not leak into guest storage');
+  failPreferences=true;
+  await evaluate("document.getElementById('workflow-name').value='Failed rename';document.getElementById('workflow-save').click()");
+  await until("document.getElementById('workflow-status').textContent.includes('could not be saved')");
+  assert.equal(mockProfile.preferences.workflows[0].name,'Member pipeline');failPreferences=false;
+  await evaluate("document.getElementById('workflow-name').value='Member pipeline';document.getElementById('workflow-save').click()");
+  await until("document.getElementById('workflow-status').textContent==='Workflow settings saved.'");
+  pass('Versioned member workflows use existing scoped preferences, preserve other settings, and recover from save failures without file uploads');
   await goTool('dashboard');await until("document.getElementById('dashboard-content').textContent.includes('<img src=x')");
   assert.equal(await evaluate("document.querySelector('#dashboard-content img')"),null);
   await goTool('compress');await evaluate("document.getElementById('demo').click()");await until("!document.getElementById('settings').disabled");

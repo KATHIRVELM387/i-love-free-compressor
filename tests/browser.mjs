@@ -113,20 +113,20 @@ try {
   await cdp('Page.navigate', { url: `http://127.0.0.1:${port}` }, session);
   await until("document.readyState === 'complete' && !!document.getElementById('demo')");
   await until("document.documentElement.dataset.activeTool==='home'");
-  assert.equal(await evaluate("document.querySelectorAll('.tool-card').length"),40);
+  assert.equal(await evaluate("document.querySelectorAll('.tool-card').length"),50);
   assert.equal(await evaluate("document.getElementById('tool').hidden && document.getElementById('batch-tool').hidden"),true);
-  await until("document.querySelectorAll('#side-links [data-route]').length===41");
+  await until("document.querySelectorAll('#side-links [data-route]').length===52");
   assert.equal(await evaluate("!document.getElementById('sidebar').hidden&&document.getElementById('app-shell').getBoundingClientRect().left>=248"),true);
   assert.equal(await evaluate("document.querySelector('#side-links [aria-current=page]').dataset.route"),'home');
   await input('nav-search','BORDER');
   assert.deepEqual(await evaluate("Array.from(document.querySelectorAll('#side-links [data-route]:not([hidden])')).map(a=>a.dataset.route)"),['home','frame']);
   await evaluate("document.getElementById('nav-clear').click()");
   await input('tool-search','PDF');
-  assert.deepEqual(await evaluate("Array.from(document.querySelectorAll('.tool-card:not([hidden])')).map(a=>a.getAttribute('href'))"),['#/pdf','#/merge-pdf','#/split-pdf','#/pdf-images','#/organize-pdf','#/pdf-watermark','#/pdf-numbers','#/pdf-text','#/text-pdf']);
+  assert.deepEqual(await evaluate("Array.from(document.querySelectorAll('.tool-card:not([hidden])')).map(a=>a.getAttribute('href'))"),['#/pdf','#/pdf-properties','#/merge-pdf','#/split-pdf','#/pdf-images','#/organize-pdf','#/pdf-watermark','#/pdf-numbers','#/pdf-text','#/text-pdf']);
   await input('tool-search','no-such-tool');
   assert.match(await evaluate("document.getElementById('tool-search-status').textContent"),/No matching/);
   await evaluate("document.getElementById('tool-search-clear').click()");
-  assert.equal(await evaluate("document.querySelectorAll('.tool-card:not([hidden])').length"),40);
+  assert.equal(await evaluate("document.querySelectorAll('.tool-card:not([hidden])').length"),50);
   await screenshot('desktop-home.png');
   for(const width of [768,390,320]){
     await cdp('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:true},session);
@@ -168,7 +168,7 @@ try {
   await evaluate("document.getElementById('menu-heading').focus()");
   await cdp('Input.dispatchKeyEvent',{type:'keyDown',key:'Tab',code:'Tab',windowsVirtualKeyCode:9},session);
   await cdp('Input.dispatchKeyEvent',{type:'keyUp',key:'Tab',code:'Tab',windowsVirtualKeyCode:9},session);
-  for(const category of ['All','Images','PDF','Creative','Web']){
+  for(const category of ['All','Images','PDF','Presentations','Creative','Web']){
     assert.equal(await evaluate("document.activeElement.dataset.category"),category);
     await cdp('Input.dispatchKeyEvent',{type:'keyDown',key:'Tab',code:'Tab',windowsVirtualKeyCode:9},session);
     await cdp('Input.dispatchKeyEvent',{type:'keyUp',key:'Tab',code:'Tab',windowsVirtualKeyCode:9},session);
@@ -588,7 +588,7 @@ try {
   pass('Corrupt inputs retain the original; navigation during processing prevents stale results');
 
   const effectChecks=await evaluate(`(async()=>{
-    const {prepareImage}=await import('./image-tools.js?v=6');
+    const {prepareImage}=await import('./image-tools.js?v=7');
     const c=document.createElement('canvas');c.width=c.height=100;const x=c.getContext('2d');x.fillStyle='rgb(100,150,200)';x.fillRect(0,0,100,100);
     const inspect=async(options={})=>{
       const result=await prepareImage(c,{width:100,height:100,type:'image/png',target:null,allowResize:false,...options});

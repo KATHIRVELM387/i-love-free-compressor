@@ -31,7 +31,7 @@ function list(items, numbered = false) {
 }
 
 export function mountHelpPages(tools, accountPages) {
-  const names = { ...tools, ...accountPages, workflow: { title: 'Saved workflows' } };
+  const names = { ...tools, ...accountPages, workflow: { title: 'Workflow builder' } };
   const routes = {};
   const register = (key, title, description) => {
     routes[key] = { title, view: key, informational: true };
@@ -53,7 +53,7 @@ export function mountHelpPages(tools, accountPages) {
   for (const [title, text, route] of [
     ['Fit an upload requirement', 'Use Compress for a maximum KB limit, Exact file size for a specific JPG size, or Resize for pixel dimensions.', 'exact'],
     ['Prepare a document', 'Combine existing PDFs with Merge PDFs, or turn photos into a document with Images to PDF.', 'merge-pdf'],
-    ['Repeat the same edits', 'Save a resize, watermark, and compression workflow, then run it on new photos.', 'workflow']
+    ['Repeat the same edits', 'Build and save ordered image-processing steps, preview a photo, then run a batch with progress and ZIP downloads.', 'workflow']
   ]) { const item = block(title, text); item.append(link('Read the guide', '#/guide/' + route)); journeys.append(item); }
   how.append(journeys);
   const account = block('Login and sign-up', 'Both use Continue with Google. On your first successful sign-in, the site creates a Member account. Returning users open their existing account. Admin access is assigned separately; public users do not become admins by registering.');

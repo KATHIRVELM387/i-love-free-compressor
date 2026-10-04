@@ -94,7 +94,7 @@ The deployed project is `ilovefreecompressor` in the `kathir-project` Hobby acco
 
 ### Release workflow
 
-`main` is the local development branch and remains backed up on GitHub. Pushing it does not publish the website. Production releases use dated `release/*` branches. The second release is `release/04-10-2026-i-love-free-compressor_second_release`. The original `release/04-10-2024-i-love-free-compressor_first_release` remains an unchanged archive.
+`main` is the local development branch and remains backed up on GitHub. Pushing it does not publish the website. Production releases use dated `release/*` branches. The Release 03 Phase A branch is `release/04-10-2026-workflow-builder-navigation-search_release-03-phase-a`. The second release remains archived at `release/04-10-2026-i-love-free-compressor_second_release`. The original `release/04-10-2024-i-love-free-compressor_first_release` remains an unchanged archive.
 
 1. Develop and run the relevant checks on `main`, then commit and push the reviewed changes.
 2. Create a new dated release branch from that tested commit, for example `git switch -c release/DD-MM-YYYY-i-love-free-compressor_third_release`.
@@ -194,7 +194,7 @@ PDF limits: 25 MB per document, 100 MB combined, 20 input documents, 200 pages c
 
 New image tools accept JPG/PNG/WebP up to 25 MB/40 million input pixels; exports are bounded to 4096 px per edge and 16 million pixels. Stitching asks for a smaller shared edge if the combined result exceeds those dimensions. Base64 decoding accepts only supported image data URLs and re-encodes pixels. QR reader displays plain text and never follows links. Redaction exports flattened opaque blocks; inspect the downloaded result before sharing. Signature creator is a drawing tool, not a certificate-based digital signing service.
 
-`#/workflow` saves up to ten resize → text watermark → compression presets. Guests store settings on this device; members save them in their existing private profile preferences. Files are still explicitly chosen for every run. Batch filenames support `{n}`, `{name}`, `{width}`, and `{height}`.
+`#/workflow` now provides the Release 03 Phase A workflow builder described below. Existing resize → text watermark → compression presets remain readable. The original batch tool continues to support `{n}`, `{name}`, `{width}`, and `{height}` filename patterns.
 
 ### Account workspace improvements
 
@@ -276,3 +276,18 @@ Images are normalized to PNG on the device, with a maximum 1,600-pixel edge, 10 
 PowerPoint export uses the self-hosted MIT-licensed PptxGenJS bundle loaded only on export. Text, tables, and charts remain editable; uploaded images are embedded. PDF export rasterizes slides without speaker notes. Fonts/line breaks may differ between preview and PowerPoint. Existing .pptx import, cloud presentation saves, animations, and collaboration are not implemented. Use project backups to move editable decks between devices. Replacing an unsaved deck and deleting a draft require an in-app confirmation.
 
 Run `npm run build:presentations` to rebuild the export bundle and license file. The unused Node image-size dependency is pinned to patched 2.0.4 through an npm override; it is excluded from the browser bundle. `npm run test:presentations` checks actual downloads, OOXML slides/chart/table/notes, Unicode, images, PDF pages, both aspect ratios, editing/history, persisted drafts, backup import, validation, and mobile layouts. Set `ILFC_LIVE_URL` to repeat against a deployment. Exported widescreen and standard PPTX samples were also opened and rendered as eight-page PDFs by LibreOffice.
+
+
+## Release 03 development — Phase A
+
+The [technical roadmap](docs/RELEASE-03-PLAN.md) covers the proposed release; only Phase A is implemented in this release. The feature release branch is `release/04-10-2026-workflow-builder-navigation-search_release-03-phase-a`; later Release 03 phases remain planned.
+
+The workflow builder (`#/workflow`) supports ordered, configurable image steps: resize, centered crop, rotate/flip, remove original metadata, convert, text watermark, transparent-area background fill, and maximum-size compression. Add/remove/reorder steps, validate, preview one photo, run a batch, save/rename/duplicate/delete settings, and import/export JSON backups. Conversion supports JPG, PNG and WebP. Background fill does not detect or remove a subject background.
+
+Processing reuses the existing image, metadata, and ZIP functions. A module worker with OffscreenCanvas handles supported browsers; a cooperative main-thread fallback uses the same engine. Processing stays local, with per-file errors, step progress, cancellation, individual downloads, and ZIP export. Completed results remain available after cancellation. Preview runs do not create account activity or cloud files. Saving an actual result to My Files still requires an explicit action.
+
+Limits remain bounded: 12 steps, 10 saved workflows, 20 inputs, 25 MB per input/intermediate, 100 MB combined input/output, 4,096 px per output edge and 16 million output pixels. Resize must be the first step for inputs exceeding output dimensions. Compression is best effort and unmet targets are identified. Guest settings use existing local storage; members use existing owner-scoped preferences with their existing 8 KB database limit. Oversized preference saves are rejected before replacing stored settings. Legacy presets are converted when read and are preserved until explicitly saved. No database migration or new dependency is required.
+
+Sidebar search now includes workflow, help, account and favorite links, preserves admin visibility rules, handles empty results, and supports Enter to select a matching result in the mobile drawer. Existing tool groups and visual styling are retained.
+
+Run `npm run test:workflows` for recipe validation, actual browser processing, fallback/worker parity, cancellation, downloads, legacy compatibility, account preference limits, responsive layouts, and navigation search. Run the existing image, studio, utility, presentation, help, video and account suites for regression coverage. OCR, PDF editing, automatic background removal, advanced formats, AI, projects, sharing and offline installation remain roadmap items, not implemented claims.

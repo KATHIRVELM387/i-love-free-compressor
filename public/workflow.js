@@ -1,18 +1,185 @@
-import { getPreferences,registerResult,forgetResult } from './account-bridge.js?v=1';
-import { bitmap } from './studio-core.js';
-import { prepareImage,fitDimensions } from './image-tools.js?v=6';
-const el=(tag,text)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;return n;};
+import { getPreferences, registerResult, forgetToolResults } from './account-bridge.js?v=1';
+import { STEP_TYPES, WORKFLOW_LIMITS, newWorkflow, newStep, validateWorkflow, migrateWorkflow, validateSelection, validateSavedWorkflows, checkPreferenceBudget } from './workflow-core.js';
+import { runWorkflowJob, canUseWorkflowWorker } from './workflow-runner.js';
+import { formatBytes } from './image-tools.js?v=7';
+
+const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;};
 export let signedIn=false;
-export function workspacePresets(){let value;try{value=signedIn?getPreferences().workflows:JSON.parse(localStorage.getItem('ilfc-guest-workflows'));}catch{}return Array.isArray(value)?value.filter(p=>p&&typeof p==='object'&&typeof p.name==='string').slice(0,10):[];}
-export async function storePresets(value){if(signedIn)await new Promise((resolve,reject)=>window.dispatchEvent(new CustomEvent('save-workspace-preferences',{detail:{key:'workflows',value,resolve,reject}})));else localStorage.setItem('ilfc-guest-workflows',JSON.stringify(value));window.dispatchEvent(new Event('workflows-changed'));}
-const section=el('section');section.id='workflow-tool';section.className='workspace wrap';section.hidden=true;
-section.innerHTML='<div class="workspace-heading"><div><span class="tiny-label">REUSABLE SETTINGS</span><h1 id="workflow-heading" tabindex="-1">Saved workflows</h1><p>Resize → text watermark → compress. Save settings, then apply them to a new photo.</p></div></div><div class="studio-body"><form id="workflow-form"><fieldset class="studio-controls" id="workflow-controls"><label>Photo<input id="workflow-file" type="file" accept="image/jpeg,image/png,image/webp"></label><label>Workflow name<input id="workflow-name" maxlength="50" placeholder="Example: Website photos"></label><label>Maximum edge (px)<input id="workflow-edge" type="number" min="1" max="4096" value="1600" required></label><label>Maximum file size (KB)<input id="workflow-target" type="number" min="1" max="10000" value="200" required></label><label>Format<select id="workflow-format"><option value="image/jpeg">JPG</option><option value="image/png">PNG</option><option value="image/webp">WebP</option></select></label><label>Watermark text (optional)<input id="workflow-watermark" maxlength="80" placeholder="Your name or brand"></label><label>Watermark color<input id="workflow-color" type="color" value="#ffffff"></label></fieldset><button class="button primary" id="workflow-run">Run workflow</button><button class="button secondary" id="workflow-save" type="button">Save settings</button></form><div><h2>Your saved workflows</h2><p id="workflow-scope" class="field-help"></p><div id="workflow-list"></div></div></div><p id="workflow-status" class="studio-status" role="status"></p><div id="workflow-output" class="studio-output"></div>';
+let identity=null,identityVersion=0;
+export function workspacePresets(){
+  let value;
+  try{value=signedIn?getPreferences().workflows:JSON.parse(localStorage.getItem('ilfc-guest-workflows'));}catch{}
+  return Array.isArray(value)?value.slice(0,10):[];
+}
+export async function storePresets(value){
+  validateSavedWorkflows(value);
+  const version=identityVersion;
+  if(signedIn){
+    checkPreferenceBudget(getPreferences(),value);
+    await new Promise((resolve,reject)=>window.dispatchEvent(new CustomEvent('save-workspace-preferences',{detail:{key:'workflows',value,resolve,reject}})));
+  }else{
+    try{localStorage.setItem('ilfc-guest-workflows',JSON.stringify(value));}catch{throw Error('This browser could not save the workflow. Download a workflow backup instead.');}
+  }
+  if(version!==identityVersion)throw Error('Your account changed. Reopen your saved workflows before continuing.');
+  window.dispatchEvent(new Event('workflows-changed'));
+}
+const section=el('section',undefined,'workspace wrap');section.id='workflow-tool';section.hidden=true;
+section.innerHTML=`<div class="workspace-heading"><div><span class="tiny-label">BROWSER WORKFLOWS</span><h1 id="workflow-heading" tabindex="-1">Workflow builder</h1><p>Arrange image-processing steps, preview one photo, then run the same settings on a batch.</p></div></div>
+<div class="workflow-layout"><form id="workflow-form"><fieldset id="workflow-controls" class="studio-controls">
+<label>Workflow name<input id="workflow-name" maxlength="50" required></label>
+<div class="workflow-actions"><button type="button" id="workflow-new" class="button secondary">New workflow</button><button type="button" id="workflow-save" class="button secondary">Save workflow</button><button type="button" id="workflow-backup" class="text-button">Download workflow backup</button></div>
+<label>Photos<input id="workflow-file" type="file" multiple accept="image/jpeg,image/png,image/webp"></label>
+<p id="workflow-selection" class="field-help">Choose up to 20 photos, 25 MB each and 100 MB combined. Originals remain unchanged.</p>
+<div class="workflow-input-marker">1. Choose photos → 2. Run steps in this order</div><ol id="workflow-steps" class="workflow-steps"></ol>
+<div class="workflow-add"><label>Add a processing step<select id="workflow-step-type"></select></label><button type="button" id="workflow-add" class="button secondary">Add step</button></div>
+<label>Downloads<select id="workflow-export"><option value="zip">Individual files and ZIP</option><option value="files">Individual files</option></select></label>
+<p class="field-help">Metadata cleanup creates a fresh PNG. Put conversion and compression afterwards to control the final format and size. Resize never enlarges photos; crop uses centered framing.</p>
+<div class="workflow-actions"><button type="button" id="workflow-validate" class="button secondary">Check workflow</button><button type="button" id="workflow-preview" class="button secondary">Preview first photo</button><button id="workflow-run" class="button primary">Run workflow</button></div>
+</fieldset></form><aside class="workflow-saved"><h2>Saved workflows</h2><p id="workflow-scope" class="field-help"></p><fieldset id="workflow-saved-controls"><div id="workflow-list"></div><label class="workflow-import-label">Import workflow backup<input id="workflow-import" type="file" accept=".json,application/json,text/plain"></label></fieldset><p class="field-help">Workflows store settings only. Downloads and previews stay on this device until you explicitly save a result to My Files.</p></aside></div>
+<div class="workflow-progress"><progress id="workflow-progress" value="0" max="1" hidden aria-label="Workflow processing progress"></progress><button id="workflow-cancel" type="button" class="button secondary" hidden>Cancel processing</button></div>
+<p id="workflow-status" class="studio-status" role="status" aria-live="polite">Build a workflow or use a saved one.</p><div id="workflow-output" class="studio-output"></div>`;
 document.getElementById('main-content').append(section);
-const $=id=>document.getElementById('workflow-'+id);let running=false,url,version=0;
-const settings=()=>Object.fromEntries(['edge','target','format','watermark','color'].map(k=>[k,$(k).value]));
-function list(){$('scope').textContent=signedIn?'Settings are saved to your account. Photos are never saved with a workflow.':'Guest settings stay in this browser. Sign in to save settings to your account.';$('list').replaceChildren();for(const [i,p]of workspacePresets().entries()){const row=el('div');row.className='account-row';row.append(el('strong',p.name));const apply=el('button','Use settings');apply.type='button';apply.className='button secondary';apply.onclick=()=>{for(const key of ['edge','target','format','watermark','color'])if(p[key]!==undefined)$(key).value=p[key];$('name').value=p.name;clear();};const remove=el('button','Delete preset');remove.type='button';remove.className='text-button';remove.onclick=async()=>{try{await storePresets(workspacePresets().filter((_,n)=>n!==i));}catch(e){$('status').textContent=e.message;}};row.append(apply,remove);$('list').append(row);}}
-function clear(){version++;forgetResult('workflow-download');if(url)URL.revokeObjectURL(url);url=null;$('output').replaceChildren();}
-$('form').addEventListener('input',clear);
-$('save').onclick=async()=>{try{if(!$('form').reportValidity())return;const name=$('name').value.trim();if(!name)throw Error('Enter a workflow name.');const presets=workspacePresets().filter(p=>p.name!==name);if(presets.length>=10)throw Error('Save up to 10 workflows.');await storePresets([...presets,{name,...settings()}]);$('status').textContent='Workflow settings saved.';}catch(e){$('status').textContent=e.message;}};
-$('form').onsubmit=async e=>{e.preventDefault();if(running)return;clear();const current=version;let image;running=true;$('controls').disabled=true;$('run').disabled=true;try{image=await bitmap($('file').files[0]);const o=settings(),scale=Math.min(1,Number(o.edge)/Math.max(image.width,image.height)),size=fitDimensions(image.width*scale,image.height*scale);const result=await prepareImage(image,{...size,type:o.format,target:Number(o.target)*1000,allowResize:true,watermarkText:o.watermark,watermarkColor:o.color,watermarkPosition:'bottom-right',watermarkSize:6,watermarkOpacity:.7});if(current!==version)return;url=URL.createObjectURL(result.blob);const img=el('img');img.src=url;img.alt='Workflow result';img.className='file-preview';const a=el('a','Download result');a.className='button primary';a.id='workflow-download';a.href=url;a.download='workflow-result.'+({'image/jpeg':'jpg','image/png':'png','image/webp':'webp'}[o.format]);$('output').append(img,el('p',`${result.width} × ${result.height} px · ${(result.blob.size/1000).toFixed(1)} KB · ${result.meetsTarget?'Within target':'Above target — try smaller dimensions'}`),a);registerResult(a.id,result.blob,'workflow');$('status').textContent='Workflow complete. Your original photo is unchanged.';}catch(e){$('status').textContent=e.message;}finally{image?.close();running=false;$('controls').disabled=false;$('run').disabled=false;}};
-window.addEventListener('workspace-identity',e=>{signedIn=e.detail.signedIn;list();});window.addEventListener('preferences-changed',list);window.addEventListener('workflows-changed',list);window.addEventListener('toolchange',()=>{if(document.documentElement.dataset.activeTool!=='workflow'&&running)clear();});window.dispatchEvent(new Event('request-workspace-identity'));list();
+const $=id=>document.getElementById('workflow-'+id);
+let recipe=newWorkflow(),files=[],running=false,controller=null,revision=0,urls=[],dirty=false,downloadPending=false;
+function status(text,error=false){$('status').textContent=text;$('status').classList.toggle('error',error);}
+function clearResults(){revision++;forgetToolResults('workflow');urls.forEach(u=>URL.revokeObjectURL(u));urls=[];$('output').replaceChildren();downloadPending=false;}
+function changed(){clearResults();dirty=true;}
+function snapshot(){return validateWorkflow({...recipe,name:$('name').value,export:$('export').value});}
+function button(text,action,cls='button secondary'){
+  const n=el('button',text,cls);n.type='button';n.onclick=async()=>{if(running)return;try{await action();}catch(e){status(e.message||'Could not complete this action. Try again.',true);}};return n;
+}
+function renderSteps(focusIndex){
+  $('steps').replaceChildren();
+  recipe.steps.forEach((step,index)=>{
+    const def=STEP_TYPES[step.type],li=el('li',undefined,'workflow-step');li.dataset.step=String(index);
+    const head=el('div',undefined,'workflow-step-heading');const title=el('h2',`${index+1}. ${def.title}`);title.tabIndex=-1;head.append(title);
+    const controls=el('div',undefined,'workflow-step-actions');
+    const up=button('↑',()=>move(index,-1)),down=button('↓',()=>move(index,1)),remove=button('Remove',()=>{recipe.steps.splice(index,1);changed();renderSteps(Math.min(index,recipe.steps.length-1));});
+    up.disabled=index===0;down.disabled=index===recipe.steps.length-1;up.setAttribute('aria-label',`Move step ${index+1} up`);down.setAttribute('aria-label',`Move step ${index+1} down`);remove.setAttribute('aria-label',`Remove step ${index+1}: ${def.title}`);controls.append(up,down,remove);head.append(controls);li.append(head);
+    const fields=el('div',undefined,'workflow-fields');
+    for(const [key,f]of Object.entries(def.fields)){
+      const label=el('label',f.label),input=el(f.kind==='select'?'select':'input');input.id=`workflow-step-${index}-${key}`;label.htmlFor=input.id;
+      if(f.kind==='select')for(const [value,text]of f.choices){const option=el('option',text);option.value=value;input.append(option);}
+      else input.type=f.kind;
+      if(f.kind==='checkbox')input.checked=step.options[key];else input.value=step.options[key];
+      if(f.kind==='number'){input.min=f.min;input.max=f.max;input.step=1;input.required=true;}
+      if(f.kind==='text')input.maxLength=f.max;
+      input.oninput=()=>{step.options[key]=f.kind==='number'?Number(input.value):f.kind==='checkbox'?input.checked:input.value;changed();};
+      label.append(input);fields.append(label);
+    }
+    if(!fields.children.length)fields.append(el('p','Re-save pixels as PNG without original camera/GPS metadata. Visible content remains.','field-help'));
+    li.append(fields);$('steps').append(li);
+  });
+  if(!recipe.steps.length)$('steps').append(el('li','Add at least one step to run this workflow.','field-help'));
+  if(focusIndex>=0)$('steps').querySelector(`[data-step="${focusIndex}"] h2`)?.focus();
+  $('add').disabled=recipe.steps.length>=WORKFLOW_LIMITS.steps;
+}
+function move(index,delta){[recipe.steps[index],recipe.steps[index+delta]]=[recipe.steps[index+delta],recipe.steps[index]];changed();renderSteps(index+delta);}
+function replace(next){
+  if((dirty||downloadPending)&&!confirm('Replace your unsaved workflow settings? Download a workflow backup first to keep them.'))return false;
+  clearResults();recipe=validateWorkflow(next);$('name').value=recipe.name;$('export').value=recipe.export;dirty=false;renderSteps();return true;
+}
+function savedList(){
+  $('scope').textContent=signedIn?'Settings save to your account, within its existing settings limit. Photos are not included.':'Settings save in this browser. Sign in to save settings to your account.';
+  $('list').replaceChildren();
+  const raw=workspacePresets();if(!raw.length)$('list').append(el('p','No saved workflows yet.','field-help'));
+  raw.forEach((saved,index)=>{
+    const row=el('article',undefined,'workflow-saved-row');let item;
+    try{item=migrateWorkflow(saved,index);}catch{}
+    row.append(el('strong',typeof saved?.name==='string'?saved.name:'Unreadable workflow'));
+    if(item){
+      row.append(el('p',`${item.steps.length} steps${saved.version===2?'':' · Compatible with your earlier saved settings'}`,'field-help'));
+      row.append(button('Use settings',()=>{if(replace(item))status('Workflow loaded. Choose photos, then preview or run.');}));
+      row.append(button('Rename',async()=>{
+        const name=prompt('Workflow name',item.name);if(name===null)return;
+        const next=validateWorkflow({...item,name}),all=workspacePresets();all[index]=next;await storePresets(all);
+        if(recipe.id===item.id){recipe.name=next.name;$('name').value=next.name;}
+        status('Workflow renamed.');
+      }));
+      row.append(button('Duplicate',async()=>{const copy={...item,id:crypto.randomUUID(),name:Array.from(item.name).slice(0,43).join('')+' (copy)'};await storePresets([...workspacePresets(),copy]);status('Workflow duplicated.');}));
+    }else row.append(el('p','These settings cannot be loaded. They have not been removed.','field-help'));
+    row.append(button('Delete preset',async()=>{if(!confirm('Delete this saved workflow? Your photos and downloaded files are unaffected.'))return;await storePresets(workspacePresets().filter((_,i)=>i!==index));status('Saved workflow deleted.');},'text-button'));
+    $('list').append(row);
+  });
+}
+for(const [type,def]of Object.entries(STEP_TYPES)){const option=el('option',def.title);option.value=type;$('step-type').append(option);}
+$('add').onclick=()=>{if(running||recipe.steps.length>=12)return;recipe.steps.push(newStep($('step-type').value));changed();renderSteps(recipe.steps.length-1);};
+$('name').oninput=()=>{recipe.name=$('name').value;dirty=true;};
+$('export').oninput=()=>{recipe.export=$('export').value;changed();};
+$('file').onchange=()=>{
+  if(running)return;const incoming=[...$('file').files];if(!incoming.length)return;
+  try{validateSelection(incoming);files=incoming;clearResults();$('selection').textContent=`${files.length} photo${files.length===1?'':'s'} selected · ${formatBytes(files.reduce((n,f)=>n+f.size,0))}`;status('Ready to preview or run. Unsupported or damaged files will be reported individually.');}
+  catch(e){$('file').value='';status(e.message,true);}
+};
+$('new').onclick=()=>{if(replace(newWorkflow())){$('name').value='Untitled workflow';recipe.name='Untitled workflow';dirty=true;status('New workflow. Add, move or configure its steps.');}};
+$('save').onclick=async()=>{
+  if(running)return;$('save').disabled=true;
+  try{const current=snapshot(),all=workspacePresets();const index=all.findIndex((p,i)=>{try{return migrateWorkflow(p,i).id===current.id;}catch{return false;}});if(index>=0)all[index]=current;else all.push(current);await storePresets(all);recipe=current;dirty=false;status('Workflow settings saved.');}
+  catch(e){status(e.message,true);}finally{$('save').disabled=false;}
+};
+$('backup').onclick=()=>{
+  try{const current=snapshot(),blob=new Blob([JSON.stringify(current,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=el('a');a.href=url;a.download='workflow.ilfc-workflow.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),3000);dirty=false;status('Workflow backup prepared. It contains settings, not your files.');}catch(e){status(e.message,true);}
+};
+$('import').onchange=async()=>{
+  const file=$('import').files[0];$('import').value='';if(!file||running)return;
+  const epoch=identityVersion;
+  try{if(file.size>WORKFLOW_LIMITS.recipeBytes)throw Error('Use a workflow backup of 50 KB or smaller.');let value;try{value=JSON.parse(await file.text());}catch{throw Error('This file is not a valid workflow backup.');}if(epoch!==identityVersion)return;const next=validateWorkflow(value);next.id=crypto.randomUUID();if(replace(next)){dirty=true;status('Backup imported. Choose Save workflow to keep it.');}}catch(e){status(e.message,true);}
+};
+$('validate').onclick=()=>{try{const current=snapshot();status(`Workflow is valid: ${current.steps.length} ordered image steps. Preview a photo to check its actual result.`);}catch(e){status(e.message,true);}};
+function setBusy(value){running=value;$('controls').disabled=value;$('saved-controls').disabled=value;$('form').setAttribute('aria-busy',String(value));$('cancel').hidden=!value;$('cancel').disabled=false;}
+function addResult(result,index,preview){
+  const row=el('article',undefined,'workflow-result');const url=URL.createObjectURL(result.blob);urls.push(url);
+  const image=el('img');image.src=url;image.alt=preview?'Workflow preview':`Workflow result ${index+1}`;image.className='file-preview';image.loading='lazy';
+  row.append(el('h2',preview?'Preview of the first photo':result.name),image,el('p',`${result.width} × ${result.height} px · ${formatBytes(result.blob.size)} · ${result.blob.type.replace('image/','').toUpperCase()}`));
+  for(const warning of result.warnings)row.append(el('p',warning,'workflow-warning'));
+  const details=el('details'),summary=el('summary','Step results');details.append(summary);
+  for(const report of result.reports)details.append(el('p',`${report.step}. ${STEP_TYPES[report.type].title}: ${report.width} × ${report.height} · ${formatBytes(report.bytes)}${report.meetsTarget?'':' · Above target'}`));row.append(details);
+  if(!preview){const a=el('a','Download result','button primary');a.id=index===0?'workflow-download':`workflow-download-${index}`;a.href=url;a.download=result.name;a.onclick=()=>{downloadPending=false;};row.append(a);$('output').append(row);registerResult(a.id,result.blob,'workflow');downloadPending=true;}
+  else $('output').append(row);
+}
+async function run(preview=false){
+  if(running)return;let current;
+  try{current=snapshot();validateSelection(files);}catch(e){status(e.message,true);return;}
+  clearResults();const version=revision;controller=new AbortController();const signal=controller.signal;setBusy(true);
+  const chosen=preview?files.slice(0,1):files;const completed=[];let total=0,failures=0;
+  $('progress').hidden=false;$('progress').max=chosen.length*current.steps.length;$('progress').value=0;
+  status(canUseWorkflowWorker()?'Processing locally in the background…':'Processing locally. This browser may pause briefly during an image operation.');
+  try{
+    for(const [index,file]of chosen.entries()){
+      if(signal.aborted)break;
+      try{
+        const result=await runWorkflowJob({file,recipe:current},{signal,onProgress:p=>{if(version!==revision)return;status(`${preview?'Preview':'Photo '+(index+1)+' of '+chosen.length}: step ${p.index+1}/${p.total} — ${p.title}`);$('progress').value=index*current.steps.length+p.index;}});
+        if(signal.aborted||version!==revision)break;
+        if(total+result.blob.size>WORKFLOW_LIMITS.totalBytes)throw Error('Combined output would exceed 100 MB. Use fewer files or smaller dimensions.');
+        total+=result.blob.size;
+        // Prefix every batch filename, avoiding collisions after sanitization.
+        if(chosen.length>1)result.name=`${index+1}-${result.name}`;
+        completed.push(result);addResult(result,index,preview);
+      }catch(e){
+        if(e.name==='AbortError'||signal.aborted)break;
+        failures++;const row=el('article',undefined,'workflow-result workflow-failed');row.append(el('h2',file.name||`Photo ${index+1}`),el('p',e.message||'Could not process this file. Try a smaller, undamaged image.'));$('output').append(row);
+      }
+      $('progress').value=(index+1)*current.steps.length;
+    }
+    if(!preview&&completed.length&&current.export==='zip'&&!signal.aborted&&version===revision){
+      status('Preparing ZIP of completed results…');
+      const {blob}=await runWorkflowJob({action:'zip',files:completed.map(r=>({name:r.name,blob:r.blob}))},{signal});
+      if(blob.size>WORKFLOW_LIMITS.totalBytes)throw Error('ZIP exceeds 100 MB. Download the completed files individually.');
+      if(!signal.aborted&&version===revision){const a=el('a','Download ZIP','button primary');a.id='workflow-zip';a.download='workflow-results.zip';a.href=URL.createObjectURL(blob);urls.push(a.href);a.onclick=()=>{downloadPending=false;};$('output').prepend(a);registerResult(a.id,blob,'workflow');}
+    }
+    if(version===revision)status(signal.aborted?`Cancelled. ${completed.length} completed result(s) remain available.`:preview?(completed.length?'Preview ready. It has not been uploaded or saved to your account.':'Preview failed. Check the file or step settings.'):`Workflow complete: ${completed.length} succeeded, ${failures} failed. Inspect the results before sharing.`,!!failures);
+  }catch(e){if(version===revision)status(e.name==='AbortError'?`Cancelled. ${completed.length} completed result(s) remain available.`:(e.message||'Processing failed. Try smaller files.'),e.name!=='AbortError');}
+  finally{setBusy(false);controller=null;}
+}
+$('form').onsubmit=e=>{e.preventDefault();run();};$('preview').onclick=()=>run(true);
+$('cancel').onclick=()=>{controller?.abort();$('cancel').disabled=true;status('Cancelling processing… Completed results are kept.');};
+window.addEventListener('toolchange',()=>{if(document.documentElement.dataset.activeTool!=='workflow'&&running){controller?.abort();clearResults();}});
+window.addEventListener('workspace-identity',e=>{
+  const next=e.detail.signedIn?(e.detail.owner||'signed-in'):null;
+  if(next!==identity){identity=next;identityVersion++;controller?.abort();clearResults();recipe=newWorkflow();$('name').value=recipe.name;$('export').value=recipe.export;dirty=false;renderSteps();}
+  signedIn=!!e.detail.signedIn;savedList();
+});
+window.addEventListener('preferences-changed',savedList);window.addEventListener('workflows-changed',savedList);
+window.addEventListener('storage',e=>{if(e.key==='ilfc-guest-workflows'&&!signedIn)savedList();});
+window.addEventListener('beforeunload',e=>{if(document.documentElement.dataset.activeTool==='workflow'&&(dirty||downloadPending||running)){e.preventDefault();e.returnValue='';}});
+$('name').value=recipe.name;$('export').value=recipe.export;renderSteps();savedList();window.dispatchEvent(new Event('request-workspace-identity'));

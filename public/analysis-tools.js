@@ -1,4 +1,4 @@
-import { fitDimensions } from './image-tools.js?v=6';
+import { fitDimensions } from './image-tools.js?v=7';
 
 export async function openPhoto(file) {
   if (!file || file.size > 25_000_000) throw new Error('Choose a photo up to 25 MB.');

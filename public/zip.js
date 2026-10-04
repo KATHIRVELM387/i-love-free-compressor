@@ -4,16 +4,21 @@ const crcTable = Uint32Array.from({ length: 256 }, (_, value) => {
   return value >>> 0;
 });
 
-export async function makeZip(files) {
+export async function makeZip(files, { check = () => {}, progress = () => {} } = {}) {
   const localParts = [];
   const centralParts = [];
   let offset = 0;
   let centralSize = 0;
   for (const file of files) {
+    check();
+    progress(file.name);
     const name = new TextEncoder().encode(file.name);
     const data = new Uint8Array(await file.blob.arrayBuffer());
     let crc = 0xffffffff;
-    for (const byte of data) crc = crcTable[(crc ^ byte) & 255] ^ (crc >>> 8);
+    for (let i = 0; i < data.length; i++) {
+      crc = crcTable[(crc ^ data[i]) & 255] ^ (crc >>> 8);
+      if (i && i % 1048576 === 0) { check(); await new Promise(resolve => setTimeout(resolve, 0)); }
+    }
     crc = (crc ^ 0xffffffff) >>> 0;
     const header = new Uint8Array(30 + name.length);
     const h = new DataView(header.buffer);
@@ -46,5 +51,6 @@ export async function makeZip(files) {
   e.setUint16(10, files.length, true);
   e.setUint32(12, centralSize, true);
   e.setUint32(16, offset, true);
+  check();
   return new Blob([...localParts, ...centralParts, end], { type: 'application/zip' });
 }

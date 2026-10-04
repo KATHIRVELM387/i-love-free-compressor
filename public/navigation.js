@@ -1,6 +1,6 @@
 import './presentations.js';
 import { PRESENTATION_TOOLS } from './presentation-core.js';
-import { mountHelpPages } from './help-pages.js?v=2';
+import { mountHelpPages } from './help-pages.js?v=3';
 import './studio.js';
 import './workflow.js';
 import { EXTRA_TOOLS } from './studio-catalog.js';
@@ -37,7 +37,7 @@ signup.querySelector('#signup-heading').textContent = 'Create your free account'
 signup.querySelector('#account-content').id = 'signup-content';
 document.getElementById('main-content').append(signup);
 export const HELP_PAGES = mountHelpPages(TOOLS, ACCOUNT_PAGES);
-export const PAGES = { ...TOOLS, ...ACCOUNT_PAGES, ...HELP_PAGES, workflow:{title:'Saved workflows',view:'workflow'} };
+export const PAGES = { ...TOOLS, ...ACCOUNT_PAGES, ...HELP_PAGES, workflow:{title:'Workflow builder',description:'Saved reusable image steps, batch pipelines and ZIP export',view:'workflow'} };
 
 export function startNavigation(onSelect) {
   const $ = id => document.getElementById(id);

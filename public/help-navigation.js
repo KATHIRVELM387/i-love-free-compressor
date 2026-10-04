@@ -1,4 +1,4 @@
-import { TOOLS, HELP_PAGES } from './navigation.js?v=16';
+import { TOOLS, HELP_PAGES } from './navigation.js?v=17';
 import { categoryFor } from './guide-data.js';
 const $ = id => document.getElementById(id);
 const workspaceTip=$('workspace-nav').querySelector(':scope > span');

@@ -1,5 +1,5 @@
 import { registerResult, forgetToolResults } from './account-bridge.js?v=1';
-import { prepareImage, formatBytes } from './image-tools.js?v=6';
+import { prepareImage, formatBytes } from './image-tools.js?v=7';
 import { imagesToPdf } from './pdf.js?v=1';
 
 const types = ['image/jpeg', 'image/png', 'image/webp'];

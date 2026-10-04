@@ -1,7 +1,7 @@
 import { filesView, meter, csv, download, setWorkspaceOwner } from './workspace-accounts.js';
 import { accountConfig } from './account-config.js';
 import { results, setPreferences } from './account-bridge.js?v=1';
-import { TOOLS, ACCOUNT_PAGES } from './navigation.js?v=16';
+import { TOOLS, ACCOUNT_PAGES } from './navigation.js?v=17';
 
 const $ = id => document.getElementById(id);
 const authReturnURL = new URL('./', import.meta.url).href;
@@ -274,7 +274,7 @@ async function refresh() {
       if (token !== revision) return;
       session = response.session; profile = data; setWorkspaceOwner(profile.id);
       if (active()) setPreferences(profile.preferences);
-      window.dispatchEvent(new CustomEvent('workspace-identity',{detail:{signedIn:active()}}));
+      window.dispatchEvent(new CustomEvent('workspace-identity',{detail:{signedIn:active(),owner:profile?.id}}));
     }
   } catch { if (token === revision) notice('Account service could not be reached. Guest tools still work. Try signing in again.'); }
   finally { if (token === revision) { loading = false;
@@ -308,7 +308,7 @@ if (configured) {
 
 async function savePreferences(key,value){if(!active())throw Error('Sign in to save account settings.');const api=scoped(),owner=profile.id;const preferences={...profile.preferences,[key]:value};const updated=checked(await api.from('account_profiles').update({preferences}).eq('id',owner).select().single());if(profile?.id===owner){profile=updated;setPreferences(preferences);}return updated;}
 window.addEventListener('save-workspace-preferences',event=>{if(!active()){event.detail.reject(Error('Sign in to save to your account.'));return;}savePreferences(event.detail.key,event.detail.value).then(event.detail.resolve,event.detail.reject);});
-window.addEventListener('request-workspace-identity',()=>window.dispatchEvent(new CustomEvent('workspace-identity',{detail:{signedIn:active()}})));
+window.addEventListener('request-workspace-identity',()=>window.dispatchEvent(new CustomEvent('workspace-identity',{detail:{signedIn:active(),owner:profile?.id}})));
 
 // Announcements contain only public, administrator-authored plain text.
 async function announcement(){

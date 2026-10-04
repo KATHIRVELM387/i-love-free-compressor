@@ -5,6 +5,7 @@
   "type": "module",
   "description": "Free image tools with optional private accounts",
   "scripts": {
+    "test:workflows": "node --test tests/workflow-core.mjs && node tests/workflows-browser.mjs && node tests/navigation-browser.mjs",
     "deploy:production": "node scripts/deploy-production.mjs",
     "start": "python3 -m http.server 4173 --bind 127.0.0.1 --directory public",
     "test": "node tests/browser.mjs",

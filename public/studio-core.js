@@ -16,9 +16,9 @@ export function pagesFrom(text = '', count) {
 export function canvas(w,h) {
  w=Math.round(w);h=Math.round(h);
  if(!Number.isFinite(w)||!Number.isFinite(h)||w<1||h<1||w>4096||h>4096||w*h>16000000) throw Error('Use dimensions from 1 to 4096 pixels, up to 16 million pixels total.');
- const c=document.createElement('canvas');c.width=w;c.height=h;return c;
+ const c=typeof document==='undefined'?new OffscreenCanvas(w,h):document.createElement('canvas');c.width=w;c.height=h;return c;
 }
-export function encode(c,type='image/png',quality=.92) {return new Promise((resolve,reject)=>c.toBlob(b=>b?resolve(b):reject(Error('Could not encode this image.')),type,quality));}
+export function encode(c,type='image/png',quality=.92) {if(typeof c.convertToBlob==='function')return c.convertToBlob({type,quality});return new Promise((resolve,reject)=>c.toBlob(b=>b?resolve(b):reject(Error('Could not encode this image.')),type,quality));}
 export async function bitmap(file) {
  if(!file || !['image/jpeg','image/png','image/webp'].includes(file.type)) throw Error('Choose a JPG, PNG, or WebP image.');
  if(file.size>25000000) throw Error('Each image must be 25 MB or smaller.');

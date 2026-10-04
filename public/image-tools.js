@@ -13,6 +13,10 @@ export function formatBytes(bytes) {
 }
 
 function encode(canvas, type, quality) {
+  if (typeof canvas.convertToBlob === 'function') return canvas.convertToBlob({ type, quality }).then(blob => {
+    if (blob.type !== type) throw new Error('Your browser cannot save this format. Please choose JPG or PNG.');
+    return blob;
+  });
   return new Promise((resolve, reject) => canvas.toBlob(blob => {
     if (!blob) reject(new Error('This browser could not create the image. Try smaller dimensions.'));
     else if (blob.type !== type) reject(new Error('Your browser cannot save this format. Please choose JPG or PNG.'));
@@ -139,7 +143,7 @@ export function renderImage(ctx, source, width, height, { type = 'image/png', ba
   ctx.restore();
 }
 
-export async function prepareImage(source, { width, height, type, target, allowResize, sizeMode = 'maximum', ...edits }) {
+export async function prepareImage(source, { width, height, type, target, allowResize, sizeMode = 'maximum', check = () => {}, ...edits }) {
   if (!Number.isInteger(width) || !Number.isInteger(height) || width < 1 || height < 1 || width > MAX_EDGE || height > MAX_EDGE || width * height > MAX_PIXELS) {
     throw new Error('Use dimensions from 1 to 4,096 pixels, with at most 16 million pixels in total.');
   }
@@ -147,12 +151,14 @@ export async function prepareImage(source, { width, height, type, target, allowR
   if (target !== null && (!Number.isInteger(target) || target < 1000 || target > 25_000_000)) throw new Error('Enter a whole-number size from 1 to 25,000 KB, or leave it blank.');
   if (!['maximum', 'exact'].includes(sizeMode)) throw new Error('Choose a valid file-size mode.');
   if (sizeMode === 'exact' && (type !== 'image/jpeg' || target === null)) throw new Error('Exact size requires a target in KB and JPG output.');
-  const canvas = document.createElement('canvas');
+  check();
+  const canvas = typeof document === 'undefined' ? new OffscreenCanvas(width, height) : document.createElement('canvas');
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Your browser does not support image processing.');
   let blob;
   try {
     for (let attempt = 0; attempt < 24; attempt++) {
+      check();
       canvas.width = width;
       canvas.height = height;
       ctx.imageSmoothingEnabled = true;
@@ -160,6 +166,7 @@ export async function prepareImage(source, { width, height, type, target, allowR
       renderImage(ctx, source, width, height, { ...edits, type });
       const maxQuality = sizeMode === 'exact' ? 1 : .94;
       blob = await encode(canvas, type, maxQuality);
+      check();
       if (!target || blob.size <= target) break;
       if (type !== 'image/png') {
         const smallest = await encode(canvas, type, .08);
@@ -168,6 +175,7 @@ export async function prepareImage(source, { width, height, type, target, allowR
           let low = .08;
           let high = maxQuality;
           for (let step = 0; step < 9; step++) {
+            check();
             const quality = (low + high) / 2;
             const candidate = await encode(canvas, type, quality);
             if (candidate.size <= target) { blob = candidate; low = quality; }
@@ -183,6 +191,7 @@ export async function prepareImage(source, { width, height, type, target, allowR
       height = Math.max(1, Math.floor(height * factor));
     }
     let paddedBytes = 0;
+    check();
     if (sizeMode === 'exact' && blob.size < target) {
       paddedBytes = target - blob.size;
       blob = await padJpegToSize(blob, target);

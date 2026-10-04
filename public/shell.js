@@ -1,6 +1,6 @@
 import { categoryFor } from './guide-data.js';
 import { EXTRA_TOOLS } from './studio-catalog.js';
-import { TOOLS, PAGES } from './navigation.js?v=16';
+import { TOOLS, PAGES } from './navigation.js?v=17';
 
 const $ = id => document.getElementById(id);
 const groups = [
@@ -21,14 +21,16 @@ const aliases = {
   collage: 'grid combine photos', pdf: 'document combine photos', split: 'divide tiles grid pieces zip', palette: 'colors hex swatches extract', compare: 'before after slider comparison', details: 'information dimensions format size aspect ratio transparency'
 };
 function matches(name, query) {
-  const text = `${TOOLS[name].title} ${TOOLS[name].description || ''} ${aliases[name]}`.toLowerCase();
+  const config = PAGES[name] || TOOLS[name];
+  if (!config) return false;
+  const text = `${config.title} ${config.description || ''} ${name.replace(/-/g, ' ')} ${aliases[name] || ''} ${name === 'checksum' ? 'sha 256 hash' : ''}`.toLowerCase();
   return query.trim().toLowerCase().split(/\s+/).every(word => text.includes(word));
 }
 
 const home = document.createElement('a');
 home.href = '#/'; home.textContent = '⌂  All tools'; home.dataset.route = 'home';
 $('side-links').append(home);
-const workflowLink=document.createElement('a');workflowLink.href='#/workflow';workflowLink.textContent='Saved workflows';$('side-links').append(workflowLink);
+const workflowLink=document.createElement('a');workflowLink.href='#/workflow';workflowLink.textContent='Workflow builder';workflowLink.dataset.route='workflow';$('side-links').append(workflowLink);
 for (const [label, names] of groups) {
   const section = document.createElement('div'); section.className = 'nav-group';
   const heading = document.createElement('h2'); heading.textContent = label; section.append(heading);
@@ -39,18 +41,33 @@ for (const [label, names] of groups) {
   }
   $('side-links').append(section);
 }
-function filterNavigation() {
+function filterNavigation(resetScroll = false) {
   let count = 0;
-  for (const link of $('side-links').querySelectorAll('[data-route]:not([data-route=home])')) {
-    link.hidden = !matches(link.dataset.route, $('nav-search').value);
-    if (!link.hidden) count++;
+  for (const link of $('side-links').querySelectorAll('a')) {
+    if (link.dataset.route === 'home') continue;
+    const route = link.hash.slice(2);
+    const match = matches(route, $('nav-search').value);
+    // Search visibility is separate from authorization visibility. Never unhide
+    // admin-only links that the account controller has hidden.
+    link.dataset.navSearchHidden = String(!match);
+    if (link.dataset.route && !link.hasAttribute('data-admin-only')) link.hidden = !match;
+    if (match && !link.hidden) count++;
   }
-  for (const group of $('side-links').querySelectorAll('.nav-group')) group.hidden = !group.querySelector('a:not([hidden])');
+  for (const group of $('side-links').querySelectorAll('.nav-group,.sidebar-quick')) group.hidden = !group.querySelector('a:not([hidden]):not([data-nav-search-hidden="true"])');
   $('nav-empty').hidden = count > 0;
   $('nav-clear').hidden = !$('nav-search').value;
+  $('nav-search').setAttribute('aria-controls', 'side-links');
+  if (resetScroll) $('side-links').scrollTop = 0;
 }
-$('nav-search').addEventListener('input', filterNavigation);
-$('nav-clear').addEventListener('click', () => { $('nav-search').value = ''; filterNavigation(); $('nav-search').focus(); });
+$('nav-search').addEventListener('input', () => filterNavigation(true));
+$('nav-clear').addEventListener('click', () => { $('nav-search').value = ''; filterNavigation(true); $('nav-search').focus(); });
+$('nav-search').addEventListener('keydown', event => {
+  if (event.key !== 'Enter' || !$('nav-search').value.trim()) return;
+  const link = [...$('side-links').querySelectorAll('a:not([data-route="home"])')].find(a => a.getClientRects().length);
+  if (link) { event.preventDefault(); link.click(); }
+});
+new MutationObserver(() => filterNavigation()).observe($('side-links'), { childList:true, subtree:true });
+window.addEventListener('workspace-identity', () => requestAnimationFrame(() => filterNavigation()));
 let toolCategory = 'All';
 window.addEventListener('tool-category-change', event => { toolCategory = event.detail; filterCards(); });
 function filterCards() {
@@ -134,6 +151,9 @@ function updateCurrent() {
   if (name === 'home') { $('tool-search').value = ''; toolCategory = 'All'; filterCards(); }
 }
 mobile.addEventListener('change', () => {
+  // A user can open the new mobile drawer before the queued media-change event
+  // runs. Do not immediately close that deliberately opened drawer.
+  if (mobile.matches && menuOpen) return;
   const wasInside = $('sidebar').contains(document.activeElement);
   closeMenu(wasInside);
 });

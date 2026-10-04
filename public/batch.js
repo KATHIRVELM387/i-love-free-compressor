@@ -1,5 +1,5 @@
 import { registerResult, forgetToolResults } from './account-bridge.js?v=1';
-import { fitDimensions, formatBytes, prepareImage } from './image-tools.js?v=6';
+import { fitDimensions, formatBytes, prepareImage } from './image-tools.js?v=7';
 import { makeZip } from './zip.js?v=3';
 
 const $ = id => document.getElementById(id);

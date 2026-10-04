@@ -1,6 +1,6 @@
 import { registerResult, forgetToolResults } from './account-bridge.js?v=1';
 import { openPhoto, drawContained, extractPalette, splitLayout, hasTransparency, canvasBlob } from './analysis-tools.js?v=1';
-import { formatBytes } from './image-tools.js?v=6';
+import { formatBytes } from './image-tools.js?v=7';
 import { makeZip } from './zip.js?v=3';
 
 const types = { 'image/jpeg': 'JPG', 'image/png': 'PNG', 'image/webp': 'WebP' };
