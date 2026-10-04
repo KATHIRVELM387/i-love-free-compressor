@@ -90,7 +90,20 @@ Batch processing decodes one photo at a time and caps the combined output at 100
 
 The root `vercel.json` deploys only `public/`, skips dependency installation and builds, and applies the same privacy headers as Cloudflare. Guest processing needs no server functions or database. Optional accounts use Supabase Auth, private Storage, a database, and an account-deletion Edge Function; configure these separately. Use Vercel's **Hobby** plan for this personal, non-commercial project.
 
-Import this repository into Vercel, use **Other** as the framework, and keep the output directory as `public`. Alternatively, sign in with the Vercel CLI and deploy this repository with `vercel --prod`. The deployed project is `ilovefreecompressor` in the `kathir-project` Hobby account, with production address `https://ilovefreecompressor.vercel.app/`. For this linked checkout, publish updates with `vercel deploy --prod --scope kathir-project`. `.vercel/` account/project link settings are excluded from Git.
+The deployed project is `ilovefreecompressor` in the `kathir-project` Hobby account, with production address `https://ilovefreecompressor.vercel.app/`. It currently uses CLI deployments, without an automatic Git connection. Sign in with the Vercel CLI and use `npm run deploy:production` from a published release branch. This command rejects `main`, detached HEADs, uncommitted changes, and commits that do not match the remote release branch. It records the release branch and commit in deployment metadata. Install the Vercel CLI on your PATH, or set `ILFC_VERCEL_CLI` to its JavaScript entry point. `.vercel/` account/project link settings are excluded from Git.
+
+### Release workflow
+
+`main` is the local development branch and remains backed up on GitHub. Pushing it does not publish the website. Production releases use dated `release/*` branches. The second release is `release/04-10-2026-i-love-free-compressor_second_release`. The original `release/04-10-2024-i-love-free-compressor_first_release` remains an unchanged archive.
+
+1. Develop and run the relevant checks on `main`, then commit and push the reviewed changes.
+2. Create a new dated release branch from that tested commit, for example `git switch -c release/DD-MM-YYYY-i-love-free-compressor_third_release`.
+3. In GitHub **Settings → Environments → github-pages → Deployment branches and tags**, allow the new release branch and remove the previous branch from the allowlist. Keep the environment restricted to selected branches; do not allow `main`. This selects the active Pages release without modifying archived branches.
+4. Publish the branch with `git push -u origin HEAD`. GitHub Pages deploys it through Actions. Manual workflow runs must also select the release branch; runs on `main` skip deployment.
+5. Run `npm run deploy:production -- --check`, then `npm run deploy:production` for Vercel. Verify both live sites and the deployed commit.
+6. Return to development with `git switch main`. Keep completed release branches as snapshots; prepare later changes on `main` and cut a new release.
+
+Do not use a direct `vercel --prod` command from `main`: direct CLI commands bypass the repository guard. If Vercel Git integration is added later, explicitly select the active release as its production branch before enabling automatic deployments. Development previews must not replace production.
 
 When changing the primary website address, update the canonical URL, Open Graph URL, sitemap, and Google Search Console URL-prefix property to match the assigned address.
 
@@ -98,11 +111,11 @@ Official instructions: https://vercel.com/docs/deployments/overview and https://
 
 ## Deploy free on GitHub Pages
 
-The repository includes `.github/workflows/pages.yml`. It publishes only `public/` on each push to `main`, using the official GitHub Pages actions. No build step, dependency installation, custom domain, or paid service is required. Use a public repository to stay on GitHub Free.
+The repository includes `.github/workflows/pages.yml`. It publishes only `public/` on pushes to `release/*`, using the official GitHub Pages actions. The `github-pages` environment permits only the selected production release branch. No build step, dependency installation, custom domain, or paid service is required. Use a public repository to stay on GitHub Free.
 
 1. Push this project to a public GitHub repository.
 2. Under **Settings → Pages → Build and deployment**, choose **GitHub Actions** as the source.
-3. Run **Deploy to GitHub Pages** from the **Actions** tab, or push a change to `main`.
+3. Allow the active release branch in the `github-pages` environment. Run **Deploy to GitHub Pages** from the **Actions** tab with that branch selected, or push the release branch.
 4. The deployment reports the live URL, normally `https://USERNAME.github.io/i-love-free-compressor/`.
 
 All asset URLs are relative, so the site works under a repository subpath. GitHub Pages ignores the Cloudflare `_headers` file; the HTML Content Security Policy still applies.

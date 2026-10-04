@@ -5,6 +5,7 @@
   "type": "module",
   "description": "Free image tools with optional private accounts",
   "scripts": {
+    "deploy:production": "node scripts/deploy-production.mjs",
     "start": "python3 -m http.server 4173 --bind 127.0.0.1 --directory public",
     "test": "node tests/browser.mjs",
     "package": "python3 scripts/package.py",
