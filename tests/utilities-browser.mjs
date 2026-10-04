@@ -67,7 +67,11 @@ async function evaluate(expression) {
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 async function until(expression) {
   const start = Date.now();
-  while (Date.now() - start < (process.env.ILFC_LIVE_URL?60000:20000)) { if (await evaluate(expression)) return; await delay(50); }
+  while (Date.now() - start < (process.env.ILFC_LIVE_URL?60000:20000)) {
+    try { if (await evaluate(expression)) return; }
+    catch(error) { if (!/Inspected target navigated or closed|Execution context was destroyed|Cannot find context/.test(error.message)) throw error; }
+    await delay(50);
+  }
   throw new Error(`Condition not met: ${expression}`);
 }
 async function screenshot(name) {
@@ -78,7 +82,7 @@ function pass(message) { console.log(`PASS ${message}`); }
 
 async function goTool(name) {
   await evaluate(String.raw`location.hash=${JSON.stringify(name ? '#/' + name : '#/')}`);
-  await until(`document.documentElement.dataset.activeTool===${JSON.stringify(name || 'home')}`);
+  await until(`document.documentElement?.dataset.activeTool===${JSON.stringify(name || 'home')}`);
 }
 async function input(id, value, change = false) {
   assert.equal(await evaluate(String.raw`!document.getElementById(${JSON.stringify(id)}).matches(':disabled') && document.getElementById(${JSON.stringify(id)}).getClientRects().length>0`),true,`${id} must be a usable visible control`);
@@ -100,7 +104,7 @@ async function dimensions() {
 try {
  const {targetId}=await cdp('Target.createTarget',{url:'about:blank'});({sessionId:session}=await cdp('Target.attachToTarget',{targetId,flatten:true}));
  await cdp('Log.enable',{},session);await cdp('Page.enable',{},session);await cdp('Runtime.enable',{},session);await cdp('Network.enable',{},session);await cdp('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false},session);
- await cdp('Page.navigate',{url:process.env.ILFC_LIVE_URL||`http://127.0.0.1:${port}/`},session);await until("document.documentElement.dataset.activeTool==='home'");
+ await cdp('Page.navigate',{url:process.env.ILFC_LIVE_URL||`http://127.0.0.1:${port}/`},session);await until("document.documentElement?.dataset.activeTool==='home'");
  await evaluate(String.raw`window.fixture={}; const lib=await import('./vendor/pdf-lib.js');const doc=await lib.PDFDocument.create();for(let i=1;i<=3;i++){const p=doc.addPage([300,400]);p.drawText('Page '+i,{x:20,y:350});}fixture.pdf=new File([await doc.save()],'sample.pdf',{type:'application/pdf'});const c=document.createElement('canvas');c.width=300;c.height=200;const x=c.getContext('2d');x.fillStyle='#ff0000';x.fillRect(0,0,300,200);fixture.image=new File([await new Promise(r=>c.toBlob(r))],'red.png',{type:'image/png'});fixture.second=new File([fixture.image],'second.png',{type:'image/png'});`);
  const put=async(id,expressions)=>evaluate(String.raw`{const dt=new DataTransfer();for(const f of [${expressions}])dt.items.add(f);const input=document.getElementById(${JSON.stringify(id)});input.files=dt.files;input.dispatchEvent(new Event('change',{bubbles:true}));}`);
  const set=async(id,value)=>evaluate(String.raw`{const n=document.getElementById(${JSON.stringify(id)});n.value=${JSON.stringify(value)};n.dispatchEvent(new Event('input',{bubbles:true}));}`);
