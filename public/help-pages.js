@@ -39,7 +39,7 @@ export function mountHelpPages(tools, accountPages) {
   };
   const about = register('about', 'Useful tools. Less file fuss.', 'A free workspace for everyday images, PDFs, and small creative tasks.');
   const cards = el('div', undefined, 'info-card-grid');
-  cards.append(block('50 tools, one workspace', 'Compress photos, prepare PDFs, annotate images, create QR codes, and more. Every tool opens a focused workspace with only the controls needed for that task.'), block('Start without an account', 'Choose a tool and work in your browser. Login is optional. Use it when you want private cloud saves, saved preferences, and activity history.'), block('Keep control of your files', 'Processing happens on your device. Download results locally. A result uploads only when you explicitly choose Save to My Files.'));
+  cards.append(block('53 tools, one workspace', 'Compress photos, prepare PDFs, annotate images, create QR codes, and more. Every tool opens a focused workspace with only the controls needed for that task.'), block('Start without an account', 'Choose a tool and work in your browser. Login is optional. Use it when you want private cloud saves, saved preferences, and activity history.'), block('Keep control of your files', 'Processing happens on your device. Download results locally. A result uploads only when you explicitly choose Save to My Files.'));
   about.append(cards, block('Built for practical tasks', 'This project is for people preparing website images, application uploads, notes, screenshots, and creative materials. It combines open-source browser tools with optional account features.'));
   const open = block('Open-source and evolving', 'You can inspect the source, report a reproducible problem, or suggest an improvement on GitHub.');
   const repo = link('View source on GitHub', 'https://github.com/KATHIRVELM387/i-love-free-compressor'); repo.target = '_blank'; repo.rel = 'noopener noreferrer'; open.append(repo);
@@ -99,7 +99,7 @@ export function mountHelpPages(tools, accountPages) {
   faqSearch.addEventListener('input', () => { let count = 0; for (const [row, text] of faqRows) { row.hidden = !text.includes(faqSearch.value.trim().toLowerCase()); if (!row.hidden) count++; } faqEmpty.hidden = count > 0; });
   const issue = link('Report an issue on GitHub', 'https://github.com/KATHIRVELM387/i-love-free-compressor/issues'); issue.target = '_blank'; issue.rel = 'noopener noreferrer'; faq.append(issue);
 
-  const features = register('features', 'Find a feature. Learn it in minutes.', 'Browse all 50 tools, plus workflows and account features. Each guide explains one feature separately.');
+  const features = register('features', 'Find a feature. Learn it in minutes.', 'Browse all 53 tools, plus workflows and account features. Each guide explains one feature separately.');
   const searchLabel = el('label', 'Search feature guides'); searchLabel.htmlFor = 'guide-search';
   const search = el('input'); search.id = 'guide-search'; search.type = 'search'; search.placeholder = 'Try resize, watermark, pages, or account…';
   const filters = el('div', undefined, 'category-filters'); filters.setAttribute('aria-label', 'Guide categories');

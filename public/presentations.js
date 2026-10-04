@@ -63,3 +63,6 @@ window.addEventListener('toolchange',()=>{if(player.open)player.close();if(docum
 window.addEventListener('keydown',e=>{if(document.documentElement.dataset.activeTool!=='presentations'||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)||player.open)return;if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();history(e.shiftKey?1:-1);}});
 window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue='';}});
 render();
+
+// AI drafts use the same validation, unsaved-change confirmation and editor state.
+export function openGeneratedPresentation(value){return replace(validateDeck(value));}

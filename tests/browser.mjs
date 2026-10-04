@@ -113,20 +113,20 @@ try {
   await cdp('Page.navigate', { url: `http://127.0.0.1:${port}` }, session);
   await until("document.readyState === 'complete' && !!document.getElementById('demo')");
   await until("document.documentElement.dataset.activeTool==='home'");
-  assert.equal(await evaluate("document.querySelectorAll('.tool-card').length"),50);
+  assert.equal(await evaluate("document.querySelectorAll('.tool-card').length"),53);
   assert.equal(await evaluate("document.getElementById('tool').hidden && document.getElementById('batch-tool').hidden"),true);
-  await until("document.querySelectorAll('#side-links [data-route]').length===52");
+  await until("document.querySelectorAll('#side-links [data-route]').length===55");
   assert.equal(await evaluate("!document.getElementById('sidebar').hidden&&document.getElementById('app-shell').getBoundingClientRect().left>=248"),true);
   assert.equal(await evaluate("document.querySelector('#side-links [aria-current=page]').dataset.route"),'home');
   await input('nav-search','BORDER');
   assert.deepEqual(await evaluate("Array.from(document.querySelectorAll('#side-links [data-route]:not([hidden])')).map(a=>a.dataset.route)"),['home','frame']);
   await evaluate("document.getElementById('nav-clear').click()");
   await input('tool-search','PDF');
-  assert.deepEqual(await evaluate("Array.from(document.querySelectorAll('.tool-card:not([hidden])')).map(a=>a.getAttribute('href'))"),['#/pdf','#/pdf-properties','#/merge-pdf','#/split-pdf','#/pdf-images','#/organize-pdf','#/pdf-watermark','#/pdf-numbers','#/pdf-text','#/text-pdf']);
+  assert.deepEqual(await evaluate("Array.from(document.querySelectorAll('.tool-card:not([hidden])')).map(a=>a.getAttribute('href'))"),['#/pdf','#/ai-document','#/pdf-properties','#/merge-pdf','#/split-pdf','#/pdf-images','#/organize-pdf','#/pdf-watermark','#/pdf-numbers','#/pdf-text','#/text-pdf']);
   await input('tool-search','no-such-tool');
   assert.match(await evaluate("document.getElementById('tool-search-status').textContent"),/No matching/);
   await evaluate("document.getElementById('tool-search-clear').click()");
-  assert.equal(await evaluate("document.querySelectorAll('.tool-card:not([hidden])').length"),50);
+  assert.equal(await evaluate("document.querySelectorAll('.tool-card:not([hidden])').length"),53);
   await screenshot('desktop-home.png');
   for(const width of [768,390,320]){
     await cdp('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:true},session);
@@ -168,7 +168,7 @@ try {
   await evaluate("document.getElementById('menu-heading').focus()");
   await cdp('Input.dispatchKeyEvent',{type:'keyDown',key:'Tab',code:'Tab',windowsVirtualKeyCode:9},session);
   await cdp('Input.dispatchKeyEvent',{type:'keyUp',key:'Tab',code:'Tab',windowsVirtualKeyCode:9},session);
-  for(const category of ['All','Images','PDF','Presentations','Creative','Web']){
+  for(const category of ['All','Images','PDF','Presentations','Creative','Web','AI']){
     assert.equal(await evaluate("document.activeElement.dataset.category"),category);
     await cdp('Input.dispatchKeyEvent',{type:'keyDown',key:'Tab',code:'Tab',windowsVirtualKeyCode:9},session);
     await cdp('Input.dispatchKeyEvent',{type:'keyUp',key:'Tab',code:'Tab',windowsVirtualKeyCode:9},session);

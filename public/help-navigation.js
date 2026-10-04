@@ -1,4 +1,4 @@
-import { TOOLS, HELP_PAGES } from './navigation.js?v=17';
+import { TOOLS, HELP_PAGES } from './navigation.js?v=18';
 import { categoryFor } from './guide-data.js';
 const $ = id => document.getElementById(id);
 const workspaceTip=$('workspace-nav').querySelector(':scope > span');
@@ -29,7 +29,7 @@ for (const [name, title] of [['about','About'],['videos','Video demos'],['how-to
 document.querySelector('footer').append(footerNav);
 
 const categories = el('div'); categories.className = 'category-filters'; categories.id = 'tool-categories'; categories.setAttribute('aria-label', 'Tool categories');
-for (const label of ['All','Images','PDF','Presentations','Creative','Web']) {
+for (const label of ['All','Images','PDF','Presentations','Creative','Web','AI']) {
   const b = el('button', label); b.type = 'button'; b.dataset.category = label; b.setAttribute('aria-pressed', String(label === 'All'));
   b.addEventListener('click', () => window.dispatchEvent(new CustomEvent('tool-category-change', { detail: label })));
   categories.append(b);

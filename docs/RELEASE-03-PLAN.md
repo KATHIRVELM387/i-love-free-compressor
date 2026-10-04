@@ -1,6 +1,6 @@
 # Release 03 — architecture review and implementation roadmap
 
-Status: incremental release. Phase A is implemented and tested; the user has authorized production promotion from `release/04-10-2026-workflow-builder-navigation-search_release-03-phase-a`. Phases B–H remain planned and are not included in this feature release.
+Status: incremental release. Phase A is implemented and tested; the user has authorized production promotion from `release/04-10-2026-workflow-builder-navigation-search_release-03-phase-a`. Phase F is implemented and tested as an experimental local AI increment at the user’s request; see [AI architecture and validation](AI-ARCHITECTURE.md). Phases B–E and G–H remain planned and are not included in the Phase A production release.
 
 ## 1. Architecture review
 
@@ -38,7 +38,7 @@ Also preserve workflows, Google login/signup, dashboard, My Files/folders, histo
 | professional.css / design.css | White/navy/blue/orange visual identity and shared controls |
 | Existing test suites | Extend real Chrome, PGlite/RLS and deployed-asset checks |
 
-## 4. Limitations and architectural gaps
+## 4. Baseline limitations and architectural gaps (before Release 03)
 
 No OCR, subject segmentation, animated output, HEIC decoder, true general PDF text replacement, PPTX import, cloud decks, collaboration, AI model layer, projects, sharing or service worker exists. PDF text extraction is selectable text only. Metadata removal is not full PDF sanitization. Image backgrounds fill transparency rather than detect subjects. Image expansion adds canvas, not generated content. Hash routes are not independent indexable HTML pages. Different host origins have separate local storage.
 

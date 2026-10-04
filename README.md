@@ -10,7 +10,7 @@ A free, mobile-friendly photo resizing and compression tool. All photo processin
 
 ## Choose a tool
 
-The homepage shows fifty tool cards. Selecting a card opens a dedicated view with only the controls needed for that task: compression, exact KB, resizing, cropping/presets, rotation/flipping, format conversion, light/color, watermarks, transparency backgrounds, batches, collages, images to PDF, filters, frames, rounded corners, pixel art, splitting, palettes, comparison, or image details.
+The homepage shows 53 tool cards. Selecting a card opens a dedicated view with only the controls needed for that task: compression, exact KB, resizing, cropping/presets, rotation/flipping, format conversion, light/color, watermarks, transparency backgrounds, batches, collages, images to PDF, filters, frames, rounded corners, pixel art, splitting, palettes, comparison, or image details.
 
 Use **All tools** to return to the menu. Browser Back/Forward and direct links such as `https://ilovefreecompressor.vercel.app/#/crop` work on Vercel and GitHub Pages without server rewrites. Unknown tool links return to the menu. These are views within the static app, not separately indexed pages.
 
@@ -76,7 +76,7 @@ Open http://localhost:4173. Python 3 is needed only for the local server. Altern
 - A generated sample illustration, keyboard controls, accessible status messages, responsive layout.
 - A Content Security Policy limits connections to this site and the configured Supabase project on GitHub Pages and other static hosts. Cloudflare also applies the additional headers in `public/_headers`.
 
-The app never claims success for an output above the target. Exact dimensions take priority unless the user enables dimension reduction. PNG is lossless, so encoding-quality adjustments do not reduce PNG file size. No guarantee of official form acceptance. Background removal and OCR are not included. PDF-to-image conversion is available as a separate local tool.
+The app never claims success for an output above the target. Exact dimensions take priority unless the user enables dimension reduction. PNG is lossless, so encoding-quality adjustments do not reduce PNG file size. No guarantee of official form acceptance. Automatic background removal and scanned-PDF/searchable-PDF OCR are not included. The optional AI image assistant can extract visible text from individual images. PDF-to-image conversion is available as a separate local tool.
 
 To make a 25 KB file 50 KB, select **Exact file size** from the menu, enter **50**, and prepare the photo. To make a larger file smaller, use the same mode with a smaller target or use the maximum-size mode. If the encoded image still exceeds the target at minimum quality, the result is explicitly marked as not meeting the target; optional dimension reduction can help.
 
@@ -250,7 +250,7 @@ Run `npm run test:videos` for real Chrome audio decoding, mute/volume recovery, 
 
 ### Six additional utilities
 
-The catalog now has 50 tools and 57 guides. Each utility has a separate route and runs locally without signing in:
+The catalog has 53 tools and 60 guides, including the optional AI studio described below. Each utility has a separate route and runs locally without signing in:
 
 - `#/image-privacy`: fresh PNG pixels, excluding original camera/GPS metadata; visible content remains.
 - `#/image-dpi`: re-save JPG/PNG at 1–1,200 DPI with unchanged pixel dimensions. JPG uses high-quality re-encoding. Both image tools accept up to 25 MB and export up to 4,096 pixels per edge / 16 million pixels total.
@@ -280,7 +280,7 @@ Run `npm run build:presentations` to rebuild the export bundle and license file.
 
 ## Release 03 development — Phase A
 
-The [technical roadmap](docs/RELEASE-03-PLAN.md) covers the proposed release; only Phase A is implemented in this release. The feature release branch is `release/04-10-2026-workflow-builder-navigation-search_release-03-phase-a`; later Release 03 phases remain planned.
+The [technical roadmap](docs/RELEASE-03-PLAN.md) covers the proposed release; Phase A introduced workflows/search; Phase F adds the optional AI studio as the next release increment. The feature release branch is `release/04-10-2026-workflow-builder-navigation-search_release-03-phase-a`; Phases B–E and G–H remain planned.
 
 The workflow builder (`#/workflow`) supports ordered, configurable image steps: resize, centered crop, rotate/flip, remove original metadata, convert, text watermark, transparent-area background fill, and maximum-size compression. Add/remove/reorder steps, validate, preview one photo, run a batch, save/rename/duplicate/delete settings, and import/export JSON backups. Conversion supports JPG, PNG and WebP. Background fill does not detect or remove a subject background.
 
@@ -290,4 +290,19 @@ Limits remain bounded: 12 steps, 10 saved workflows, 20 inputs, 25 MB per input/
 
 Sidebar search now includes workflow, help, account and favorite links, preserves admin visibility rules, handles empty results, and supports Enter to select a matching result in the mobile drawer. Existing tool groups and visual styling are retained.
 
-Run `npm run test:workflows` for recipe validation, actual browser processing, fallback/worker parity, cancellation, downloads, legacy compatibility, account preference limits, responsive layouts, and navigation search. Run the existing image, studio, utility, presentation, help, video and account suites for regression coverage. OCR, PDF editing, automatic background removal, advanced formats, AI, projects, sharing and offline installation remain roadmap items, not implemented claims.
+Run `npm run test:workflows` for recipe validation, actual browser processing, fallback/worker parity, cancellation, downloads, legacy compatibility, account preference limits, responsive layouts, and navigation search. Run the existing image, studio, utility, presentation, help, video and account suites for regression coverage. Scanned-PDF OCR, PDF editing, automatic background removal, advanced formats, projects, sharing and offline installation remain roadmap items. The optional AI increment is described below.
+
+
+## Release 03 development — local AI studio
+
+Three optional pages preserve the existing static architecture:
+
+- `#/ai-document`: summaries, source-based questions, key points, names, action-item drafts and presentation outlines. Date extraction uses local patterns; table extraction copies delimiter-separated rows. These two helpers are labelled text matching, not generated AI. Paste up to 12,000 characters, or read up to 20 selected pages of a selectable-text PDF (25 MB/200 document pages). Scanned-PDF OCR and semantic table-layout reconstruction remain separate roadmap features.
+- `#/ai-image`: image descriptions, draft alt text, visible-text OCR and filename suggestions using a local vision model. JPG/PNG/WebP up to 10 MB, fitted to a 1,024-pixel edge on white before inference. OCR is approximate; review small text, handwriting and non-English content.
+- `#/ai-presentation`: generate 2–10 slides from a topic/audience and optional 6,000-character source passage, including content, native slide layouts, speaker notes and image ideas. Open the result in the existing presentation editor or download a project backup. Images are not generated/fetched. Optional charts use only user-entered numbers. Existing editor validation and unsaved-change confirmation remain in place.
+
+The AI runtime is self-hosted and loaded on demand. Models are not part of the initial page load or repository: an explicit download installs a SHA-256-verified, fixed-revision pack in browser Cache Storage. Pack sizes are about 627 MB (Qwen3 text), 110 MB (BERT name recognition), and 278 MB (Florence vision). Downloads contact Hugging Face and its CDN with credentials omitted and no referrer; inference uses only verified cache entries and local WASM. Prompts, files and images are never sent to a remote inference API. Remove-model controls delete only the relevant AI cache entries. No API key, account, subscription, new Supabase table or paid inference service is required.
+
+This is experimental, English-first assistance. Small models can invent, omit or misinterpret facts. Literal extractions must match the source, numeric additions are checked, and generated decks are validated; these checks do not prove semantic correctness. Always review output. Inference runs in a cancellable worker; navigation and account changes stop active work. Significant browser memory is required, and low-memory mobile devices may fail. Generation can take several minutes. Outputs stay in memory until downloaded or explicitly saved through existing My Files controls.
+
+`npm run build:ai` regenerates the locally bundled runtime/WASM and runtime notices. `npm run test:ai` runs validation, download-integrity fault tests, input/privacy/UI and editor integration checks. Real inference tests are separate because they require large verified fixtures: `AI_MODELS_DIR=/path/to/packs node tests/ai-models-browser.mjs --vision` and `--text`. See [AI architecture and validation](docs/AI-ARCHITECTURE.md). The AI release branch is `release/04-10-2026-local-ai-studio_release-03-phase-f`; see the [implementation and validation report](docs/RELEASE-03-PHASE-F.md). Production promotion uses the existing release-only deployment guard.

@@ -102,8 +102,8 @@ async function dimensions() {
  await cdp('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false},session);
  const base=process.env.ILFC_LIVE_URL||`http://127.0.0.1:${port}/`;
  await cdp('Page.navigate',{url:base},session);await until("document.documentElement?.dataset.activeTool==='home' && !!document.getElementById('current-tool-guide')");
- assert.equal(await evaluate("document.querySelectorAll('.tool-card').length"),50);
- const guides=await evaluate("Object.keys((await import('./guide-data.js')).GUIDES)");assert.equal(guides.length,57);
+ assert.equal(await evaluate("document.querySelectorAll('.tool-card').length"),53);
+ const guides=await evaluate("Object.keys((await import('./guide-data.js')).GUIDES)");assert.equal(guides.length,60);
  for(const width of [1440,1280,1024,768,390,320]){
   await cdp('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<1000},session);
   assert.equal(await evaluate("['header-login','header-signup'].every(id=>document.getElementById(id).getClientRects().length>0)"),true,`Account links visible at ${width}`);
@@ -116,12 +116,12 @@ async function dimensions() {
  await evaluate("document.querySelector('#tool-categories [data-category=PDF]').click()");
  assert.equal(await evaluate("document.querySelectorAll('.tool-card:not([hidden])').length"),10);
  await input('tool-search','merge');assert.deepEqual(await evaluate("[...document.querySelectorAll('.tool-card:not([hidden])')].map(a=>a.hash)"),['#/merge-pdf']);
- await evaluate("document.getElementById('tool-search-clear').click()");assert.equal(await evaluate("document.querySelectorAll('.tool-card:not([hidden])').length"),50);
- await goTool('features');assert.equal(await evaluate("document.querySelectorAll('.guide-card').length"),57);
+ await evaluate("document.getElementById('tool-search-clear').click()");assert.equal(await evaluate("document.querySelectorAll('.tool-card:not([hidden])').length"),53);
+ await goTool('features');assert.equal(await evaluate("document.querySelectorAll('.guide-card').length"),60);
  await input('guide-search','watermark');assert.equal(await evaluate("document.querySelectorAll('.guide-card:not([hidden])').length>=3"),true);
  await evaluate("[...document.querySelectorAll('#features-tool .category-filters button')].find(b=>b.textContent==='PDF').click()");assert.deepEqual(await evaluate("[...document.querySelectorAll('.guide-card:not([hidden])')].map(c=>c.dataset.guide)"),['pdf-watermark']);
  await input('guide-search','no-such-feature');assert.equal(await evaluate("document.querySelector('#features-tool .help-empty').hidden"),false);
- await evaluate("[...document.querySelectorAll('#features-tool button')].find(b=>b.textContent==='Clear filters').click()");assert.equal(await evaluate("document.querySelectorAll('.guide-card:not([hidden])').length"),57);
+ await evaluate("[...document.querySelectorAll('#features-tool button')].find(b=>b.textContent==='Clear filters').click()");assert.equal(await evaluate("document.querySelectorAll('.guide-card:not([hidden])').length"),60);
  pass('Tool categories, combined searching, guide filters, and empty-state recovery');
  for(const key of guides){
   await goTool('guide/'+key);
@@ -130,7 +130,7 @@ async function dimensions() {
   assert.equal(await evaluate(`document.getElementById('guide/${key}-tool').querySelector('.guide-actions a').hash`),'#/'+key);
   assert.equal(await evaluate("document.getElementById('tool').hidden && document.getElementById('home-view').hidden && document.getElementById('workspace-nav').hidden"),true);
  }
- pass('All 57 feature guides open independently, focus their headings, and link to the matching feature');
+ pass('All 60 feature guides open independently, focus their headings, and link to the matching feature');
  await goTool('compress');assert.equal(await evaluate("document.getElementById('current-tool-guide').hash"),'#/guide/compress');
  await evaluate("document.getElementById('current-tool-guide').click()");await until("document.documentElement.dataset.activeTool==='guide/compress'");
  await evaluate("window.originalClipboardWrite=navigator.clipboard.writeText.bind(navigator.clipboard);navigator.clipboard.writeText=()=>Promise.reject(Error('Unavailable'));[...document.getElementById('guide/compress-tool').querySelectorAll('button')].find(b=>b.textContent==='Copy guide link').click()");

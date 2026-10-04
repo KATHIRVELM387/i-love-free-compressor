@@ -1,11 +1,12 @@
 import { spawn } from 'node:child_process';
+import { createReadStream } from 'node:fs';
 import { createServer } from 'node:http';
 import { readFile, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export async function browserTest() {
+export async function browserTest({modelRoot=null}={}) {
   const root = fileURLToPath(new URL('../', import.meta.url));
   const profile = await mkdtemp(join(tmpdir(), 'ilfc-release03-'));
   const downloads = join(profile, 'downloads');
@@ -14,10 +15,11 @@ export async function browserTest() {
   const server = createServer(async (req, res) => {
     try {
       const pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
+      if(modelRoot && /^\/__ai-fixtures\/(text|vision|entities)\/(?:onnx\/)?[a-z_]+\.(json|onnx)$/.test(pathname)){res.writeHead(200,{'Content-Type':'application/octet-stream'});createReadStream(join(modelRoot,pathname.slice('/__ai-fixtures/'.length))).on('error',()=>res.destroy()).pipe(res);return;}
       const file = resolve(root, 'public', '.' + (pathname === '/' ? '/index.html' : pathname));
       if (!file.startsWith(join(root, 'public') + '/')) { res.writeHead(403).end(); return; }
       const data = pathname === '/account-config.js' ? Buffer.from("export const accountConfig={url:'',publishableKey:''};") : await readFile(file);
-      res.writeHead(200, { 'Content-Type': ({ '.html':'text/html', '.css':'text/css', '.js':'text/javascript', '.mjs':'text/javascript', '.svg':'image/svg+xml' })[extname(file)] || 'application/octet-stream', 'Content-Security-Policy':csp });
+      res.writeHead(200, { 'Content-Type': ({ '.html':'text/html', '.css':'text/css', '.js':'text/javascript', '.mjs':'text/javascript', '.wasm':'application/wasm', '.svg':'image/svg+xml' })[extname(file)] || 'application/octet-stream', 'Content-Security-Policy':csp });
       res.end(data);
     } catch { res.writeHead(404).end(); }
   });
@@ -25,7 +27,7 @@ export async function browserTest() {
   const base = `http://127.0.0.1:${server.address().port}/`;
   const chrome = spawn(process.env.CHROME_BIN || '/usr/bin/google-chrome', ['--headless=new','--disable-gpu','--disable-dev-shm-usage','--no-first-run','--no-default-browser-check','--remote-debugging-pipe',`--user-data-dir=${profile}`,'about:blank'], { stdio:['ignore','ignore','pipe','pipe','pipe'] });
   let seq=0, buffer='', session, log='';
-  const pending=new Map(), errors=[], external=[];
+  const pending=new Map(), errors=[], external=[], logs=[];
   chrome.stderr.on('data', d => log+=d);
   function cdp(method, params={}, target=session) {
     return new Promise((resolve,reject) => {
@@ -39,6 +41,7 @@ export async function browserTest() {
     while ((end=buffer.indexOf('\0'))>=0) {
       const m=JSON.parse(buffer.slice(0,end)); buffer=buffer.slice(end+1);
       if (pending.has(m.id)) { const p=pending.get(m.id);pending.delete(m.id);clearTimeout(p.timer);m.error?p.reject(Error(JSON.stringify(m.error))):p.resolve(m.result); }
+      if(m.method==='Runtime.consoleAPICalled')logs.push(m.params.args.map(a=>a.value||a.description).join(' '));
       if(m.method==='Runtime.exceptionThrown')errors.push(m.params.exceptionDetails.exception?.description||m.params.exceptionDetails.text);
       if(m.method==='Log.entryAdded'&&m.params.entry.level==='error'&&/Content Security Policy|CORS/.test(m.params.entry.text))errors.push(m.params.entry.text);
       if(m.method==='Network.requestWillBeSent'&&!m.params.request.url.startsWith(base)&&!m.params.request.url.startsWith('blob:')&&!m.params.request.url.startsWith('data:'))external.push(m.params.request.url);
@@ -62,6 +65,6 @@ export async function browserTest() {
     await cdp('Browser.setDownloadBehavior',{behavior:'allow',downloadPath:downloads});
     await cdp('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
     await cdp('Page.navigate',{url:base});await until("document.documentElement?.dataset.activeTool==='home' && !!document.querySelector('.footer-links')");
-    return {root,base,cdp,evaluate,until,set,go,errors,external,downloads,close,screenshot:async name=>{await mkdir(join(root,'test-artifacts'),{recursive:true});const r=await cdp('Page.captureScreenshot',{format:'png'});await writeFile(join(root,'test-artifacts',name),Buffer.from(r.data,'base64'));}};
+    return {root,base,cdp,evaluate,until,set,go,errors,external,logs,downloads,close,screenshot:async name=>{await mkdir(join(root,'test-artifacts'),{recursive:true});const r=await cdp('Page.captureScreenshot',{format:'png'});await writeFile(join(root,'test-artifacts',name),Buffer.from(r.data,'base64'));}};
   } catch(e) { await close();throw e; }
 }

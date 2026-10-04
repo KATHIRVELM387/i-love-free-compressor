@@ -1,6 +1,8 @@
+import './ai.js';
+import { AI_TOOLS } from './ai-core.js';
 import './presentations.js';
 import { PRESENTATION_TOOLS } from './presentation-core.js';
-import { mountHelpPages } from './help-pages.js?v=3';
+import { mountHelpPages } from './help-pages.js?v=4';
 import './studio.js';
 import './workflow.js';
 import { EXTRA_TOOLS } from './studio-catalog.js';
@@ -26,7 +28,8 @@ export const TOOLS = {
   compare: { title: 'Compare images', view: 'compare' },
   details: { title: 'Image details', view: 'details' },
   ...EXTRA_TOOLS,
-  ...PRESENTATION_TOOLS
+  ...PRESENTATION_TOOLS,
+  ...AI_TOOLS
 };
 
 export const ACCOUNT_PAGES = Object.fromEntries(['account','signup','dashboard','files','history','profile','admin'].map(name => [name, { title: ({account:'Sign in',signup:'Create account',dashboard:'My dashboard',files:'My files',history:'Activity history',profile:'Profile & settings',admin:'Administration'})[name], view:name }]));

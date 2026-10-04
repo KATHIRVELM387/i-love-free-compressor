@@ -1,9 +1,10 @@
 import { categoryFor } from './guide-data.js';
 import { EXTRA_TOOLS } from './studio-catalog.js';
-import { TOOLS, PAGES } from './navigation.js?v=17';
+import { TOOLS, PAGES } from './navigation.js?v=18';
 
 const $ = id => document.getElementById(id);
 const groups = [
+  ['AI studio', ['ai-document','ai-image','ai-presentation']],
   ['Presentations', ['presentations','presentation-templates','outline-presentation','presentation-drafts']],
   ['Size & format', ['compress', 'exact', 'resize', 'convert']],
   ['Edit & style', ['crop', 'rotate', 'adjust', 'filters', 'frame', 'rounded', 'pixelate', 'watermark', 'background']],

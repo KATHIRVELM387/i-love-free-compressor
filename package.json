@@ -20,9 +20,12 @@
     "test:studio": "node tests/studio-browser.mjs",
     "test:help": "node tests/help-browser.mjs",
     "test:videos": "node tests/videos-browser.mjs",
-    "capture:demos": "node scripts/capture-demos.mjs"
+    "capture:demos": "node scripts/capture-demos.mjs",
+    "build:ai": "node scripts/build-ai.mjs",
+    "test:ai": "node --test tests/ai-core.mjs && node tests/ai-browser.mjs"
   },
   "dependencies": {
+    "@huggingface/transformers": "4.3.0",
     "@supabase/supabase-js": "2.117.2",
     "jsqr": "1.4.0",
     "pdf-lib": "1.17.1",

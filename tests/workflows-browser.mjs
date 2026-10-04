@@ -12,7 +12,7 @@ try {
   await put('fixture.image');await set('workflow-step-0-edge','450');
   await click('workflow-preview');await until("document.getElementById('workflow-status').textContent.startsWith('Preview ready')");
   assert.equal(await evaluate("bridge.results.size"),0,'Preview must not register an account save or activity');
-  assert.equal(await evaluate("document.querySelector('#workflow-output img').naturalWidth"),450);
+  await until("document.querySelector('#workflow-output img')?.naturalWidth>0");assert.equal(await evaluate("document.querySelector('#workflow-output img').naturalWidth"),450);
   await run();assert.equal(await evaluate("bridge.results.get('workflow-download').blob.type"),'image/webp');
   assert.equal(await evaluate("bridge.results.get('workflow-download').blob.size<=200000"),true);
   assert.equal(await evaluate("!!document.getElementById('workflow-zip')"),true);
