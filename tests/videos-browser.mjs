@@ -34,6 +34,7 @@ const pending = new Map();
 const errors = [];
 const externalRequests = [];
 const mediaRequests = [];
+const failedRequests = [];
 browser.stdio[4].on('data', data => {
   buffer += data.toString();
   let end;
@@ -43,6 +44,7 @@ browser.stdio[4].on('data', data => {
       const { resolve, reject, timer } = pending.get(message.id); clearTimeout(timer); pending.delete(message.id);
       if (message.error) reject(new Error(JSON.stringify(message.error))); else resolve(message.result);
     }
+    if(message.method==='Network.loadingFailed')failedRequests.push(message.params.errorText);
     if(message.method==='Log.entryAdded'&&message.params.entry.level==='error'&&/Content Security Policy|CORS/.test(message.params.entry.text))errors.push(message.params.entry.text);
     if (message.method === 'Runtime.exceptionThrown') errors.push(message.params.exceptionDetails.text);
     if (message.method === 'Network.requestWillBeSent') {
@@ -69,8 +71,13 @@ async function evaluate(expression) {
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 async function until(expression) {
   const start = Date.now();
-  while (Date.now() - start < 20000) { if (await evaluate(expression)) return; await delay(50); }
-  throw new Error(`Condition not met: ${expression}`);
+  while (Date.now() - start < (process.env.ILFC_LIVE_URL ? 60000 : 20000)) {
+    try { if (await evaluate(expression)) return; }
+    catch(error) { if (!/Inspected target navigated or closed|Execution context was destroyed|Cannot find context/.test(error.message)) throw error; }
+    await delay(50);
+  }
+  await screenshot('video-check-failure.png');
+  throw new Error(`Condition not met: ${expression}; network: ${failedRequests.join(', ')}; browser: ${errors.join(', ')}`);
 }
 async function screenshot(name) {
   const { data } = await cdp('Page.captureScreenshot', { format: 'png', captureBeyondViewport: true }, session);
