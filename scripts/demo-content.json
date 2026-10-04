@@ -4,7 +4,7 @@
     [
       [
         "01 / YOUR TOOLKIT",
-        "46 free tools. Start without signing up."
+        "Free everyday tools. Start without signing up."
       ],
       [
         "02 / FIND A TOOL",
@@ -59,6 +59,27 @@
       [
         "04 / SAVE YOUR IMAGE",
         "Choose Download photo to keep your resized image."
+      ]
+    ]
+  ],
+  "presentations": [
+    "Build your first presentation",
+    [
+      [
+        "01 / CHOOSE A TEMPLATE",
+        "Open Templates. Choose Project update to get started."
+      ],
+      [
+        "02 / EDIT YOUR SLIDES",
+        "Select a slide. Edit its title and content."
+      ],
+      [
+        "03 / REHEARSE YOUR STORY",
+        "Choose Present. Use the arrow keys to move through slides."
+      ],
+      [
+        "04 / DOWNLOAD POWERPOINT",
+        "Close the player. Create PowerPoint, then download your deck."
       ]
     ]
   ]

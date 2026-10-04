@@ -1,16 +1,19 @@
-import { TOOLS, HELP_PAGES } from './navigation.js?v=15';
+import { TOOLS, HELP_PAGES } from './navigation.js?v=16';
 import { categoryFor } from './guide-data.js';
 const $ = id => document.getElementById(id);
+const workspaceTip=$('workspace-nav').querySelector(':scope > span');
+const photoTip=workspaceTip?.textContent;
 const el = (tag, text) => { const n = document.createElement(tag); if (text !== undefined) n.textContent = text; return n; };
 
 const helpLink = el('a', 'Help for this tool'); helpLink.id = 'current-tool-guide'; helpLink.className = 'text-button';
 $('workspace-nav').append(helpLink);
 function current() {
   const route = document.documentElement.dataset.activeTool || 'home';
+  if(workspaceTip)workspaceTip.textContent=['presentations','presentation-templates','outline-presentation','presentation-drafts'].includes(route)?'Create slides here. Save a draft or project backup to keep editing later.':photoTip;
   helpLink.hidden = !TOOLS[route] && route !== 'workflow';
   helpLink.href = '#/guide/' + route;
   for (const a of document.querySelectorAll('[data-header-page]')) {
-    const selected = a.dataset.headerPage === route || (a.dataset.headerPage === 'features' && route.startsWith('guide/')) || (a.dataset.headerPage === 'home' && (!!TOOLS[route] || route === 'workflow'));
+    const selected = (a.dataset.headerPage === 'presentations' && ['presentations','presentation-templates','outline-presentation','presentation-drafts'].includes(route)) || a.dataset.headerPage === route || (a.dataset.headerPage === 'features' && route.startsWith('guide/')) || (a.dataset.headerPage === 'home' && ((!!TOOLS[route] && !['presentations','presentation-templates','outline-presentation','presentation-drafts'].includes(route)) || route === 'workflow'));
     if (selected) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
   }
 }
@@ -26,7 +29,7 @@ for (const [name, title] of [['about','About'],['videos','Video demos'],['how-to
 document.querySelector('footer').append(footerNav);
 
 const categories = el('div'); categories.className = 'category-filters'; categories.id = 'tool-categories'; categories.setAttribute('aria-label', 'Tool categories');
-for (const label of ['All','Images','PDF','Creative','Web']) {
+for (const label of ['All','Images','PDF','Presentations','Creative','Web']) {
   const b = el('button', label); b.type = 'button'; b.dataset.category = label; b.setAttribute('aria-pressed', String(label === 'All'));
   b.addEventListener('click', () => window.dispatchEvent(new CustomEvent('tool-category-change', { detail: label })));
   categories.append(b);

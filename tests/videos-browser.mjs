@@ -119,10 +119,10 @@ try {
  await evaluate("document.querySelector('.watch-demo').click()");await until("document.documentElement.dataset.activeTool==='videos'");
  assert.equal(await evaluate("document.getElementById('demo-video').paused && !document.getElementById('demo-video').autoplay && document.getElementById('demo-video').preload==='none'"),true);
  assert.equal(mediaRequests.length,0,'Opening the gallery must not download a video until playback');
- assert.equal(await evaluate("document.querySelectorAll('.demo-choice').length"),3);
+ assert.equal(await evaluate("document.querySelectorAll('.demo-choice').length"),4);
  await until("document.getElementById('demo-video').poster.endsWith('tour.jpg')");
  await screenshot('redesign-videos-desktop.png');
- for(const key of ['tour','compress','resize']){
+ for(const key of ['tour','compress','resize','presentations']){
   await evaluate(`document.querySelector('[data-demo=${key}]').click()`);
   assert.equal(await evaluate("document.querySelectorAll('.demo-choice[aria-pressed=true]').length"),1);
   assert.equal(await evaluate('location.hash'),'#/videos/'+key);
@@ -141,7 +141,7 @@ try {
   assert.equal(await evaluate("document.querySelector('.video-actions a[download]').href.endsWith(location.hash.split('/').pop()+'-narrated.mp4')"),true);
   const response=await fetch(new URL(`videos/${key}-narrated.mp4`,base));assert.equal(response.status,200);assert.ok(response.headers.get('content-type')?.includes('video/mp4'));assert.ok((await response.arrayBuffer()).byteLength>10000);
  }
- pass('All three narrated MP4s decode audio, play with sound, mute/unmute, seek, load captions, and provide downloads');
+ pass('All four narrated MP4s decode audio, play with sound, mute/unmute, seek, load captions, and provide downloads');
  await evaluate("document.getElementById('demo-video').play()");await goTool('compress');assert.equal(await evaluate("document.getElementById('demo-video').paused"),true);
  assert.equal(await evaluate("document.getElementById('current-tool-video').getClientRects().length>0"),true);
  await evaluate("document.getElementById('current-tool-video').click()");await until("document.getElementById('demo-video').dataset.source.endsWith('/compress-narrated.mp4')");
@@ -158,7 +158,7 @@ try {
   await goTool('videos');if([1440,390].includes(width))await screenshot(`redesign-videos-${width}.png`);
   await goTool('');if([1440,390].includes(width))await screenshot(`redesign-home-${width}.png`);
  }
- const pages=await evaluate("Object.entries((await import('./navigation.js?v=15')).PAGES).map(([key,config])=>[key,config.view||'tool'])");
+ const pages=await evaluate("Object.entries((await import('./navigation.js?v=16')).PAGES).map(([key,config])=>[key,config.view||'tool'])");
  for(const [key,view] of pages){
   await goTool(key);
   const colours=await evaluate(`(()=>{const section=document.getElementById(${JSON.stringify(view==='tool'?'tool':view+'-tool')});const heading=section.querySelector('h1');const banner=heading.closest('.workspace-heading,.info-heading')||heading;return {background:getComputedStyle(banner).backgroundImage,colour:getComputedStyle(heading).color,width:document.documentElement.scrollWidth};})()`);

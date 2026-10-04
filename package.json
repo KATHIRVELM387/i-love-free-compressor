@@ -11,6 +11,8 @@
     "build:auth": "node scripts/build-auth.mjs",
     "test:accounts": "node tests/accounts-db.mjs && node tests/account-deletion.mjs && node tests/account-config.mjs",
     "test:account-ui": "node tests/accounts-browser.mjs",
+    "build:presentations": "node scripts/build-presentations.mjs",
+    "test:presentations": "node tests/presentations-browser.mjs",
     "build:tools": "node scripts/build-tools.mjs",
     "test:utilities": "node tests/utilities-browser.mjs",
     "test:studio": "node tests/studio-browser.mjs",
@@ -23,6 +25,7 @@
     "jsqr": "1.4.0",
     "pdf-lib": "1.17.1",
     "pdfjs-dist": "6.4.299",
+    "pptxgenjs": "4.0.1",
     "qrcode": "1.5.4"
   },
   "devDependencies": {
@@ -31,5 +34,8 @@
   },
   "engines": {
     "node": ">=22.0.0"
+  },
+  "overrides": {
+    "image-size": "2.0.4"
   }
 }

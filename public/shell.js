@@ -1,9 +1,10 @@
 import { categoryFor } from './guide-data.js';
 import { EXTRA_TOOLS } from './studio-catalog.js';
-import { TOOLS, PAGES } from './navigation.js?v=15';
+import { TOOLS, PAGES } from './navigation.js?v=16';
 
 const $ = id => document.getElementById(id);
 const groups = [
+  ['Presentations', ['presentations','presentation-templates','outline-presentation','presentation-drafts']],
   ['Size & format', ['compress', 'exact', 'resize', 'convert']],
   ['Edit & style', ['crop', 'rotate', 'adjust', 'filters', 'frame', 'rounded', 'pixelate', 'watermark', 'background']],
   ['Multiple photos', ['batch', 'collage', 'pdf', 'split']],
@@ -11,6 +12,7 @@ const groups = [
 ];
 for (const label of ['PDF tools','Create & draw','Web utilities']) groups.push([label,Object.keys(EXTRA_TOOLS).filter(k=>EXTRA_TOOLS[k].group===label)]);
 const aliases = {
+  presentations: 'ppt pptx powerpoint slides presentation maker', 'presentation-templates': 'ppt powerpoint business lesson pitch portfolio meeting', 'outline-presentation': 'text notes headings ppt slides', 'presentation-drafts': 'save backup import json deck',
   compress: 'reduce shrink kb', exact: 'increase enlarge kb', resize: 'dimensions width height pixels',
   convert: 'jpg jpeg png webp', crop: 'square instagram story presets', rotate: 'mirror flip',
   adjust: 'brightness contrast grayscale black white', filters: 'sepia vintage warm cool negative invert',

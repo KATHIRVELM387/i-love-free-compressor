@@ -114,9 +114,14 @@ try {
  await goTool('resize');await shot('resize-1','#tool');
  await input('width','800');await shot('resize-2','#settings-form');
  await prepare();await shot('resize-3','#result');await shot('resize-4','#result');
+ await goTool('presentation-templates');await shot('presentations-1','.presentation-gallery');
+ await evaluate("document.getElementById('ppt-template-project').click()");await until("document.documentElement.dataset.activeTool==='presentations'");
+ await input('ppt-slide-title','Our next chapter');await shot('presentations-2','.presentation-workspace');
+ await evaluate("document.getElementById('ppt-present').click()");await until("!!document.querySelector('#ppt-player canvas')");await shot('presentations-3');
+ await evaluate("document.getElementById('ppt-player-close').click();document.getElementById('ppt-export').click()");await until("!!document.getElementById('ppt-pptx-download')");await shot('presentations-4','.presentation-export');
  await goTool('');await cdp('Emulation.setDeviceMetricsOverride',{width:1440,height:1050,deviceScaleFactor:1,mobile:false},session);await shot('home-desktop');
  await cdp('Emulation.setDeviceMetricsOverride',{width:390,height:1000,deviceScaleFactor:1,mobile:true},session);await shot('home-mobile');
- console.log('Captured real website scenes for all three demos.');
+ console.log('Captured real website scenes for all four demos.');
 }finally{
  browser.kill('SIGTERM');await new Promise(resolve=>server.close(resolve));await delay(500);for(const entry of pending.values())clearTimeout(entry.timer);await rm(profile,{recursive:true,force:true,maxRetries:3,retryDelay:100});
 }

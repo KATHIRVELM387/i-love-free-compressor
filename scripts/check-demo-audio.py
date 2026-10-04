@@ -6,7 +6,7 @@ ROOT=Path(__file__).resolve().parent.parent
 FFMPEG=os.environ.get('FFMPEG_BIN','ffmpeg')
 RATE=16000
 SLOT=112/15
-for name in ['tour','compress','resize']:
+for name in ['tour','compress','resize','presentations']:
  result=subprocess.run([FFMPEG,'-hide_banner','-loglevel','error','-i',str(ROOT/f'public/videos/{name}-narrated.mp4'),'-map','0:a:0','-ac','1','-ar',str(RATE),'-f','f32le','-'],capture_output=True,check=True)
  samples=array('f',result.stdout)
  if sys.byteorder!='little':samples.byteswap()

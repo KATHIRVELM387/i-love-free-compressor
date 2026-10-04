@@ -10,7 +10,7 @@ A free, mobile-friendly photo resizing and compression tool. All photo processin
 
 ## Choose a tool
 
-The homepage shows forty tool cards. Selecting a card opens a dedicated view with only the controls needed for that task: compression, exact KB, resizing, cropping/presets, rotation/flipping, format conversion, light/color, watermarks, transparency backgrounds, batches, collages, images to PDF, filters, frames, rounded corners, pixel art, splitting, palettes, comparison, or image details.
+The homepage shows fifty tool cards. Selecting a card opens a dedicated view with only the controls needed for that task: compression, exact KB, resizing, cropping/presets, rotation/flipping, format conversion, light/color, watermarks, transparency backgrounds, batches, collages, images to PDF, filters, frames, rounded corners, pixel art, splitting, palettes, comparison, or image details.
 
 Use **All tools** to return to the menu. Browser Back/Forward and direct links such as `https://ilovefreecompressor.vercel.app/#/crop` work on Vercel and GitHub Pages without server rewrites. Unknown tool links return to the menu. These are views within the static app, not separately indexed pages.
 
@@ -216,7 +216,7 @@ All tools now supports combined search/category filtering. Each tool workspace l
 
 The reference-inspired design uses a white identity header, navy navigation, a blue network-pattern hero, orange accents, and white account and tool panels. Homepage summaries describe real features, and the account panel switches to dashboard links after sign-in. The same navy network-pattern heading, white panels, blue controls, and orange accents apply to all 101 tool, account, information, workflow, and guide routes. The existing vertical tool navigation remains available. CSS lives in `public/design.css`; the original decorative network pattern is in `public/assets/network.svg`.
 
-`#/videos` offers three approximately 30-second captioned walkthroughs: the website tour, compression, and resizing. Direct links are `#/videos/tour`, `#/videos/compress`, and `#/videos/resize`. Each video is an MP4 made from the actual redesigned website and built-in sample image, with synchronized computer-generated English narration, on-screen instructions, four caption cues, and a complete written walkthrough. The native player starts with sound only after pressing Play and includes an explicit Mute narration button plus standard volume controls. Narration remains in downloaded MP4s. There is no third-party player. The three narrated MP4s together are approximately 1.5 MB; media is loaded only after pressing Play. Playback stops when leaving the page. Native controls provide seeking, volume, fullscreen, and captions after playback starts. Download links and written steps remain available if playback fails.
+`#/videos` offers four approximately 30-second captioned walkthroughs: the website tour, compression, resizing, and presentation creation. Direct links are `#/videos/tour`, `#/videos/compress`, `#/videos/resize`, and `#/videos/presentations`. Each video is an MP4 made from the actual redesigned website and built-in sample image, with synchronized computer-generated English narration, on-screen instructions, four caption cues, and a complete written walkthrough. The native player starts with sound only after pressing Play and includes an explicit Mute narration button plus standard volume controls. Narration remains in downloaded MP4s. There is no third-party player. The four narrated MP4s together are approximately 2 MB; media is loaded only after pressing Play. Playback stops when leaving the page. Native controls provide seeking, volume, fullscreen, and captions after playback starts. Download links and written steps remain available if playback fails.
 
 Generated videos, posters, and WebVTT captions live in `public/videos/`. To refresh recordings after a UI change:
 
@@ -232,12 +232,12 @@ The original narration script is shared in `scripts/demo-content.json`. Speech i
 
 The MP4s use `*-narrated.mp4` filenames so browsers cannot reuse the old silent assets. Audio starts 0.35 seconds into each matching scene and is normalized to -18 LUFS with a -2 dB true-peak limit. The audio checker decodes the final MP4 track and verifies audible content in every scene, unclipped peaks, and matching duration.
 
-Run `npm run test:videos` for real Chrome audio decoding, mute/volume recovery, playback, seeking, caption parsing, explicit loading, route cleanup, failure recovery, desktop/mobile layout checks, and shared banner colours on all 113 routes. `ILFC_LIVE_URL=https://your-site/ npm run test:videos` checks the hosted assets too.
+Run `npm run test:videos` for real Chrome audio decoding, mute/volume recovery, playback, seeking, caption parsing, explicit loading, route cleanup, failure recovery, desktop/mobile layout checks, and shared banner colours on all 121 routes. `ILFC_LIVE_URL=https://your-site/ npm run test:videos` checks the hosted assets too.
 
 
 ### Six additional utilities
 
-The catalog now has 46 tools and 53 guides. Each utility has a separate route and runs locally without signing in:
+The catalog now has 50 tools and 57 guides. Each utility has a separate route and runs locally without signing in:
 
 - `#/image-privacy`: fresh PNG pixels, excluding original camera/GPS metadata; visible content remains.
 - `#/image-dpi`: re-save JPG/PNG at 1–1,200 DPI with unchanged pixel dimensions. JPG uses high-quality re-encoding. Both image tools accept up to 25 MB and export up to 4,096 pixels per edge / 16 million pixels total.
@@ -247,3 +247,19 @@ The catalog now has 46 tools and 53 guides. Each utility has a separate route an
 - `#/checksum`: local SHA-256 with optional expected-hash comparison; any file up to 100 MB. This is a content comparison, not a malware scan.
 
 Run `npm run test:utilities` for browser processing, known checksum vectors, metadata removal, PDF page preservation, PNG CRC/density, JPEG density, exact JSON numbers, input validation, cancellation, and mobile routes/guides.
+
+
+## Presentations
+
+A separate **Presentations** header link and sidebar group open four focused pages:
+
+- `#/presentations`: slide editor with up to 30 slides, eight layouts (title, bullets, columns, image, quote, chart, table, closing), six themes, 16:9 / 4:3 sizes, live preview, notes, move/duplicate/delete, and 20-step undo/redo.
+- `#/presentation-templates`: five editable starter decks for project updates, lessons, pitches, portfolios, and meetings. Chart values are labelled examples, not business claims.
+- `#/outline-presentation`: headings (`# Title`) become slides and following lines become content. Create a deck or append; no AI service or API key is used.
+- `#/presentation-drafts`: explicitly save up to five decks in IndexedDB (40 MB combined), reopen, delete, or import/export project backups (`.ilfc.json`, up to 18 MB). Drafts are device/browser-local and separate from account storage.
+
+Images are normalized to PNG on the device, with a maximum 1,600-pixel edge, 10 MB source / 40 million source pixels, 2.5 MB embedded data URL per image, and 12 MB of embedded images per deck. Notes are included in project backups and PPTX; audience view hides them by default. The presentation player supports arrow keys, Home/End, previous/next, optional notes, and full screen. Leaving the route closes it.
+
+PowerPoint export uses the self-hosted MIT-licensed PptxGenJS bundle loaded only on export. Text, tables, and charts remain editable; uploaded images are embedded. PDF export rasterizes slides without speaker notes. Fonts/line breaks may differ between preview and PowerPoint. Existing .pptx import, cloud presentation saves, animations, and collaboration are not implemented. Use project backups to move editable decks between devices. Replacing an unsaved deck and deleting a draft require an in-app confirmation.
+
+Run `npm run build:presentations` to rebuild the export bundle and license file. The unused Node image-size dependency is pinned to patched 2.0.4 through an npm override; it is excluded from the browser bundle. `npm run test:presentations` checks actual downloads, OOXML slides/chart/table/notes, Unicode, images, PDF pages, both aspect ratios, editing/history, persisted drafts, backup import, validation, and mobile layouts. Set `ILFC_LIVE_URL` to repeat against a deployment. Exported widescreen and standard PPTX samples were also opened and rendered as eight-page PDFs by LibreOffice.

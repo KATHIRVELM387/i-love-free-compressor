@@ -1,3 +1,5 @@
+import './presentations.js';
+import { PRESENTATION_TOOLS } from './presentation-core.js';
 import { mountHelpPages } from './help-pages.js?v=2';
 import './studio.js';
 import './workflow.js';
@@ -23,7 +25,8 @@ export const TOOLS = {
   palette: { title: 'Color palette', view: 'palette' },
   compare: { title: 'Compare images', view: 'compare' },
   details: { title: 'Image details', view: 'details' },
-  ...EXTRA_TOOLS
+  ...EXTRA_TOOLS,
+  ...PRESENTATION_TOOLS
 };
 
 export const ACCOUNT_PAGES = Object.fromEntries(['account','signup','dashboard','files','history','profile','admin'].map(name => [name, { title: ({account:'Sign in',signup:'Create account',dashboard:'My dashboard',files:'My files',history:'Activity history',profile:'Profile & settings',admin:'Administration'})[name], view:name }]));
@@ -41,7 +44,7 @@ export function startNavigation(onSelect) {
   function render() {
     const legacy = { '#tool': 'compress', '#batch-tool': 'batch' };
     const raw = legacy[location.hash] || location.hash.slice(2);
-    const requested = /^videos\/(tour|compress|resize)$/.test(raw) ? 'videos' : raw;
+    const requested = /^videos\/(tour|compress|resize|presentations)$/.test(raw) ? 'videos' : raw;
     const name = Object.hasOwn(PAGES, requested) ? requested : null;
     const config = name ? PAGES[name] : null;
     $('home-view').hidden = !!name;
